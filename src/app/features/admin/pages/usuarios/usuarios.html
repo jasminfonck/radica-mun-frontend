@@ -1,0 +1,58 @@
+<div class="pagina">
+  <div class="pagina-header">
+    <div>
+      <h1>Usuarios del sistema</h1>
+      <p>Gestione las cuentas y roles de los operadores</p>
+    </div>
+    <button mat-flat-button color="primary" (click)="abrirDialogo()">
+      <mat-icon>person_add</mat-icon> Nuevo usuario
+    </button>
+  </div>
+
+  <mat-card>
+    <table mat-table [dataSource]="usuarios" class="tabla-completa">
+
+      <ng-container matColumnDef="nombre">
+        <th mat-header-cell *matHeaderCellDef>Nombre</th>
+        <td mat-cell *matCellDef="let u">{{ u.nombre }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="email">
+        <th mat-header-cell *matHeaderCellDef>Correo electrónico</th>
+        <td mat-cell *matCellDef="let u">{{ u.email }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="rol">
+        <th mat-header-cell *matHeaderCellDef>Rol</th>
+        <td mat-cell *matCellDef="let u">
+          <mat-chip-set><mat-chip>{{ u.rol.nombre }}</mat-chip></mat-chip-set>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="estado">
+        <th mat-header-cell *matHeaderCellDef>Estado</th>
+        <td mat-cell *matCellDef="let u">
+          <span class="chip-estado" [class.activo]="u.activo">
+            {{ u.activo ? 'Activo' : 'Inactivo' }}
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let u">
+          <button mat-icon-button (click)="abrirDialogo(u)" matTooltip="Editar">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button (click)="toggleEstado(u)"
+                  [matTooltip]="u.activo ? 'Inactivar' : 'Activar'">
+            <mat-icon>{{ u.activo ? 'block' : 'check_circle' }}</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+      <tr mat-row *matRowDef="let row; columns: columnas;"></tr>
+    </table>
+  </mat-card>
+</div>

@@ -1,0 +1,55 @@
+<div class="dashboard">
+
+  <div class="dashboard-header">
+    <h1>Configuración del sistema</h1>
+    <p>Complete los pasos para activar el sistema de radicación</p>
+  </div>
+
+  <!-- Estado general -->
+  <mat-card class="estado-card" [class.listo]="sistemaListo">
+    <mat-card-content>
+      <div class="estado-row">
+        <mat-icon>{{ sistemaListo ? 'check_circle' : 'pending' }}</mat-icon>
+        <div>
+          <strong>{{ sistemaListo ? 'Sistema activo y listo para operar' : 'Configuración pendiente' }}</strong>
+          <p>{{ sistemaListo ? 'Todos los módulos están habilitados.' : 'Complete los pasos a continuación para habilitar la radicación.' }}</p>
+        </div>
+        <span class="progreso-label">{{ progreso }}%</span>
+      </div>
+      <mat-progress-bar mode="determinate" [value]="progreso"></mat-progress-bar>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Pasos de configuración -->
+  <h2 class="seccion-titulo">Pasos de configuración</h2>
+  <div class="pasos-grid">
+    <mat-card *ngFor="let paso of pasos; let i = index"
+              class="paso-card"
+              [class.completado]="paso.completado"
+              (click)="ir(paso.ruta)">
+      <mat-card-content>
+        <div class="paso-numero">{{ i + 1 }}</div>
+        <mat-icon class="paso-icono">{{ paso.icono }}</mat-icon>
+        <div class="paso-info">
+          <strong>{{ paso.label }}</strong>
+          <span>{{ paso.descripcion }}</span>
+        </div>
+        <mat-icon class="paso-estado">{{ paso.completado ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Accesos rápidos -->
+  <h2 class="seccion-titulo">Gestión</h2>
+  <div class="accesos-grid">
+    <mat-card *ngFor="let acceso of accesosRapidos"
+              class="acceso-card"
+              (click)="ir(acceso.ruta)">
+      <mat-card-content>
+        <mat-icon>{{ acceso.icono }}</mat-icon>
+        <span>{{ acceso.label }}</span>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+</div>

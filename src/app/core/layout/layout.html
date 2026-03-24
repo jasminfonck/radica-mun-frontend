@@ -1,0 +1,55 @@
+<mat-sidenav-container class="contenedor-app">
+
+  <!-- Sidebar -->
+  <mat-sidenav #sidenav [opened]="sidebarAbierto" mode="side" class="sidebar">
+    <div class="sidebar-header">
+      <mat-icon class="logo-icon">account_balance</mat-icon>
+      <span class="logo-texto">Radica Mun</span>
+    </div>
+
+    <mat-nav-list>
+      <ng-container *ngFor="let item of menu">
+        <a mat-list-item
+           *ngIf="menuVisible(item.roles)"
+           [routerLink]="item.ruta"
+           routerLinkActive="activo">
+          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+          <span matListItemTitle>{{ item.label }}</span>
+        </a>
+      </ng-container>
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <!-- Contenido principal -->
+  <mat-sidenav-content>
+
+    <!-- Barra superior -->
+    <mat-toolbar color="primary" class="barra-superior">
+      <button mat-icon-button (click)="sidenav.toggle()">
+        <mat-icon>menu</mat-icon>
+      </button>
+      <span class="spacer"></span>
+      <span class="nombre-usuario">{{ usuario?.nombre }}</span>
+      <button mat-icon-button [matMenuTriggerFor]="menuUsuario">
+        <mat-icon>account_circle</mat-icon>
+      </button>
+      <mat-menu #menuUsuario="matMenu">
+        <div class="menu-usuario-info" mat-menu-item disabled>
+          <small>{{ usuario?.email }}</small><br>
+          <small><strong>{{ usuario?.rol }}</strong></small>
+        </div>
+        <mat-divider></mat-divider>
+        <button mat-menu-item (click)="cerrarSesion()">
+          <mat-icon>logout</mat-icon>
+          Cerrar sesión
+        </button>
+      </mat-menu>
+    </mat-toolbar>
+
+    <!-- Área de contenido -->
+    <main class="contenido">
+      <router-outlet></router-outlet>
+    </main>
+
+  </mat-sidenav-content>
+</mat-sidenav-container>

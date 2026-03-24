@@ -1,0 +1,27 @@
+<div class="pagina">
+  <div class="pagina-header">
+    <div>
+      <h1>Canales de recepción</h1>
+      <p>Active los canales por los cuales la entidad recibe comunicaciones</p>
+    </div>
+  </div>
+
+  <div class="canales-grid">
+    <mat-card *ngFor="let canal of canales" class="canal-card" [class.activo]="canal.activo">
+      <mat-card-content>
+        <div class="canal-icono">
+          <mat-icon>{{ iconos[canal.tipo] }}</mat-icon>
+        </div>
+        <div class="canal-info">
+          <strong>{{ canal.nombre }}</strong>
+          <span class="canal-tipo">{{ canal.tipo }}</span>
+        </div>
+        <mat-slide-toggle
+          [checked]="canal.activo"
+          (change)="toggleCanal(canal)"
+          color="primary">
+        </mat-slide-toggle>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

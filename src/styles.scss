@@ -1,1 +1,182 @@
-/* You can add global styles to this file, and also import other style files */
+// Include theming for Angular Material with `mat.theme()`.
+// This Sass mixin will define CSS variables that are used for styling Angular Material
+// components according to the Material 3 design spec.
+// Learn more about theming and how to use it for your application's
+// custom components at https://material.angular.dev/guide/theming
+@use '@angular/material' as mat;
+
+html {
+  height: 100%;
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$azure-palette,
+        tertiary: mat.$blue-palette,
+      ),
+      typography: Roboto,
+      density: 0,
+    )
+  );
+}
+
+body {
+  // Default the application to a light color theme. This can be changed to
+  // `dark` to enable the dark color theme, or to `light dark` to defer to the
+  // user's system settings.
+  color-scheme: light;
+
+  // Set a default background, font and text colors for the application using
+  // Angular Material's system-level CSS variables. Learn more about these
+  // variables at https://material.angular.dev/guide/system-variables
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+
+  // Reset the user agent margin.
+  margin: 0;
+  height: 100%;
+}
+* { box-sizing: border-box; }
+
+// ── Estilos compartidos de páginas admin ──────────────────────────────────
+.pagina {
+  max-width: 960px;
+
+  &-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    gap: 16px;
+
+    h1 { font-size: 22px; font-weight: 700; color: #1a237e; margin: 0 0 4px; }
+    p  { color: #666; margin: 0; font-size: 14px; }
+  }
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+
+  mat-form-field { width: 100%; }
+  .campo-ancho   { grid-column: 1 / -1; }
+}
+
+.acciones {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 8px 0 4px;
+}
+
+.exito {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #43a047;
+  font-size: 14px;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+.chip-estado {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #ffebee;
+  color: #c62828;
+
+  &.activo {
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+}
+
+.tabla-completa {
+  width: 100%;
+}
+
+.form-card {
+  margin-bottom: 20px;
+  border-left: 3px solid #1a237e;
+
+  mat-card-title { font-size: 16px; padding: 16px 16px 0; }
+  mat-card-content { padding: 12px 16px 16px !important; }
+}
+
+.tab-contenido {
+  padding: 20px 0;
+}
+
+.tab-acciones {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.canales-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  max-width: 700px;
+}
+
+.canal-card {
+  border-left: 3px solid #e0e0e0;
+  transition: border-color 0.2s;
+
+  &.activo { border-left-color: #43a047; }
+
+  mat-card-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px !important;
+  }
+
+  .canal-icono {
+    mat-icon { font-size: 28px; width: 28px; height: 28px; color: #5c6bc0; }
+  }
+
+  .canal-info {
+    flex: 1;
+    strong { display: block; font-size: 15px; }
+    .canal-tipo { font-size: 12px; color: #888; text-transform: capitalize; }
+  }
+}
+
+.ejemplo-radicado {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 16px;
+  background: #e8eaf6;
+  border-radius: 8px;
+
+  .ejemplo-label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+  .ejemplo-numero { font-size: 20px; color: #1a237e; letter-spacing: 1px; }
+}
+
+.color-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  font-size: 13px;
+  color: #666;
+
+  .color-muestra {
+    width: 40px; height: 40px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+  }
+}
+
+app-root {
+  display: block;
+  height: 100vh;
+}

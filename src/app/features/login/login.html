@@ -1,0 +1,111 @@
+<div class="login-wrapper">
+
+  <!-- Panel izquierdo: identidad institucional -->
+  <div class="panel-institucional">
+    <div class="panel-content">
+      <div class="escudo">
+        <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="8" y="28" width="64" height="40" rx="2" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+          <rect x="20" y="40" width="12" height="16" rx="1" fill="rgba(255,255,255,0.25)"/>
+          <rect x="34" y="36" width="12" height="20" rx="1" fill="rgba(255,255,255,0.35)"/>
+          <rect x="48" y="42" width="12" height="14" rx="1" fill="rgba(255,255,255,0.25)"/>
+          <path d="M4 28 L40 8 L76 28" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" fill="none"/>
+          <rect x="34" y="56" width="12" height="12" rx="1" fill="rgba(255,255,255,0.5)"/>
+        </svg>
+      </div>
+
+      <div class="sistema-info">
+        <span class="sistema-etiqueta">Sistema de Gestión</span>
+        <h1 class="sistema-nombre">Radica<span>Mun</span></h1>
+        <p class="sistema-descripcion">
+          Radicación de comunicaciones para municipios de categoría 5ª y 6ª
+        </p>
+      </div>
+
+      <div class="separador"></div>
+
+      <div class="entidad-info">
+        <span class="entidad-etiqueta">Entidad</span>
+        <p class="entidad-nombre">{{ nombreEntidad }}</p>
+      </div>
+
+      <div class="deco-grid">
+        <div class="deco-cell" *ngFor="let c of decoItems"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel derecho: formulario -->
+  <div class="panel-form">
+    <div class="form-wrapper">
+
+      <div class="form-header">
+        <h2>Iniciar sesión</h2>
+        <p>Ingrese sus credenciales para acceder al sistema</p>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="ingresar()" class="form-login" autocomplete="off">
+
+        <div class="campo-grupo">
+          <label class="campo-label">Correo electrónico</label>
+          <mat-form-field appearance="outline" class="campo-input">
+            <input matInput formControlName="email"
+                   type="email"
+                   placeholder="usuario@municipio.gov.co"
+                   autocomplete="username">
+            <mat-icon matSuffix>alternate_email</mat-icon>
+            <mat-error *ngIf="form.get('email')?.hasError('required')">
+              El correo es obligatorio
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="campo-grupo">
+          <label class="campo-label">Contraseña</label>
+          <mat-form-field appearance="outline" class="campo-input">
+            <input matInput
+                   formControlName="password"
+                   [type]="ocultarPassword ? 'password' : 'text'"
+                   placeholder="••••••••"
+                   autocomplete="current-password">
+            <button mat-icon-button matSuffix type="button"
+                    (click)="ocultarPassword = !ocultarPassword"
+                    [attr.aria-label]="ocultarPassword ? 'Mostrar contraseña' : 'Ocultar contraseña'">
+              <mat-icon>{{ ocultarPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            <mat-error *ngIf="form.get('password')?.hasError('required')">
+              La contraseña es obligatoria
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="error-banner" *ngIf="error">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ error }}</span>
+        </div>
+
+        <button mat-flat-button
+                type="submit"
+                class="btn-ingresar"
+                [disabled]="cargando || form.invalid">
+          <span class="btn-contenido" *ngIf="!cargando">
+            <mat-icon>login</mat-icon>
+            Ingresar al sistema
+          </span>
+          <span class="btn-contenido" *ngIf="cargando">
+            <mat-spinner diameter="18"></mat-spinner>
+            Verificando...
+          </span>
+        </button>
+
+      </form>
+
+      <footer class="form-footer">
+        <span>Radica Mun &copy; {{ anio }}</span>
+        <span>v1.0.0</span>
+      </footer>
+
+    </div>
+  </div>
+
+</div>

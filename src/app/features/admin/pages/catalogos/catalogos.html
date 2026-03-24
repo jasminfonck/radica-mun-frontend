@@ -1,0 +1,95 @@
+<div class="pagina">
+  <div class="pagina-header">
+    <div><h1>Catálogos administrativos</h1><p>Tipos de requerimiento y plazos de respuesta</p></div>
+  </div>
+
+  <mat-tab-group [(selectedIndex)]="tabActiva">
+
+    <!-- Tipos de requerimiento -->
+    <mat-tab label="Tipos de requerimiento">
+      <div class="tab-contenido">
+        <div class="tab-acciones">
+          <button mat-flat-button color="primary" (click)="mostrarFormTipo = true; editandoTipo = null; inicializarForms()">
+            <mat-icon>add</mat-icon> Nuevo tipo
+          </button>
+        </div>
+
+        <mat-card *ngIf="mostrarFormTipo" class="form-card">
+          <mat-card-title>{{ editandoTipo ? 'Editar tipo' : 'Nuevo tipo de requerimiento' }}</mat-card-title>
+          <mat-card-content>
+            <form [formGroup]="formTipo" (ngSubmit)="guardarTipo()" class="form-grid">
+              <mat-form-field appearance="outline">
+                <mat-label>Nombre *</mat-label>
+                <input matInput formControlName="nombre" placeholder="Ej: Derecho de petición">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Descripción</mat-label>
+                <input matInput formControlName="descripcion">
+              </mat-form-field>
+              <div class="acciones campo-ancho">
+                <button mat-button type="button" (click)="mostrarFormTipo = false">Cancelar</button>
+                <button mat-flat-button color="primary" type="submit" [disabled]="formTipo.invalid">Guardar</button>
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-list>
+          <mat-list-item *ngFor="let t of tipos">
+            <mat-icon matListItemIcon [style.color]="t.activo ? '#43a047' : '#ccc'">label</mat-icon>
+            <span matListItemTitle>{{ t.nombre }}</span>
+            <span matListItemLine>{{ t.descripcion }}</span>
+            <div matListItemMeta>
+              <button mat-icon-button (click)="editarTipo(t)"><mat-icon>edit</mat-icon></button>
+              <button mat-icon-button (click)="toggleTipo(t)"><mat-icon>{{ t.activo ? 'block' : 'check_circle' }}</mat-icon></button>
+            </div>
+          </mat-list-item>
+        </mat-list>
+      </div>
+    </mat-tab>
+
+    <!-- Plazos de respuesta -->
+    <mat-tab label="Plazos de respuesta">
+      <div class="tab-contenido">
+        <div class="tab-acciones">
+          <button mat-flat-button color="primary" (click)="mostrarFormPlazo = true; editandoPlazo = null; inicializarForms()">
+            <mat-icon>add</mat-icon> Nuevo plazo
+          </button>
+        </div>
+
+        <mat-card *ngIf="mostrarFormPlazo" class="form-card">
+          <mat-card-title>{{ editandoPlazo ? 'Editar plazo' : 'Nuevo plazo de respuesta' }}</mat-card-title>
+          <mat-card-content>
+            <form [formGroup]="formPlazo" (ngSubmit)="guardarPlazo()" class="form-grid">
+              <mat-form-field appearance="outline">
+                <mat-label>Nombre *</mat-label>
+                <input matInput formControlName="nombre" placeholder="Ej: 15 días hábiles">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Días hábiles *</mat-label>
+                <input matInput formControlName="dias_habiles" type="number" min="1">
+              </mat-form-field>
+              <div class="acciones campo-ancho">
+                <button mat-button type="button" (click)="mostrarFormPlazo = false">Cancelar</button>
+                <button mat-flat-button color="primary" type="submit" [disabled]="formPlazo.invalid">Guardar</button>
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-list>
+          <mat-list-item *ngFor="let p of plazos">
+            <mat-icon matListItemIcon [style.color]="p.activo ? '#43a047' : '#ccc'">schedule</mat-icon>
+            <span matListItemTitle>{{ p.nombre }}</span>
+            <span matListItemLine>{{ p.dias_habiles }} días hábiles</span>
+            <div matListItemMeta>
+              <button mat-icon-button (click)="editarPlazo(p)"><mat-icon>edit</mat-icon></button>
+              <button mat-icon-button (click)="togglePlazo(p)"><mat-icon>{{ p.activo ? 'block' : 'check_circle' }}</mat-icon></button>
+            </div>
+          </mat-list-item>
+        </mat-list>
+      </div>
+    </mat-tab>
+
+  </mat-tab-group>
+</div>
