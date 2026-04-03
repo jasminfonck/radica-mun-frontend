@@ -1,44 +1,44 @@
 .dashboard {
   max-width: 900px;
-
-  &-header {
-    margin-bottom: 24px;
-    h1 { font-size: 24px; font-weight: 700; color: #1a237e; margin: 0 0 4px; }
-    p  { color: #666; margin: 0; }
-  }
 }
 
+// Estado card ----------------------------------------------------------------
 .estado-card {
-  margin-bottom: 32px;
-  border-left: 4px solid #ff9800;
-
-  &.listo { border-left-color: #43a047; }
-
-  .estado-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    margin-bottom: 12px;
-
-    mat-icon { font-size: 32px; width: 32px; height: 32px; color: #ff9800; margin-top: 2px; }
-    &:has(+ mat-progress-bar) mat-icon { color: #43a047; }
-
-    div { flex: 1; strong { display: block; font-size: 16px; } p { margin: 4px 0 0; color: #666; font-size: 14px; } }
-    .progreso-label { font-size: 22px; font-weight: 700; color: #1a237e; }
-  }
+  border-left: 4px solid #ff9800 !important;
+  &.listo { border-left-color: #43a047 !important; }
 }
 
-.listo .estado-row mat-icon { color: #43a047; }
+.estado-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 14px;
+}
 
+.estado-icono {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: #fff3e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  mat-icon { color: #ff9800; font-size: 26px; width: 26px; height: 26px; }
+  &.icono-listo { background: #e8f5e9; mat-icon { color: #43a047; } }
+}
+
+// Section labels ------------------------------------------------------------
 .seccion-titulo {
-  font-size: 16px;
-  font-weight: 600;
-  color: #374151;
-  margin: 0 0 16px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--texto-muy-suave);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1.2px;
+  margin: 0 0 14px;
 }
 
+// Pasos grid -----------------------------------------------------------------
 .pasos-grid {
   display: flex;
   flex-direction: column;
@@ -48,62 +48,80 @@
 
 .paso-card {
   cursor: pointer;
-  transition: box-shadow 0.2s, transform 0.15s;
+  transition: transform 0.15s, box-shadow 0.2s !important;
+  border-left: 3px solid transparent !important;
 
-  &:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); transform: translateX(4px); }
-  &.completado { border-left: 3px solid #43a047; }
+  &:hover { transform: translateX(4px); }
+  &.completado { border-left-color: #43a047 !important; }
 
   mat-card-content {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 12px 16px !important;
+    gap: 14px;
+    padding: 14px 18px !important;
   }
-
-  .paso-numero {
-    width: 28px; height: 28px;
-    border-radius: 50%;
-    background: #e8eaf6;
-    color: #1a237e;
-    font-size: 13px;
-    font-weight: 700;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
-
-  .paso-icono { color: #5c6bc0; }
-
-  .paso-info {
-    flex: 1;
-    strong { display: block; font-size: 14px; }
-    span   { font-size: 12px; color: #888; }
-  }
-
-  .paso-estado { color: #ccc; }
-  &.completado .paso-estado { color: #43a047; }
 }
 
-.accesos-grid {
+.paso-numero {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--azul-pale);
+  color: var(--azul);
+  font-size: 13px;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.paso-icono-wrap {
+  width: 36px; height: 36px;
+  border-radius: var(--radio-sm);
+  background: var(--azul-pale2);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  mat-icon { color: var(--azul-hover); font-size: 20px; width: 20px; height: 20px; }
+}
+
+.paso-info {
+  flex: 1;
+  strong { display: block; font-size: 14px; color: var(--texto); font-weight: 600; }
+  span   { font-size: 12px; color: var(--texto-suave); }
+}
+
+.paso-estado-icon {
+  color: var(--borde);
+  transition: color 0.2s;
+  .completado & { color: #43a047; }
+}
+.paso-card.completado .paso-estado-icon { color: #43a047; }
+
+// Quick access grid ----------------------------------------------------------
+.admin-accesos-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
 }
 
-.acceso-card {
+.admin-acceso-card {
   cursor: pointer;
-  transition: box-shadow 0.2s;
-
-  &:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
 
   mat-card-content {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
-    padding: 20px 16px !important;
+    gap: 10px;
+    padding: 22px 16px !important;
     text-align: center;
 
-    mat-icon { font-size: 28px; width: 28px; height: 28px; color: #1a237e; }
-    span { font-size: 13px; font-weight: 600; color: #374151; }
+    mat-icon {
+      font-size: 28px; width: 28px; height: 28px;
+      color: var(--azul);
+    }
+    span {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--texto-medio);
+      line-height: 1.3;
+    }
   }
 }

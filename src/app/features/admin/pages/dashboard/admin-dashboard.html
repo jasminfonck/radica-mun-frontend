@@ -1,27 +1,37 @@
-<div class="dashboard">
+<div class="pagina dashboard">
 
-  <div class="dashboard-header">
-    <h1>Configuración del sistema</h1>
-    <p>Complete los pasos para activar el sistema de radicación</p>
+  <div class="pagina-header">
+    <div>
+      <h1>Panel de administración</h1>
+      <p>Complete los pasos de configuración para activar el sistema de radicación</p>
+    </div>
   </div>
 
   <!-- Estado general -->
-  <mat-card class="estado-card" [class.listo]="sistemaListo">
+  <mat-card class="estado-card" [class.listo]="sistemaListo" style="margin-bottom:28px">
     <mat-card-content>
       <div class="estado-row">
-        <mat-icon>{{ sistemaListo ? 'check_circle' : 'pending' }}</mat-icon>
-        <div>
-          <strong>{{ sistemaListo ? 'Sistema activo y listo para operar' : 'Configuración pendiente' }}</strong>
-          <p>{{ sistemaListo ? 'Todos los módulos están habilitados.' : 'Complete los pasos a continuación para habilitar la radicación.' }}</p>
+        <div class="estado-icono" [class.icono-listo]="sistemaListo">
+          <mat-icon>{{ sistemaListo ? 'check_circle' : 'pending' }}</mat-icon>
         </div>
-        <span class="progreso-label">{{ progreso }}%</span>
+        <div style="flex:1">
+          <strong style="font-size:16px; display:block; color:var(--texto); margin-bottom:4px">
+            {{ sistemaListo ? 'Sistema activo y listo para operar' : 'Configuración pendiente' }}
+          </strong>
+          <p style="margin:0; color:var(--texto-suave); font-size:14px">
+            {{ sistemaListo ? 'Todos los módulos están habilitados.' : 'Complete los pasos a continuación para habilitar la radicación.' }}
+          </p>
+        </div>
+        <span style="font-family:'Playfair Display', serif; font-size:28px; font-weight:700; color:var(--azul)">
+          {{ progreso }}%
+        </span>
       </div>
-      <mat-progress-bar mode="determinate" [value]="progreso"></mat-progress-bar>
+      <mat-progress-bar mode="determinate" [value]="progreso" style="border-radius:4px; height:6px"></mat-progress-bar>
     </mat-card-content>
   </mat-card>
 
   <!-- Pasos de configuración -->
-  <h2 class="seccion-titulo">Pasos de configuración</h2>
+  <p class="seccion-titulo">Pasos de configuración</p>
   <div class="pasos-grid">
     <mat-card *ngFor="let paso of pasos; let i = index"
               class="paso-card"
@@ -29,21 +39,23 @@
               (click)="ir(paso.ruta)">
       <mat-card-content>
         <div class="paso-numero">{{ i + 1 }}</div>
-        <mat-icon class="paso-icono">{{ paso.icono }}</mat-icon>
+        <div class="paso-icono-wrap">
+          <mat-icon>{{ paso.icono }}</mat-icon>
+        </div>
         <div class="paso-info">
           <strong>{{ paso.label }}</strong>
           <span>{{ paso.descripcion }}</span>
         </div>
-        <mat-icon class="paso-estado">{{ paso.completado ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+        <mat-icon class="paso-estado-icon">{{ paso.completado ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
       </mat-card-content>
     </mat-card>
   </div>
 
   <!-- Accesos rápidos -->
-  <h2 class="seccion-titulo">Gestión</h2>
-  <div class="accesos-grid">
+  <p class="seccion-titulo">Gestión</p>
+  <div class="admin-accesos-grid">
     <mat-card *ngFor="let acceso of accesosRapidos"
-              class="acceso-card"
+              class="admin-acceso-card"
               (click)="ir(acceso.ruta)">
       <mat-card-content>
         <mat-icon>{{ acceso.icono }}</mat-icon>

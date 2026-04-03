@@ -1,0 +1,471 @@
+<div class="pagina" *ngIf="recepcion">
+  <div class="pagina-header">
+    <div>
+      <h1>Recepción #{{ recepcion.id }}</h1>
+      <p>{{ recepcion.created_at | date:'dd/MM/yyyy HH:mm' }} — {{ recepcion.canal.nombre }}</p>
+    </div>
+    <button mat-stroked-button routerLink="/recepcion">
+      <mat-icon>arrow_back</mat-icon> Volver
+    </button>
+  </div>
+
+  <mat-tab-group animationDuration="200ms">
+
+    <!-- ── Pestaña: Información ────────────────────────────────────────── -->
+    <mat-tab label="Información">
+      <div class="tab-contenido detalle-grid">
+
+        <mat-card>
+          <mat-card-title>Datos de recepción</mat-card-title>
+          <mat-card-content>
+            <div class="campo-detalle">
+              <span class="campo-etiqueta">Canal</span>
+              <span>{{ recepcion.canal.nombre }}</span>
+            </div>
+            <div class="campo-detalle">
+              <span class="campo-etiqueta">Asunto provisional</span>
+              <span>{{ recepcion.asunto_provisional || 'No registrado' }}</span>
+            </div>
+            <div class="campo-detalle">
+              <span class="campo-etiqueta">Observaciones</span>
+              <span>{{ recepcion.observaciones || 'Sin observaciones' }}</span>
+            </div>
+            <div class="campo-detalle" *ngIf="recepcion.recibido_por">
+              <span class="campo-etiqueta">Recibido por</span>
+              <span>{{ recepcion.recibido_por.nombre }}</span>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card>
+          <mat-card-title>Estado</mat-card-title>
+          <mat-card-content>
+            <div class="estado-actual">
+              <span [class]="'chip-estado ' + recepcion.estado" style="font-size:13px; padding:5px 14px">
+                {{ recepcion.estado | titlecase }}
+              </span>
+            </div>
+            <p class="estado-label">Cambiar estado:</p>
+            <div class="estados-botones">
+              <button *ngFor="let e of estados"
+                      mat-stroked-button
+                      [color]="recepcion.estado === e.value ? 'primary' : ''"
+                      (click)="cambiarEstado(e.value)">
+                {{ e.label }}
+              </button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+      </div>
+    </mat-tab>
+
+    <!-- ── Pestaña: Adjuntos ───────────────────────────────────────────── -->
+    <mat-tab label="Adjuntos ({{ recepcion.adjuntos.length }})">
+      <div class="tab-contenido">
+        <mat-card>
+          <mat-card-title>
+            Documentos adjuntos
+            <label class="btn-adjunto-label">
+              <mat-icon>attach_file</mat-icon> Agregar archivo
+              <input type="file" (change)="subirAdjunto($event)" hidden>
+            </label>
+          </mat-card-title>
+          <mat-card-content>
+            <p *ngIf="recepcion.adjuntos.length === 0" class="sin-adjuntos">
+              No hay documentos adjuntos
+            </p>
+            <mat-list>
+              <mat-list-item *ngFor="let adj of recepcion.adjuntos">
+                <mat-icon matListItemIcon>insert_drive_file</mat-icon>
+                <span matListItemTitle>{{ adj.nombre_original }}</span>
+                <span matListItemLine>{{ adj.tipo_mime }} · {{ formatoTamano(adj.tamano_bytes) }}</span>
+                <button mat-icon-button matListItemMeta (click)="eliminarAdjunto(adj.id)" matTooltip="Eliminar">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </mat-list-item>
+            </mat-list>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- ── Pestaña: Remitente y Metadatos ──────────────────────────────── -->
+    <mat-tab label="Remitente y Metadatos">
+      <div class="tab-contenido">
+
+        <!-- Vista de metadatos guardados -->
+        <ng-container *ngIf="metadatos && !remitenteSeleccionado">
+          <mat-card class="form-card">
+            <mat-card-title>Remitente</mat-card-title>
+            <mat-card-content>
+              <div class="detalle-grid">
+                <div class="campo-detalle">
+                  <span class="campo-etiqueta">Nombre</span>
+                  <span>{{ metadatos.remitente.nombre_completo }}</span>
+                </div>
+                <div class="campo-detalle">
+                  <span class="campo-etiqueta">Identificación</span>
+                  <span>{{ metadatos.remitente.numero_identificacion || '—' }}</span>
+                </div>
+                <div class="campo-detalle">
+                  <span class="campo-etiqueta">Email</span>
+                  <span>{{ metadatos.remitente.email || '—' }}</span>
+                </div>
+                <div class="campo-detalle">
+                  <span class="campo-etiqueta">Teléfono</span>
+                  <span>{{ metadatos.remitente.telefono || '—' }}</span>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="form-card">
+            <mat-card-title>Metadatos</mat-card-title>
+            <mat-card-content>
+              <div class="detalle-grid">
+                <div class="campo-detalle campo-ancho-grid">
+                  <span class="campo-etiqueta">Asunto</span>
+                  <span>{{ metadatos.asunto }}</span>
+                </div>
+                <div class="campo-detalle">
+                  <span class="campo-etiqueta">Tipo de soporte</span>
+                  <span>{{ metadatos.tipo_soporte | titlecase }}</span>
+                </div>
+                <div class="campo-detalle">
+                  <span class="campo-etiqueta">Número de anexos</span>
+                  <span>{{ metadatos.numero_anexos }}</span>
+                </div>
+                <div class="campo-detalle" *ngIf="metadatos.tipo_requerimiento">
+                  <span class="campo-etiqueta">Tipo de requerimiento</span>
+                  <span>{{ metadatos.tipo_requerimiento.nombre }}</span>
+                </div>
+                <div class="campo-detalle" *ngIf="metadatos.plazo_respuesta">
+                  <span class="campo-etiqueta">Plazo de respuesta</span>
+                  <span>{{ metadatos.plazo_respuesta.nombre }} ({{ metadatos.plazo_respuesta.dias_habiles }} días hábiles)</span>
+                </div>
+                <div class="campo-detalle campo-ancho-grid" *ngIf="metadatos.observaciones">
+                  <span class="campo-etiqueta">Observaciones</span>
+                  <span>{{ metadatos.observaciones }}</span>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <div class="acciones">
+            <button mat-stroked-button (click)="editarMetadatos()">
+              <mat-icon>edit</mat-icon> Editar metadatos
+            </button>
+          </div>
+        </ng-container>
+
+        <!-- Formulario de captura -->
+        <ng-container *ngIf="!metadatos || remitenteSeleccionado !== undefined">
+
+          <!-- Paso 1: Buscar remitente -->
+          <mat-card class="form-card" *ngIf="modoFormRemitente === 'ninguno'">
+            <mat-card-title>1. Identificar remitente</mat-card-title>
+            <mat-card-content>
+
+              <div *ngIf="!remitenteSeleccionado">
+                <mat-form-field appearance="outline" style="width:100%">
+                  <mat-label>Buscar por nombre o identificación</mat-label>
+                  <input matInput [formControl]="busquedaCtrl" placeholder="Escriba mínimo 2 caracteres">
+                  <mat-icon matSuffix>search</mat-icon>
+                </mat-form-field>
+
+                <!-- Resultados de búsqueda -->
+                <mat-list *ngIf="remitentesEncontrados.length > 0" class="lista-resultados">
+                  <mat-list-item *ngFor="let r of remitentesEncontrados"
+                                 class="resultado-item"
+                                 (click)="seleccionarRemitente(r)">
+                    <mat-icon matListItemIcon>person</mat-icon>
+                    <span matListItemTitle>{{ r.nombre_completo }}</span>
+                    <span matListItemLine>{{ r.numero_identificacion }} · {{ r.email }}</span>
+                  </mat-list-item>
+                </mat-list>
+
+                <div class="acciones">
+                  <button mat-stroked-button color="primary" (click)="iniciarNuevoRemitente()">
+                    <mat-icon>person_add</mat-icon> Crear nuevo remitente
+                  </button>
+                </div>
+              </div>
+
+              <!-- Remitente seleccionado -->
+              <div *ngIf="remitenteSeleccionado" class="remitente-chip">
+                <mat-icon>check_circle</mat-icon>
+                <strong>{{ remitenteSeleccionado.nombre_completo }}</strong>
+                <span>{{ remitenteSeleccionado.numero_identificacion }}</span>
+                <button mat-icon-button (click)="remitenteSeleccionado = undefined; busquedaCtrl.setValue('')">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Formulario de nuevo remitente -->
+          <mat-card class="form-card" *ngIf="modoFormRemitente === 'nuevo'">
+            <mat-card-title>Nuevo remitente</mat-card-title>
+            <mat-card-content>
+
+              <!-- Aviso de posibles duplicados -->
+              <div *ngIf="duplicadosAviso.length > 0" class="aviso-duplicados">
+                <mat-icon>warning</mat-icon>
+                <span>Ya existen remitentes con datos similares:</span>
+                <ul>
+                  <li *ngFor="let d of duplicadosAviso">
+                    <a (click)="seleccionarRemitente(d)">{{ d.nombre_completo }} — {{ d.numero_identificacion }}</a>
+                  </li>
+                </ul>
+              </div>
+
+              <form [formGroup]="formRemitente">
+                <mat-form-field appearance="outline">
+                  <mat-label>Tipo de persona</mat-label>
+                  <mat-select formControlName="tipo_persona">
+                    <mat-option value="natural">Persona natural</mat-option>
+                    <mat-option value="juridico">Persona jurídica</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <div class="form-grid" *ngIf="formRemitente.get('tipo_persona')?.value === 'natural'">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Nombres</mat-label>
+                    <input matInput formControlName="nombres">
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Apellidos</mat-label>
+                    <input matInput formControlName="apellidos">
+                  </mat-form-field>
+                </div>
+
+                <div class="form-grid" *ngIf="formRemitente.get('tipo_persona')?.value === 'juridico'">
+                  <mat-form-field appearance="outline" class="campo-ancho">
+                    <mat-label>Razón social</mat-label>
+                    <input matInput formControlName="razon_social">
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>NIT</mat-label>
+                    <input matInput formControlName="nit">
+                  </mat-form-field>
+                </div>
+
+                <div class="form-grid">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Tipo de identificación</mat-label>
+                    <mat-select formControlName="tipo_identificacion" (selectionChange)="verificarDuplicados()">
+                      <mat-option *ngFor="let t of TIPOS_ID" [value]="t">{{ t }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Número de identificación</mat-label>
+                    <input matInput formControlName="numero_identificacion" (blur)="verificarDuplicados()">
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Email</mat-label>
+                    <input matInput formControlName="email" (blur)="verificarDuplicados()">
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Teléfono</mat-label>
+                    <input matInput formControlName="telefono">
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="campo-ancho">
+                    <mat-label>Dirección</mat-label>
+                    <input matInput formControlName="direccion">
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Municipio</mat-label>
+                    <input matInput formControlName="municipio">
+                  </mat-form-field>
+                </div>
+              </form>
+
+              <div class="acciones">
+                <button mat-button (click)="modoFormRemitente = 'ninguno'">Cancelar</button>
+                <button mat-flat-button color="primary"
+                        [disabled]="guardandoRemitente"
+                        (click)="guardarRemitente()">
+                  Guardar remitente
+                </button>
+              </div>
+
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Paso 2: Metadatos mínimos -->
+          <mat-card class="form-card" *ngIf="remitenteSeleccionado">
+            <mat-card-title>2. Metadatos del documento</mat-card-title>
+            <mat-card-content>
+              <form [formGroup]="formMetadatos">
+                <div class="form-grid">
+                  <mat-form-field appearance="outline" class="campo-ancho">
+                    <mat-label>Asunto *</mat-label>
+                    <input matInput formControlName="asunto">
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Tipo de soporte *</mat-label>
+                    <mat-select formControlName="tipo_soporte">
+                      <mat-option *ngFor="let s of TIPOS_SOPORTE" [value]="s.value">{{ s.label }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Número de anexos</mat-label>
+                    <input matInput type="number" min="0" formControlName="numero_anexos">
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Tipo de requerimiento</mat-label>
+                    <mat-select formControlName="tipo_requerimiento_id">
+                      <mat-option [value]="null">— Sin clasificar —</mat-option>
+                      <mat-option *ngFor="let t of tiposRequerimiento" [value]="t.id">{{ t.nombre }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Plazo de respuesta</mat-label>
+                    <mat-select formControlName="plazo_respuesta_id">
+                      <mat-option [value]="null">— Sin definir —</mat-option>
+                      <mat-option *ngFor="let p of plazosRespuesta" [value]="p.id">{{ p.nombre }} ({{ p.dias_habiles }} días)</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>N° de referencia del documento</mat-label>
+                    <input matInput formControlName="numero_referencia">
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Fecha del documento</mat-label>
+                    <input matInput type="date" formControlName="fecha_documento">
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="campo-ancho">
+                    <mat-label>Observaciones</mat-label>
+                    <textarea matInput rows="3" formControlName="observaciones"></textarea>
+                  </mat-form-field>
+                </div>
+              </form>
+
+              <div class="acciones">
+                <span class="exito" *ngIf="exito">
+                  <mat-icon>check_circle</mat-icon> Guardado correctamente
+                </span>
+                <button mat-flat-button color="primary"
+                        [disabled]="formMetadatos.invalid || guardandoMetadatos"
+                        (click)="guardarMetadatos()">
+                  <mat-icon>save</mat-icon>
+                  {{ guardandoMetadatos ? 'Guardando…' : 'Guardar metadatos' }}
+                </button>
+              </div>
+
+            </mat-card-content>
+          </mat-card>
+
+        </ng-container>
+
+      </div>
+    </mat-tab>
+
+    <!-- ── Pestaña: Radicado ───────────────────────────────────────────── -->
+    <mat-tab label="Radicado">
+      <div class="tab-contenido">
+
+        <!-- Radicado existente -->
+        <ng-container *ngIf="radicado">
+          <mat-card class="form-card radicado-card">
+            <mat-card-content>
+              <div class="radicado-numero-grande">{{ radicado.numero_radicado }}</div>
+              <div class="radicado-fecha">
+                {{ radicado.fecha_radicacion | date:'dd/MM/yyyy HH:mm' }} —
+                <span [class]="'chip-estado ' + radicado.estado">{{ radicado.estado | titlecase }}</span>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="form-card">
+            <mat-card-title>Datos del radicado</mat-card-title>
+            <mat-card-content>
+              <div class="detalle-grid">
+                <div class="campo-detalle">
+                  <span class="campo-etiqueta">Dependencia destino</span>
+                  <span>{{ radicado.dependencia.nombre }}</span>
+                </div>
+                <div class="campo-detalle">
+                  <span class="campo-etiqueta">Radicado por</span>
+                  <span>{{ radicado.radicado_por.nombre }}</span>
+                </div>
+                <div class="campo-detalle campo-ancho-grid" *ngIf="radicado.observaciones">
+                  <span class="campo-etiqueta">Observaciones</span>
+                  <span>{{ radicado.observaciones }}</span>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <div class="acciones" *ngIf="radicado.ruta_constancia">
+            <a mat-flat-button color="primary" [href]="urlConstancia()" target="_blank">
+              <mat-icon>picture_as_pdf</mat-icon> Descargar constancia
+            </a>
+          </div>
+        </ng-container>
+
+        <!-- Formulario de radicación -->
+        <ng-container *ngIf="!radicado">
+
+          <div *ngIf="!metadatos" class="aviso-sin-metadatos">
+            <mat-icon>info</mat-icon>
+            <span>Primero complete el remitente y los metadatos en la pestaña anterior.</span>
+          </div>
+
+          <mat-card class="form-card" *ngIf="metadatos">
+            <mat-card-title>Radicar documento</mat-card-title>
+            <mat-card-content>
+              <p class="estado-label">
+                Al radicar se asignará un número único y se generará la constancia en PDF.
+              </p>
+              <form [formGroup]="formRadicado">
+                <div class="form-grid">
+                  <mat-form-field appearance="outline" class="campo-ancho">
+                    <mat-label>Dependencia destino *</mat-label>
+                    <mat-select formControlName="dependencia_id">
+                      <mat-option *ngFor="let d of dependencias" [value]="d.id">
+                        {{ d.nombre }}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="campo-ancho">
+                    <mat-label>Observaciones de radicación</mat-label>
+                    <textarea matInput rows="3" formControlName="observaciones"></textarea>
+                  </mat-form-field>
+                </div>
+              </form>
+
+              <div class="acciones">
+                <span class="exito" *ngIf="exitoRadicado">
+                  <mat-icon>check_circle</mat-icon> Documento radicado exitosamente
+                </span>
+                <button mat-flat-button color="primary"
+                        [disabled]="formRadicado.invalid || radicando"
+                        (click)="radicar()">
+                  <mat-icon>assignment_turned_in</mat-icon>
+                  {{ radicando ? 'Radicando…' : 'Radicar documento' }}
+                </button>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+        </ng-container>
+
+      </div>
+    </mat-tab>
+
+  </mat-tab-group>
+</div>
+
+<div *ngIf="cargando" class="cargando">
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+</div>

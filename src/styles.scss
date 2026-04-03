@@ -1,66 +1,169 @@
-// Include theming for Angular Material with `mat.theme()`.
-// This Sass mixin will define CSS variables that are used for styling Angular Material
-// components according to the Material 3 design spec.
-// Learn more about theming and how to use it for your application's
-// custom components at https://material.angular.dev/guide/theming
 @use '@angular/material' as mat;
 
+// ── Material theme ────────────────────────────────────────────────────────────
 html {
   height: 100%;
-  @include mat.theme(
-    (
-      color: (
-        primary: mat.$azure-palette,
-        tertiary: mat.$blue-palette,
-      ),
-      typography: Roboto,
-      density: 0,
-    )
-  );
+  @include mat.theme((
+    color: (
+      primary: mat.$azure-palette,
+      tertiary: mat.$violet-palette,
+    ),
+    typography: Lato,
+    density: 0,
+  ));
 }
 
-body {
-  // Default the application to a light color theme. This can be changed to
-  // `dark` to enable the dark color theme, or to `light dark` to defer to the
-  // user's system settings.
-  color-scheme: light;
+// ── Design tokens ─────────────────────────────────────────────────────────────
+:root {
+  --azul:          #1a237e;
+  --azul-deep:     #0d1b5e;
+  --azul-hover:    #283593;
+  --azul-pale:     #e8eaf6;
+  --azul-pale2:    #f0f2fb;
+  --oro:           #c9a84c;
+  --oro-claro:     #e8c97a;
 
-  // Set a default background, font and text colors for the application using
-  // Angular Material's system-level CSS variables. Learn more about these
-  // variables at https://material.angular.dev/guide/system-variables
-  background-color: var(--mat-sys-surface);
-  color: var(--mat-sys-on-surface);
-  font: var(--mat-sys-body-medium);
+  --superficie:    #f5f7fc;
+  --superficie2:   #eef0f8;
+  --blanco:        #ffffff;
+  --borde:         #e2e8f4;
+  --borde-suave:   #edf0f8;
 
-  // Reset the user agent margin.
-  margin: 0;
-  height: 100%;
+  --texto:         #1a1f36;
+  --texto-medio:   #374151;
+  --texto-suave:   #6b7280;
+  --texto-muy-suave: #9ca3af;
+
+  --sombra-sm:     0 1px 4px rgba(26,35,126,0.07);
+  --sombra:        0 4px 16px rgba(26,35,126,0.09);
+  --sombra-md:     0 8px 28px rgba(26,35,126,0.12);
+  --sombra-hover:  0 12px 32px rgba(26,35,126,0.15);
+
+  --radio:         12px;
+  --radio-sm:      8px;
+  --radio-lg:      16px;
+
+  // Status colors
+  --estado-recibido-bg:     #e8eaf6; --estado-recibido-text:     #1a237e;
+  --estado-revision-bg:     #fff3e0; --estado-revision-text:     #bf360c;
+  --estado-pendiente-bg:    #fffde7; --estado-pendiente-text:    #f57f17;
+  --estado-incompleto-bg:   #ffebee; --estado-incompleto-text:   #b71c1c;
+  --estado-incompetente-bg: #f3e5f5; --estado-incompetente-text: #4a148c;
+  --estado-vigente-bg:      #e8f5e9; --estado-vigente-text:      #1b5e20;
+  --estado-anulado-bg:      #ffebee; --estado-anulado-text:      #b71c1c;
 }
+
+// ── Base ──────────────────────────────────────────────────────────────────────
 * { box-sizing: border-box; }
 
-// ── Estilos compartidos de páginas admin ──────────────────────────────────
+body {
+  color-scheme: light;
+  background-color: var(--superficie);
+  color: var(--texto);
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+  height: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+
+app-root { display: block; height: 100vh; }
+
+// ── Sidenav layout fix ────────────────────────────────────────────────────────
+// En Angular Material v17+, mat-drawer-side usa position:relative
+// (no absolute), por lo que el sidebar y el contenido se apilan verticalmente
+// si el contenedor es display:block. Forzamos flex-row para que queden lado a lado.
+.mat-drawer-container,
+.mat-sidenav-container {
+  display: flex !important;
+  flex-direction: row !important;
+  height: 100vh;
+  overflow: hidden !important;
+}
+
+.mat-drawer-content,
+.mat-sidenav-content {
+  flex: 1 !important;
+  min-width: 0;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  // Ignorar el margin-left inline que pone Angular Material (ya no lo necesitamos)
+  margin-left: 0 !important;
+}
+
+// ── Typography helpers ────────────────────────────────────────────────────────
+.serif { font-family: 'Playfair Display', Georgia, serif; }
+
+// ── Page layout ───────────────────────────────────────────────────────────────
 .pagina {
-  max-width: 960px;
+  max-width: 1100px;
+  animation: fadeUp 0.25s ease both;
+}
 
-  &-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    margin-bottom: 24px;
-    gap: 16px;
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
-    h1 { font-size: 22px; font-weight: 700; color: #1a237e; margin: 0 0 4px; }
-    p  { color: #666; margin: 0; font-size: 14px; }
+.pagina-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  gap: 16px;
+
+  h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--azul);
+    margin: 0 0 4px;
+    letter-spacing: -0.3px;
+  }
+  p {
+    color: var(--texto-suave);
+    margin: 0;
+    font-size: 14px;
   }
 }
 
+// ── Cards ─────────────────────────────────────────────────────────────────────
+mat-card {
+  border-radius: var(--radio) !important;
+  box-shadow: var(--sombra) !important;
+  border: 1px solid var(--borde-suave) !important;
+  background: var(--blanco) !important;
+  transition: box-shadow 0.2s !important;
+
+  &:hover { box-shadow: var(--sombra-md) !important; }
+}
+
+.form-card {
+  margin-bottom: 20px;
+  border-left: 3px solid var(--azul) !important;
+  border-radius: var(--radio) !important;
+
+  mat-card-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--azul);
+    padding: 18px 20px 0;
+    margin: 0;
+  }
+  mat-card-content { padding: 12px 20px 20px !important; }
+}
+
+// ── Forms ─────────────────────────────────────────────────────────────────────
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0 16px;
+  gap: 0 20px;
 
   mat-form-field { width: 100%; }
-  .campo-ancho   { grid-column: 1 / -1; }
+  .campo-ancho { grid-column: 1 / -1; }
 }
 
 .acciones {
@@ -68,47 +171,104 @@ body {
   align-items: center;
   justify-content: flex-end;
   gap: 12px;
-  padding: 8px 0 4px;
+  padding: 12px 0 4px;
 }
 
-.exito {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: #43a047;
-  font-size: 14px;
-  mat-icon { font-size: 18px; width: 18px; height: 18px; }
-}
+// ── Tables ────────────────────────────────────────────────────────────────────
+table.mat-mdc-table {
+  width: 100%;
+  border-radius: 0 0 var(--radio) var(--radio);
+  overflow: hidden;
 
-.chip-estado {
-  display: inline-block;
-  padding: 2px 10px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-  background: #ffebee;
-  color: #c62828;
+  th.mat-mdc-header-cell {
+    font-family: 'Lato', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--texto-suave);
+    background: var(--azul-pale2);
+    border-bottom: 2px solid var(--borde);
+    padding: 14px 16px;
+    white-space: nowrap;
+  }
 
-  &.activo {
-    background: #e8f5e9;
-    color: #2e7d32;
+  td.mat-mdc-cell {
+    padding: 13px 16px;
+    color: var(--texto-medio);
+    font-size: 13.5px;
+    border-bottom: 1px solid var(--borde-suave);
+    vertical-align: middle;
+  }
+
+  tr.mat-mdc-row {
+    transition: background 0.12s;
+
+    &:nth-child(even) td { background: var(--superficie); }
+    &:hover td { background: var(--azul-pale) !important; cursor: pointer; }
   }
 }
 
-.tabla-completa {
-  width: 100%;
+.tabla-completa { width: 100%; }
+
+// ── Status chips ──────────────────────────────────────────────────────────────
+.chip-estado {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 11px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  background: var(--estado-anulado-bg);
+  color:       var(--estado-anulado-text);
+  white-space: nowrap;
+
+  &.activo,
+  &.vigente    { background: var(--estado-vigente-bg);     color: var(--estado-vigente-text); }
+  &.recibido   { background: var(--estado-recibido-bg);    color: var(--estado-recibido-text); }
+  &.en_revision{ background: var(--estado-revision-bg);    color: var(--estado-revision-text); }
+  &.pendiente  { background: var(--estado-pendiente-bg);   color: var(--estado-pendiente-text); }
+  &.incompleto { background: var(--estado-incompleto-bg);  color: var(--estado-incompleto-text); }
+  &.incompetente{ background: var(--estado-incompetente-bg); color: var(--estado-incompetente-text); }
 }
 
-.form-card {
-  margin-bottom: 20px;
-  border-left: 3px solid #1a237e;
+// ── Detail grid ───────────────────────────────────────────────────────────────
+.detalle-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
 
-  mat-card-title { font-size: 16px; padding: 16px 16px 0; }
-  mat-card-content { padding: 12px 16px 16px !important; }
+  .campo-ancho-grid { grid-column: 1 / -1; }
 }
 
+.campo-detalle {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--borde-suave);
+
+  &:last-child { border-bottom: none; }
+
+  .campo-etiqueta {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--texto-muy-suave);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+
+  > span, > p {
+    font-size: 14px;
+    color: var(--texto-medio);
+    margin: 0;
+  }
+}
+
+// ── Tab content ───────────────────────────────────────────────────────────────
 .tab-contenido {
-  padding: 20px 0;
+  padding: 24px 0 8px;
 }
 
 .tab-acciones {
@@ -117,6 +277,163 @@ body {
   margin-bottom: 16px;
 }
 
+// ── Upload zone ───────────────────────────────────────────────────────────────
+.zona-carga {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px;
+  border: 2px dashed var(--borde);
+  border-radius: var(--radio);
+  cursor: pointer;
+  color: var(--texto-suave);
+  transition: all 0.2s;
+  background: var(--superficie);
+
+  &:hover {
+    background: var(--azul-pale2);
+    border-color: var(--azul);
+    color: var(--azul);
+  }
+
+  mat-icon { font-size: 36px; width: 36px; height: 36px; color: var(--azul); opacity: 0.6; }
+  span { font-size: 14px; font-weight: 600; }
+  small { font-size: 12px; color: var(--texto-muy-suave); }
+}
+
+.lista-archivos { margin-top: 12px; }
+
+.btn-adjunto-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--azul);
+  cursor: pointer;
+  padding: 5px 14px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-sm);
+  margin-left: 16px;
+  font-weight: 600;
+  transition: background 0.15s;
+  background: var(--blanco);
+
+  &:hover { background: var(--azul-pale2); }
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+}
+
+.sin-adjuntos {
+  color: var(--texto-muy-suave);
+  font-size: 14px;
+  text-align: center;
+  padding: 24px;
+}
+
+// ── Loading ───────────────────────────────────────────────────────────────────
+.cargando { padding: 40px; }
+
+// ── Feedback ──────────────────────────────────────────────────────────────────
+.exito {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #2e7d32;
+  font-size: 13px;
+  font-weight: 600;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+// ── Radicado number ───────────────────────────────────────────────────────────
+.radicado-card {
+  border-left: 4px solid var(--azul) !important;
+  background: linear-gradient(135deg, var(--azul-pale2) 0%, var(--blanco) 100%) !important;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.radicado-numero-grande {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 38px;
+  font-weight: 700;
+  color: var(--azul);
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+
+.radicado-fecha {
+  font-size: 14px;
+  color: var(--texto-suave);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.numero-radicado {
+  font-family: 'Playfair Display', Georgia, serif;
+  color: var(--azul);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+// ── Example radicado ──────────────────────────────────────────────────────────
+.ejemplo-radicado {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 18px;
+  background: var(--azul-pale2);
+  border-radius: var(--radio-sm);
+  border-left: 3px solid var(--azul);
+
+  .ejemplo-label {
+    font-size: 10px;
+    color: var(--texto-suave);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 700;
+  }
+  .ejemplo-numero {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 20px;
+    color: var(--azul);
+    letter-spacing: 1px;
+  }
+}
+
+// ── Estado labels ─────────────────────────────────────────────────────────────
+.estado-actual { margin-bottom: 16px; }
+
+.tag-estado-grande {
+  display: inline-block;
+  padding: 7px 18px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 700;
+  background: var(--azul-pale);
+  color: var(--azul);
+  text-transform: capitalize;
+}
+
+.estado-label {
+  font-size: 12px;
+  color: var(--texto-suave);
+  margin: 0 0 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.estados-botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+// ── Canal tags ────────────────────────────────────────────────────────────────
 .canales-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -125,10 +442,10 @@ body {
 }
 
 .canal-card {
-  border-left: 3px solid #e0e0e0;
+  border-left: 3px solid var(--borde) !important;
   transition: border-color 0.2s;
 
-  &.activo { border-left-color: #43a047; }
+  &.activo { border-left-color: #43a047 !important; }
 
   mat-card-content {
     display: flex;
@@ -137,46 +454,362 @@ body {
     padding: 16px !important;
   }
 
-  .canal-icono {
-    mat-icon { font-size: 28px; width: 28px; height: 28px; color: #5c6bc0; }
+  .canal-icono mat-icon {
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+    color: var(--azul);
   }
 
   .canal-info {
     flex: 1;
     strong { display: block; font-size: 15px; }
-    .canal-tipo { font-size: 12px; color: #888; text-transform: capitalize; }
+    .canal-tipo { font-size: 12px; color: var(--texto-suave); text-transform: capitalize; }
   }
 }
 
-.ejemplo-radicado {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 4px;
-  padding: 8px 16px;
-  background: #e8eaf6;
-  border-radius: 8px;
-
-  .ejemplo-label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
-  .ejemplo-numero { font-size: 20px; color: #1a237e; letter-spacing: 1px; }
+// ── Stats grid ────────────────────────────────────────────────────────────────
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
 }
 
+.stat-card {
+  text-align: center;
+  border-top: 3px solid var(--borde) !important;
+  padding: 4px 0 !important;
+
+  &--primario { border-top-color: var(--azul) !important; }
+  &--exito    { border-top-color: #2e7d32 !important; }
+  &--alerta   { border-top-color: #ef5350 !important; }
+  &--oro      { border-top-color: var(--oro) !important; }
+
+  .stat-valor {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 40px;
+    font-weight: 700;
+    color: var(--azul);
+    line-height: 1.1;
+  }
+  .stat-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--texto-suave);
+    margin-top: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+  }
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+// ── Bar charts ────────────────────────────────────────────────────────────────
+.barra-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.barra-fila {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.barra-label {
+  width: 150px;
+  min-width: 150px;
+  color: var(--texto-medio);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.barra-track {
+  flex: 1;
+  height: 18px;
+  background: var(--superficie2);
+  border-radius: 9px;
+  overflow: hidden;
+}
+
+.barra-fill {
+  height: 100%;
+  background: var(--azul);
+  border-radius: 9px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &--canal { background: #5c6bc0; }
+  &--mes   { background: #00897b; }
+  &--tipo  { background: #7b1fa2; }
+}
+
+.barra-valor {
+  min-width: 32px;
+  font-weight: 700;
+  color: var(--texto);
+  text-align: right;
+  font-size: 13px;
+}
+
+// ── Audit chip ────────────────────────────────────────────────────────────────
+.chip-accion {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--azul-pale);
+  color: var(--azul);
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.3px;
+}
+
+// ── Remitente / color picker ──────────────────────────────────────────────────
+.lista-resultados {
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-sm);
+  margin-bottom: 12px;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--blanco);
+}
+
+.resultado-item {
+  cursor: pointer;
+  &:hover { background: var(--azul-pale2); }
+}
+
+.remitente-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--estado-vigente-bg);
+  border-radius: var(--radio-sm);
+  color: #1b5e20;
+
+  mat-icon { color: #43a047; }
+  strong   { flex: 1; }
+  span     { font-size: 13px; color: var(--texto-suave); }
+}
+
+.aviso-duplicados {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  background: #fff8e1;
+  border-left: 3px solid #f9a825;
+  border-radius: var(--radio-sm);
+  margin-bottom: 16px;
+  font-size: 13px;
+
+  mat-icon { color: #f9a825; }
+  ul { margin: 4px 0 0 18px; padding: 0; }
+  li a { color: var(--azul); cursor: pointer; text-decoration: underline; }
+}
+
+.aviso-sin-metadatos {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  background: #fff8e1;
+  border-left: 3px solid #f9a825;
+  border-radius: var(--radio-sm);
+  font-size: 14px;
+  color: var(--texto-medio);
+  mat-icon { color: #f9a825; }
+}
+
+.form-anular {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--borde-suave);
+}
+
+// ── Radicado form ─────────────────────────────────────────────────────────────
+.radicado-form { padding: 4px 0; }
+
+// ── Color picker ─────────────────────────────────────────────────────────────
+.color-section { margin-bottom: 8px; }
+
+.color-section-titulo {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--texto-medio);
+  margin: 0 0 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.color-seleccionado-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: var(--superficie);
+  border-radius: var(--radio-sm);
+  border: 1px solid var(--borde);
+}
+
+.color-muestra-grande {
+  width: 48px; height: 48px;
+  border-radius: var(--radio-sm);
+  border: 2px solid rgba(0,0,0,0.1);
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.color-seleccionado-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.color-seleccionado-nombre {
+  font-size: 12px;
+  color: var(--texto-suave);
+}
+
+.color-hex-badge {
+  font-family: 'Courier New', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--azul);
+  letter-spacing: 1px;
+}
+
+.paleta-panel {
+  border: 1px solid var(--borde);
+  border-top: none;
+  border-radius: 0 0 var(--radio-sm) var(--radio-sm);
+  padding: 20px;
+  background: var(--superficie);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.paleta-grupo {}
+
+.paleta-grupo-titulo {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--texto-muy-suave);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0 0 10px;
+}
+
+.paleta-fila {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.swatch {
+  width: 40px; height: 40px;
+  border-radius: var(--radio-sm);
+  border: 2px solid transparent;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  min-width: 0;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+
+  &:hover { transform: scale(1.15); box-shadow: var(--sombra-md); z-index: 1; }
+  &--activo { border-color: white; box-shadow: 0 0 0 3px var(--azul), var(--sombra); transform: scale(1.1); }
+}
+
+.swatch-check {
+  color: white;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+}
+
+.paleta-manual {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-top: 8px;
+  border-top: 1px solid var(--borde);
+}
+
+.color-muestra-preview {
+  width: 44px; height: 44px;
+  border-radius: var(--radio-sm);
+  border: 2px solid rgba(0,0,0,0.1);
+  flex-shrink: 0;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+// ── Angular Material overrides ────────────────────────────────────────────────
+
+// Tab group
+.mat-mdc-tab-group {
+  .mat-mdc-tab-header {
+    border-bottom: 2px solid var(--borde-suave);
+    background: transparent;
+  }
+  .mat-mdc-tab .mdc-tab__text-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--texto-suave);
+    letter-spacing: 0.2px;
+  }
+  .mat-mdc-tab.mdc-tab--active .mdc-tab__text-label { color: var(--azul); }
+  .mdc-tab-indicator__content--underline { border-color: var(--azul) !important; border-top-width: 2px; }
+}
+
+// Snackbar
+.mat-mdc-snack-bar-container {
+  border-radius: var(--radio-sm) !important;
+}
+
+// Progress bar
+.mat-mdc-progress-bar { --mdc-linear-progress-active-indicator-color: var(--azul); }
+
+// Form field
+.mat-mdc-form-field.mat-focused .mdc-notched-outline__leading,
+.mat-mdc-form-field.mat-focused .mdc-notched-outline__notch,
+.mat-mdc-form-field.mat-focused .mdc-notched-outline__trailing {
+  border-color: var(--azul) !important;
+  border-width: 2px !important;
+}
+
+// Flat button
+.mat-mdc-unelevated-button.mat-primary {
+  background-color: var(--azul) !important;
+}
+
+// Legacy kept for backward compat
 .color-preview {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 8px 0;
   font-size: 13px;
-  color: #666;
+  color: var(--texto-suave);
 
   .color-muestra {
     width: 40px; height: 40px;
-    border-radius: 8px;
-    border: 1px solid #ddd;
+    border-radius: var(--radio-sm);
+    border: 1px solid var(--borde);
   }
-}
-
-app-root {
-  display: block;
-  height: 100vh;
 }

@@ -1,50 +1,75 @@
 <mat-sidenav-container class="contenedor-app">
 
-  <!-- Sidebar -->
+  <!-- ── Sidebar ────────────────────────────────────────────────────────── -->
   <mat-sidenav #sidenav [opened]="sidebarAbierto" mode="side" class="sidebar">
-    <div class="sidebar-header">
-      <mat-icon class="logo-icon">account_balance</mat-icon>
-      <span class="logo-texto">Radica Mun</span>
+
+    <!-- Logo -->
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icono">
+        <mat-icon>account_balance</mat-icon>
+      </div>
+      <div class="sidebar-logo-texto">
+        <span class="logo-nombre">Radica<span class="logo-acento">Mun</span></span>
+        <span class="logo-sub">Sistema de Radicación</span>
+      </div>
     </div>
 
-    <mat-nav-list>
+    <!-- Navegación -->
+    <nav class="sidebar-nav">
       <ng-container *ngFor="let item of menu">
-        <a mat-list-item
-           *ngIf="menuVisible(item.roles)"
+        <a *ngIf="menuVisible(item.roles)"
+           class="nav-item"
            [routerLink]="item.ruta"
-           routerLinkActive="activo">
-          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
-          <span matListItemTitle>{{ item.label }}</span>
+           routerLinkActive="nav-item--activo">
+          <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
+          <span class="nav-label">{{ item.label }}</span>
         </a>
       </ng-container>
-    </mat-nav-list>
+    </nav>
+
+    <!-- Footer del sidebar -->
+    <div class="sidebar-footer">
+      <div class="sidebar-usuario">
+        <div class="sidebar-avatar">{{ (usuario?.nombre || 'U').charAt(0) | uppercase }}</div>
+        <div class="sidebar-usuario-info">
+          <span class="sidebar-usuario-nombre">{{ usuario?.nombre }}</span>
+          <span class="sidebar-usuario-rol">{{ usuario?.rol }}</span>
+        </div>
+      </div>
+      <button class="sidebar-logout" (click)="cerrarSesion()" matTooltip="Cerrar sesión" matTooltipPosition="right">
+        <mat-icon>logout</mat-icon>
+      </button>
+    </div>
+
   </mat-sidenav>
 
-  <!-- Contenido principal -->
+  <!-- ── Contenido ──────────────────────────────────────────────────────── -->
   <mat-sidenav-content>
 
-    <!-- Barra superior -->
-    <mat-toolbar color="primary" class="barra-superior">
-      <button mat-icon-button (click)="sidenav.toggle()">
+    <!-- Topbar -->
+    <header class="topbar">
+      <button class="topbar-menu-btn" (click)="sidenav.toggle()">
         <mat-icon>menu</mat-icon>
       </button>
-      <span class="spacer"></span>
-      <span class="nombre-usuario">{{ usuario?.nombre }}</span>
-      <button mat-icon-button [matMenuTriggerFor]="menuUsuario">
-        <mat-icon>account_circle</mat-icon>
-      </button>
+      <span class="topbar-titulo">Municipio de Ejemplo</span>
+      <span class="topbar-spacer"></span>
+      <div class="topbar-user-chip" [matMenuTriggerFor]="menuUsuario">
+        <div class="topbar-avatar">{{ (usuario?.nombre || 'U').charAt(0) | uppercase }}</div>
+        <span class="topbar-nombre">{{ usuario?.nombre }}</span>
+        <mat-icon>expand_more</mat-icon>
+      </div>
       <mat-menu #menuUsuario="matMenu">
-        <div class="menu-usuario-info" mat-menu-item disabled>
-          <small>{{ usuario?.email }}</small><br>
-          <small><strong>{{ usuario?.rol }}</strong></small>
+        <div class="menu-usuario-header">
+          <strong>{{ usuario?.nombre }}</strong>
+          <small>{{ usuario?.email }}</small>
         </div>
         <mat-divider></mat-divider>
         <button mat-menu-item (click)="cerrarSesion()">
           <mat-icon>logout</mat-icon>
-          Cerrar sesión
+          <span>Cerrar sesión</span>
         </button>
       </mat-menu>
-    </mat-toolbar>
+    </header>
 
     <!-- Área de contenido -->
     <main class="contenido">

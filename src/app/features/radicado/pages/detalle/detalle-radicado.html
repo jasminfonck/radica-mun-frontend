@@ -1,0 +1,109 @@
+<div class="pagina" *ngIf="radicado">
+
+  <div class="pagina-header">
+    <div>
+      <h1>Detalle de radicado</h1>
+      <p>Constancia de radicación oficial del documento</p>
+    </div>
+    <button mat-stroked-button routerLink="/radicado">
+      <mat-icon>arrow_back</mat-icon> Volver al listado
+    </button>
+  </div>
+
+  <!-- Número destacado -->
+  <mat-card class="radicado-card" style="margin-bottom:20px">
+    <mat-card-content style="padding:32px 24px !important; text-align:center">
+      <div style="font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--texto-muy-suave); margin-bottom:8px">
+        Número de radicado
+      </div>
+      <div class="radicado-numero-grande">{{ radicado.numero_radicado }}</div>
+      <div class="radicado-fecha" style="margin-top:10px">
+        <mat-icon style="font-size:16px; width:16px; height:16px">calendar_today</mat-icon>
+        {{ radicado.fecha_radicacion | date:'dd/MM/yyyy' }} a las {{ radicado.fecha_radicacion | date:'HH:mm' }}
+        &nbsp;—&nbsp;
+        <span [class]="'chip-estado ' + radicado.estado">{{ radicado.estado | titlecase }}</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Datos + Acciones -->
+  <div class="detalle-grid">
+
+    <mat-card class="form-card">
+      <mat-card-title>Direccionamiento</mat-card-title>
+      <mat-card-content>
+        <div class="campo-detalle">
+          <span class="campo-etiqueta">Dependencia destino</span>
+          <span>{{ radicado.dependencia.nombre }}</span>
+        </div>
+        <div class="campo-detalle" *ngIf="radicado.dependencia.codigo">
+          <span class="campo-etiqueta">Código</span>
+          <span>{{ radicado.dependencia.codigo }}</span>
+        </div>
+        <div class="campo-detalle">
+          <span class="campo-etiqueta">Radicado por</span>
+          <span>{{ radicado.radicado_por.nombre }}</span>
+        </div>
+        <div class="campo-detalle" *ngIf="radicado.observaciones">
+          <span class="campo-etiqueta">Observaciones</span>
+          <span>{{ radicado.observaciones }}</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="form-card">
+      <mat-card-title>Acciones</mat-card-title>
+      <mat-card-content>
+        <div class="estados-botones" style="flex-direction:column; align-items:stretch">
+
+          <a mat-flat-button color="primary"
+             *ngIf="radicado.ruta_constancia"
+             [href]="urlConstancia()" target="_blank"
+             style="text-align:center">
+            <mat-icon>picture_as_pdf</mat-icon> Descargar constancia PDF
+          </a>
+
+          <button mat-stroked-button
+                  [routerLink]="['/recepcion', radicado.recepcion_id]">
+            <mat-icon>inbox</mat-icon> Ver recepción original
+          </button>
+
+          <button mat-stroked-button *ngIf="esAdmin" (click)="regenerarPdf()">
+            <mat-icon>refresh</mat-icon> Regenerar PDF
+          </button>
+
+          <button mat-stroked-button color="warn"
+                  *ngIf="esAdmin && radicado.estado === 'vigente'"
+                  (click)="modoAnular = true">
+            <mat-icon>cancel</mat-icon> Anular radicado
+          </button>
+        </div>
+
+        <!-- Formulario de anulación -->
+        <div *ngIf="modoAnular" class="form-anular" [formGroup]="formAnular">
+          <mat-form-field appearance="outline" style="width:100%; margin-top:16px">
+            <mat-label>Motivo de anulación *</mat-label>
+            <textarea matInput rows="3" formControlName="observaciones"
+                      placeholder="Ingrese el motivo de la anulación"></textarea>
+          </mat-form-field>
+          <div class="acciones">
+            <button mat-button (click)="modoAnular = false">Cancelar</button>
+            <button mat-flat-button color="warn"
+                    [disabled]="formAnular.invalid || anulando"
+                    (click)="anular()">
+              <mat-icon>cancel</mat-icon>
+              Confirmar anulación
+            </button>
+          </div>
+        </div>
+
+      </mat-card-content>
+    </mat-card>
+
+  </div>
+
+</div>
+
+<div *ngIf="cargando" class="cargando">
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+</div>

@@ -1,0 +1,10 @@
+// Bandeja styles are mostly handled by global styles.scss
+// Only bandeja-specific overrides here
+
+.filtros-form {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0 16px;
+
+  mat-form-field { width: 100%; }
+}

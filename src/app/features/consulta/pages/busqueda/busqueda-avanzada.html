@@ -1,0 +1,145 @@
+<div class="pagina">
+
+  <div class="pagina-header">
+    <div>
+      <h1>Búsqueda avanzada</h1>
+      <p>Consulta interna de radicados por múltiples criterios</p>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <mat-card class="form-card" style="margin-bottom:20px" [formGroup]="filtros">
+    <mat-card-title>Criterios de búsqueda</mat-card-title>
+    <mat-card-content>
+      <div class="form-grid">
+
+        <mat-form-field appearance="outline" class="campo-ancho">
+          <mat-label>Buscar por asunto, remitente o identificación</mat-label>
+          <mat-icon matSuffix>search</mat-icon>
+          <input matInput formControlName="q" placeholder="Texto libre…">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Número de radicado</mat-label>
+          <mat-icon matPrefix style="margin-right:8px; color:var(--azul-hover)">assignment</mat-icon>
+          <input matInput formControlName="numero_radicado" placeholder="RAD-2026-00001">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Dependencia</mat-label>
+          <mat-select formControlName="dependencia_id">
+            <mat-option [value]="null">Todas las dependencias</mat-option>
+            <mat-option *ngFor="let d of dependencias" [value]="d.id">{{ d.nombre }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Estado del radicado</mat-label>
+          <mat-select formControlName="estado_radicado">
+            <mat-option *ngFor="let e of ESTADOS" [value]="e.value">{{ e.label }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha desde</mat-label>
+          <input matInput type="date" formControlName="fecha_desde">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha hasta</mat-label>
+          <input matInput type="date" formControlName="fecha_hasta">
+        </mat-form-field>
+
+      </div>
+
+      <div class="acciones">
+        <button mat-stroked-button (click)="limpiar()">Limpiar filtros</button>
+        <button mat-flat-button color="primary" [disabled]="buscando" (click)="buscar()">
+          <mat-icon>search</mat-icon>
+          {{ buscando ? 'Buscando…' : 'Buscar' }}
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Estado buscando -->
+  <mat-progress-bar *ngIf="buscando" mode="indeterminate" style="border-radius:4px; margin-bottom:12px"></mat-progress-bar>
+
+  <!-- Resultados -->
+  <ng-container *ngIf="buscado && !buscando">
+
+    <!-- Sin resultados -->
+    <div *ngIf="resultados.length === 0" style="text-align:center; padding:60px; color:var(--texto-muy-suave)">
+      <mat-icon style="font-size:48px; width:48px; height:48px; margin-bottom:12px; display:block; margin-left:auto; margin-right:auto">search_off</mat-icon>
+      <p style="margin:0">No se encontraron radicados con los criterios indicados</p>
+    </div>
+
+    <!-- Tabla de resultados -->
+    <mat-card *ngIf="resultados.length > 0">
+      <div style="padding:16px 20px; border-bottom:1px solid var(--borde-suave); display:flex; align-items:center; justify-content:space-between">
+        <span style="font-size:13px; font-weight:700; color:var(--texto-suave)">
+          {{ resultados.length }} resultado{{ resultados.length !== 1 ? 's' : '' }} encontrado{{ resultados.length !== 1 ? 's' : '' }}
+        </span>
+      </div>
+      <table mat-table [dataSource]="resultados" class="tabla-completa">
+
+        <ng-container matColumnDef="numero_radicado">
+          <th mat-header-cell *matHeaderCellDef>Radicado</th>
+          <td mat-cell *matCellDef="let r">
+            <strong class="numero-radicado">{{ r.numero_radicado }}</strong>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="asunto">
+          <th mat-header-cell *matHeaderCellDef>Asunto</th>
+          <td mat-cell *matCellDef="let r" style="max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">
+            {{ r.asunto }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="remitente">
+          <th mat-header-cell *matHeaderCellDef>Remitente</th>
+          <td mat-cell *matCellDef="let r">{{ r.remitente }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="dependencia">
+          <th mat-header-cell *matHeaderCellDef>Dependencia</th>
+          <td mat-cell *matCellDef="let r">{{ r.dependencia }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="fecha_radicacion">
+          <th mat-header-cell *matHeaderCellDef>Fecha</th>
+          <td mat-cell *matCellDef="let r" style="white-space:nowrap">
+            {{ r.fecha_radicacion | date:'dd/MM/yyyy' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let r">
+            <span [class]="'chip-estado ' + r.estado_radicado">{{ r.estado_radicado | titlecase }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let r">
+            <button mat-icon-button [routerLink]="['/radicado', r.radicado_id]" matTooltip="Ver radicado"
+                    style="color:var(--azul)">
+              <mat-icon>assignment</mat-icon>
+            </button>
+            <button mat-icon-button [routerLink]="['/recepcion', r.recepcion_id]" matTooltip="Ver recepción"
+                    style="color:var(--texto-suave)">
+              <mat-icon>inbox</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr mat-row *matRowDef="let row; columns: columnas;"></tr>
+      </table>
+    </mat-card>
+
+  </ng-container>
+
+</div>
