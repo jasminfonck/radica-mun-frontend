@@ -8,6 +8,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { LayoutComponent } from './layout';
 
@@ -23,6 +25,8 @@ import { LayoutComponent } from './layout';
     MatButtonModule,
     MatMenuModule,
     MatDividerModule,
+    MatSnackBarModule,
+    MatTooltipModule,
   ],
   exports: [LayoutComponent]
 })

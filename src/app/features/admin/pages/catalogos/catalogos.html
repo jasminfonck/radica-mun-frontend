@@ -1,6 +1,14 @@
 <div class="pagina">
   <div class="pagina-header">
-    <div><h1>Catálogos administrativos</h1><p>Tipos de requerimiento y plazos de respuesta</p></div>
+    <div class="header-con-back">
+      <button mat-icon-button routerLink="/admin" matTooltip="Volver al panel">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        <h1>Catálogos administrativos</h1>
+        <p>Tipos de requerimiento y plazos de respuesta</p>
+      </div>
+    </div>
   </div>
 
   <mat-tab-group [(selectedIndex)]="tabActiva">

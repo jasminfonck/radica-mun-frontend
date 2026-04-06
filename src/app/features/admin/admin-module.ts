@@ -17,6 +17,7 @@ import { MatTabsModule }             from '@angular/material/tabs';
 import { MatListModule }             from '@angular/material/list';
 import { MatTooltipModule }          from '@angular/material/tooltip';
 import { MatProgressBarModule }      from '@angular/material/progress-bar';
+import { MatSnackBarModule }         from '@angular/material/snack-bar';
 
 import { AdminRoutingModule }        from './admin-routing-module';
 
@@ -29,6 +30,7 @@ import { DependenciasComponent }     from './pages/dependencias/dependencias';
 import { CanalesComponent }          from './pages/canales/canales';
 import { CatalogosComponent }        from './pages/catalogos/catalogos';
 import { ConfiguracionComponent }    from './pages/configuracion/configuracion';
+import { AuditoriaComponent }        from './pages/auditoria/auditoria';
 
 @NgModule({
   declarations: [
@@ -40,6 +42,7 @@ import { ConfiguracionComponent }    from './pages/configuracion/configuracion';
     CanalesComponent,
     CatalogosComponent,
     ConfiguracionComponent,
+    AuditoriaComponent,
   ],
   imports: [
     CommonModule,
@@ -50,6 +53,7 @@ import { ConfiguracionComponent }    from './pages/configuracion/configuracion';
     MatTableModule, MatDialogModule, MatSelectModule,
     MatChipsModule, MatSlideToggleModule, MatTabsModule,
     MatListModule, MatTooltipModule, MatProgressBarModule,
+    MatSnackBarModule,
   ]
 })
 export class AdminModule {}

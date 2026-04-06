@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AdminService, DependenciaOut } from '../../../../core/services/admin.service';
 
@@ -14,7 +14,11 @@ export class DependenciasComponent implements OnInit {
   editando: DependenciaOut | null = null;
   mostrarForm = false;
 
-  constructor(private fb: FormBuilder, private adminService: AdminService) {}
+  constructor(
+    private fb: FormBuilder,
+    private adminService: AdminService,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   ngOnInit(): void {
     this.inicializarForm();
@@ -30,7 +34,11 @@ export class DependenciasComponent implements OnInit {
     });
   }
 
-  cargar(): void { this.adminService.getDependencias().subscribe(d => this.dependencias = d); }
+  cargar(): void {
+    this.adminService.getDependencias().subscribe({
+      next: d => { this.dependencias = d; this.cdr.markForCheck(); },
+    });
+  }
 
   editar(dep: DependenciaOut): void {
     this.editando = dep;
@@ -47,7 +55,8 @@ export class DependenciasComponent implements OnInit {
     const obs = this.editando
       ? this.adminService.actualizarDependencia(this.editando.id, this.form.value)
       : this.adminService.crearDependencia(this.form.value);
-    obs.subscribe(() => { this.cargar(); this.cancelar(); });
+    // cancelar() ANTES de cargar() para evitar NG0100
+    obs.subscribe(() => { this.cancelar(); this.cargar(); });
   }
 
   toggleActiva(dep: DependenciaOut): void {

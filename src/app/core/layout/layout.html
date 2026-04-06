@@ -1,7 +1,7 @@
 <mat-sidenav-container class="contenedor-app">
 
   <!-- ── Sidebar ────────────────────────────────────────────────────────── -->
-  <mat-sidenav #sidenav [opened]="sidebarAbierto" mode="side" class="sidebar">
+  <mat-sidenav #sidenav [opened]="sidebarAbierto" (openedChange)="sidebarAbierto = $event" mode="side" class="sidebar">
 
     <!-- Logo -->
     <div class="sidebar-logo">
@@ -17,12 +17,18 @@
     <!-- Navegación -->
     <nav class="sidebar-nav">
       <ng-container *ngFor="let item of menu">
-        <a *ngIf="menuVisible(item.roles)"
+        <a *ngIf="menuVisible(item)"
            class="nav-item"
-           [routerLink]="item.ruta"
-           routerLinkActive="nav-item--activo">
+           [class.nav-item--bloqueado]="bloqueado(item)"
+           [routerLink]="bloqueado(item) ? null : item.ruta"
+           routerLinkActive="nav-item--activo"
+           [routerLinkActiveOptions]="{ exact: item.ruta === '/inicio' }"
+           (click)="navegarA(item)"
+           [matTooltip]="bloqueado(item) ? 'Complete la configuración primero' : ''"
+           matTooltipPosition="right">
           <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
           <span class="nav-label">{{ item.label }}</span>
+          <mat-icon *ngIf="bloqueado(item)" class="nav-lock-icon">lock</mat-icon>
         </a>
       </ng-container>
     </nav>
@@ -51,7 +57,7 @@
       <button class="topbar-menu-btn" (click)="sidenav.toggle()">
         <mat-icon>menu</mat-icon>
       </button>
-      <span class="topbar-titulo">Municipio de Ejemplo</span>
+      <span class="topbar-titulo">{{ nombreEntidad || 'Radica Mun' }}</span>
       <span class="topbar-spacer"></span>
       <div class="topbar-user-chip" [matMenuTriggerFor]="menuUsuario">
         <div class="topbar-avatar">{{ (usuario?.nombre || 'U').charAt(0) | uppercase }}</div>

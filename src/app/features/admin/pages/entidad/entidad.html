@@ -1,55 +1,101 @@
 <div class="pagina">
   <div class="pagina-header">
-    <h1>Datos de la entidad</h1>
-    <p>Información básica del municipio o entidad que usa el sistema</p>
+    <div class="header-con-back">
+      <button mat-icon-button routerLink="/admin" matTooltip="Volver al panel">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        <h1>Datos de la entidad</h1>
+        <p>Información básica del municipio o entidad que usa el sistema</p>
+      </div>
+    </div>
   </div>
 
   <mat-card>
     <mat-card-content>
       <form [formGroup]="form" (ngSubmit)="guardar()" class="form-grid">
 
+        <!-- Nombre -->
         <mat-form-field appearance="outline" class="campo-ancho">
           <mat-label>Nombre de la entidad *</mat-label>
-          <input matInput formControlName="nombre" placeholder="Municipio de...">
-          <mat-error>El nombre es obligatorio</mat-error>
+          <mat-icon matPrefix>account_balance</mat-icon>
+          <input matInput formControlName="nombre" placeholder="Alcaldía Municipal de...">
+          <mat-error *ngIf="form.get('nombre')?.hasError('required')">El nombre es obligatorio</mat-error>
+          <mat-error *ngIf="form.get('nombre')?.hasError('minlength')">Mínimo 3 caracteres</mat-error>
         </mat-form-field>
 
+        <!-- NIT -->
         <mat-form-field appearance="outline">
           <mat-label>NIT</mat-label>
-          <input matInput formControlName="nit" placeholder="800.000.000-0">
+          <mat-icon matPrefix>badge</mat-icon>
+          <input matInput formControlName="nit" placeholder="800000000-0">
+          <mat-hint>Formato: 800000000-0</mat-hint>
+          <mat-error>Formato de NIT inválido</mat-error>
         </mat-form-field>
 
+        <!-- Departamento -->
         <mat-form-field appearance="outline">
-          <mat-label>Municipio</mat-label>
-          <input matInput formControlName="municipio">
+          <mat-label>Departamento *</mat-label>
+          <mat-icon matPrefix>map</mat-icon>
+          <mat-select formControlName="departamento">
+            <mat-option *ngFor="let dep of departamentos" [value]="dep.nombre">{{ dep.nombre }}</mat-option>
+          </mat-select>
+          <mat-error>Seleccione un departamento</mat-error>
         </mat-form-field>
 
+        <!-- Municipio -->
         <mat-form-field appearance="outline">
-          <mat-label>Departamento</mat-label>
-          <input matInput formControlName="departamento">
+          <mat-label>Municipio *</mat-label>
+          <mat-icon matPrefix>location_city</mat-icon>
+          <mat-select formControlName="municipio" [disabled]="!form.get('departamento')?.value">
+            <mat-option *ngFor="let mun of municipios" [value]="mun.nombre">{{ mun.nombre }}</mat-option>
+          </mat-select>
+          <mat-hint *ngIf="!form.get('departamento')?.value">Primero seleccione un departamento</mat-hint>
+          <mat-error>Seleccione un municipio</mat-error>
         </mat-form-field>
 
+        <!-- Dirección -->
         <mat-form-field appearance="outline" class="campo-ancho">
-          <mat-label>Dirección</mat-label>
-          <input matInput formControlName="direccion" placeholder="Calle 1 # 1-01">
+          <mat-label>Dirección de la entidad</mat-label>
+          <mat-icon matPrefix>place</mat-icon>
+          <input matInput formControlName="direccion" placeholder="Calle 1 # 1-01, Centro">
+          <mat-error>Máximo 200 caracteres</mat-error>
         </mat-form-field>
 
+        <!-- Teléfono -->
         <mat-form-field appearance="outline">
           <mat-label>Teléfono</mat-label>
-          <input matInput formControlName="telefono">
+          <mat-icon matPrefix>phone</mat-icon>
+          <input matInput formControlName="telefono"
+                 placeholder="6011234567"
+                 inputmode="tel"
+                 (keypress)="$event.key === 'Enter' || /[\d\s\+\-]/.test($event.key) || $event.preventDefault()">
+          <mat-hint>Solo números, espacios, + o —</mat-hint>
+          <mat-error>Teléfono inválido (7-15 dígitos)</mat-error>
         </mat-form-field>
 
+        <!-- Email institucional -->
         <mat-form-field appearance="outline">
           <mat-label>Correo institucional</mat-label>
-          <input matInput formControlName="email_institucional" placeholder="contacto@municipio.gov.co">
+          <mat-icon matPrefix>alternate_email</mat-icon>
+          <input matInput formControlName="email_institucional"
+                 placeholder="contacto@municipio.gov.co"
+                 inputmode="email">
+          <mat-error>Ingrese un correo electrónico válido</mat-error>
         </mat-form-field>
 
+        <!-- Acciones -->
         <div class="acciones campo-ancho">
           <span class="exito" *ngIf="guardado">
             <mat-icon>check_circle</mat-icon> Guardado correctamente
           </span>
-          <button mat-flat-button color="primary" type="submit" [disabled]="guardando || form.invalid">
-            {{ guardando ? 'Guardando...' : 'Guardar datos' }}
+          <button mat-flat-button color="primary" type="submit"
+                  [disabled]="guardando || form.invalid" class="btn-guardar">
+            <span *ngIf="!guardando">Guardar datos</span>
+            <span *ngIf="guardando" class="btn-spinner">
+              <svg class="spinner-svg" viewBox="0 0 24 24"><circle class="spinner-circle" cx="12" cy="12" r="10"/></svg>
+              Guardando...
+            </span>
           </button>
         </div>
 

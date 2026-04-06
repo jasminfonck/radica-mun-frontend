@@ -70,15 +70,15 @@ body {
 
 app-root { display: block; height: 100vh; }
 
-// ── Sidenav layout fix ────────────────────────────────────────────────────────
-// En Angular Material v17+, mat-drawer-side usa position:relative
-// (no absolute), por lo que el sidebar y el contenido se apilan verticalmente
-// si el contenedor es display:block. Forzamos flex-row para que queden lado a lado.
+// ── Sidenav layout ────────────────────────────────────────────────────────────
+// AM usa position:absolute en el drawer — el layout real lo maneja el flex del
+// contenedor. El margin-left que inyecta AM queda en 0 (lo anulamos) y la
+// distribución la hace flex. Cuando el sidebar se cierra, width:0 libera el espacio.
 .mat-drawer-container,
 .mat-sidenav-container {
   display: flex !important;
   flex-direction: row !important;
-  height: 100vh;
+  height: 100vh !important;
   overflow: hidden !important;
 }
 
@@ -88,9 +88,16 @@ app-root { display: block; height: 100vh; }
   min-width: 0;
   display: flex !important;
   flex-direction: column !important;
-  overflow: hidden !important;
-  // Ignorar el margin-left inline que pone Angular Material (ya no lo necesitamos)
+  height: 100% !important;
+  // Anular el margin-left que AM inyecta; el espacio lo gestiona el flex padre
   margin-left: 0 !important;
+}
+
+// En cuanto .mat-drawer-opened se quita, width transiciona a 0 en paralelo
+// con el transform de AM — sin esperar a que .mat-drawer-animating desaparezca.
+// El contenedor tiene overflow:hidden, así que el sidebar no se ve fuera de su caja.
+.mat-drawer:not(.mat-drawer-opened) {
+  width: 0 !important;
 }
 
 // ── Typography helpers ────────────────────────────────────────────────────────
@@ -98,7 +105,7 @@ app-root { display: block; height: 100vh; }
 
 // ── Page layout ───────────────────────────────────────────────────────────────
 .pagina {
-  max-width: 1100px;
+  width: 100%;
   animation: fadeUp 0.25s ease both;
 }
 
@@ -126,6 +133,19 @@ app-root { display: block; height: 100vh; }
     color: var(--texto-suave);
     margin: 0;
     font-size: 14px;
+  }
+}
+
+// Botón volver dentro del header
+.header-con-back {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  button[mat-icon-button] {
+    color: var(--texto-suave);
+    flex-shrink: 0;
+    &:hover { color: var(--azul); }
   }
 }
 
@@ -793,9 +813,61 @@ table.mat-mdc-table {
   border-width: 2px !important;
 }
 
-// Flat button
+// matPrefix icons — consistent size & color
+.mat-mdc-form-field .mat-mdc-form-field-icon-prefix mat-icon,
+.mat-mdc-form-field [matPrefix] mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--texto-suave);
+  margin-right: 4px;
+}
+.mat-mdc-form-field.mat-focused [matPrefix] mat-icon {
+  color: var(--azul);
+}
+
+// Flat button — force white text on primary fill
 .mat-mdc-unelevated-button.mat-primary {
   background-color: var(--azul) !important;
+  color: #ffffff !important;
+
+  .mdc-button__label,
+  span { color: #ffffff !important; }
+}
+
+// ── Custom spinner ────────────────────────────────────────────────────────────
+.btn-spinner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #ffffff;
+}
+
+.spinner-svg {
+  width: 18px;
+  height: 18px;
+  animation: spinner-rotate 0.9s linear infinite;
+  flex-shrink: 0;
+}
+
+.spinner-circle {
+  fill: none;
+  stroke: rgba(255,255,255,0.85);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 45, 100;
+  stroke-dashoffset: -10;
+  animation: spinner-dash 1.4s ease-in-out infinite;
+}
+
+@keyframes spinner-rotate {
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes spinner-dash {
+  0%   { stroke-dasharray: 4, 100;  stroke-dashoffset: 0; }
+  50%  { stroke-dasharray: 50, 100; stroke-dashoffset: -20; }
+  100% { stroke-dasharray: 4, 100;  stroke-dashoffset: -65; }
 }
 
 // Legacy kept for backward compat

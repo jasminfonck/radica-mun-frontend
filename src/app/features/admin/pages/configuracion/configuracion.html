@@ -1,8 +1,13 @@
 <div class="pagina">
   <div class="pagina-header">
-    <div>
-      <h1>Configuración del radicado</h1>
-      <p>Defina el formato del número de radicado y parámetros del sistema</p>
+    <div class="header-con-back">
+      <button mat-icon-button routerLink="/admin" matTooltip="Volver al panel">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        <h1>Configuración del radicado</h1>
+        <p>Defina el formato del número de radicado, almacenamiento y política de privacidad</p>
+      </div>
     </div>
   </div>
 
@@ -34,10 +39,8 @@
 
         <!-- ── Color institucional ──────────────────────────────────────── -->
         <div class="campo-ancho color-section">
-
           <p class="color-section-titulo">Color institucional</p>
 
-          <!-- Barra de selección actual -->
           <div class="color-seleccionado-bar">
             <div class="color-muestra-grande" [style.background]="colorActual()"></div>
             <div class="color-seleccionado-info">
@@ -50,15 +53,12 @@
             </button>
           </div>
 
-          <!-- Panel de paleta -->
           <div class="paleta-panel" *ngIf="paletaAbierta">
-
             <div *ngFor="let grupo of PALETA" class="paleta-grupo">
               <p class="paleta-grupo-titulo">{{ grupo.nombre }}</p>
               <div class="paleta-fila">
                 <button *ngFor="let color of grupo.colores"
-                        type="button"
-                        class="swatch"
+                        type="button" class="swatch"
                         [class.swatch--activo]="esColorSeleccionado(color.hex)"
                         [style.background]="color.hex"
                         [matTooltip]="color.nombre + ' — ' + color.hex"
@@ -69,7 +69,6 @@
               </div>
             </div>
 
-            <!-- Input manual para usuarios avanzados -->
             <div class="paleta-manual">
               <mat-form-field appearance="outline" style="width:200px">
                 <mat-label>Código hexadecimal manual</mat-label>
@@ -83,12 +82,42 @@
                    [style.opacity]="form.get('color_primario')?.valid ? 1 : 0.3">
               </div>
             </div>
-
           </div>
-
         </div>
 
-        <!-- Acciones -->
+        <!-- ── Política de privacidad (RN-19 / V-19) ──────────────────── -->
+        <div class="campo-ancho politica-section">
+          <p class="color-section-titulo">
+            <mat-icon style="vertical-align:middle; margin-right:6px">policy</mat-icon>
+            Política de privacidad y tratamiento de datos
+          </p>
+          <p style="font-size:13px; color:var(--texto-suave); margin-bottom:12px">
+            Requerida por la Ley 1581 de 2012 antes de habilitar la operación del sistema (RN-19).
+          </p>
+
+          <mat-form-field appearance="outline" class="campo-ancho">
+            <mat-label>Texto de la política de privacidad</mat-label>
+            <textarea matInput formControlName="politica_privacidad_texto"
+                      rows="5"
+                      placeholder="Ingrese el texto oficial de la política de privacidad y tratamiento de datos personales de la entidad...">
+            </textarea>
+            <mat-hint>El texto quedará disponible en el sistema y en los formularios públicos</mat-hint>
+          </mat-form-field>
+
+          <div class="politica-toggle-row">
+            <mat-slide-toggle formControlName="politica_privacidad_activa" color="primary">
+              <span style="font-size:14px">
+                Política activa y publicada
+                <span *ngIf="form.get('politica_privacidad_activa')?.value"
+                      style="color:#388e3c; font-weight:600"> — habilitada</span>
+                <span *ngIf="!form.get('politica_privacidad_activa')?.value"
+                      style="color:#b71c1c; font-weight:600"> — inactiva</span>
+              </span>
+            </mat-slide-toggle>
+          </div>
+        </div>
+
+        <!-- Acciones formulario -->
         <div class="acciones campo-ancho">
           <span class="exito" *ngIf="guardado">
             <mat-icon>check_circle</mat-icon> Guardado correctamente
@@ -102,4 +131,27 @@
       </form>
     </mat-card-content>
   </mat-card>
+
+  <!-- ── Respaldo de configuración (RN-13 / V-16) ───────────────────────── -->
+  <mat-card style="margin-top:24px">
+    <mat-card-content>
+      <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap">
+        <mat-icon style="font-size:36px; height:36px; width:36px; color:var(--azul)">backup</mat-icon>
+        <div style="flex:1">
+          <strong style="display:block; margin-bottom:4px">Respaldo de configuración</strong>
+          <p style="margin:0; font-size:13px; color:var(--texto-suave)">
+            Descarga un archivo JSON con toda la configuración del sistema: entidad, dependencias,
+            canales, catálogos y parámetros. Guárdelo en un lugar seguro (RN-13 / V-16).
+          </p>
+        </div>
+        <button mat-stroked-button color="primary"
+                [disabled]="descargandoBackup"
+                (click)="descargarRespaldo()">
+          <mat-icon>download</mat-icon>
+          {{ descargandoBackup ? 'Generando...' : 'Descargar respaldo' }}
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
 </div>

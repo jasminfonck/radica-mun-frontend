@@ -1,27 +1,80 @@
 <div class="pagina">
   <div class="pagina-header">
-    <div>
-      <h1>Canales de recepción</h1>
-      <p>Active los canales por los cuales la entidad recibe comunicaciones</p>
+    <div class="header-con-back">
+      <button mat-icon-button routerLink="/admin" matTooltip="Volver al panel">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        <h1>Canales de recepción</h1>
+        <p>Active los canales por los cuales la entidad recibe comunicaciones</p>
+      </div>
     </div>
   </div>
 
-  <div class="canales-grid">
+  <!-- Cargando -->
+  <div *ngIf="cargando" style="text-align:center; padding:40px; color:var(--texto-suave)">
+    Cargando canales...
+  </div>
+
+  <!-- Error -->
+  <mat-card *ngIf="error" style="border-left: 4px solid #b71c1c">
+    <mat-card-content style="display:flex; align-items:center; gap:12px; padding:20px">
+      <mat-icon style="color:#b71c1c">error_outline</mat-icon>
+      <div>
+        <strong>No se pudieron cargar los canales</strong>
+        <p style="margin:4px 0 0; font-size:13px; color:var(--texto-suave)">
+          Asegúrese de haber ejecutado <code>alembic upgrade head</code> en el backend para aplicar la migración pendiente.
+        </p>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <div *ngIf="!cargando && !error" class="canales-grid">
     <mat-card *ngFor="let canal of canales" class="canal-card" [class.activo]="canal.activo">
       <mat-card-content>
+
         <div class="canal-icono">
           <mat-icon>{{ iconos[canal.tipo] }}</mat-icon>
         </div>
+
         <div class="canal-info">
           <strong>{{ canal.nombre }}</strong>
           <span class="canal-tipo">{{ canal.tipo }}</span>
         </div>
+
         <mat-slide-toggle
           [checked]="canal.activo"
+          [disabled]="guardando[canal.id]"
           (change)="toggleCanal(canal)"
-          color="primary">
+          color="primary"
+          matTooltip="{{ canal.tipo === 'digital' && !canal.acuse_configurado ? 'Primero configure el acuse de recibo' : '' }}">
         </mat-slide-toggle>
+
       </mat-card-content>
+
+      <!-- Sección acuse de recibo — solo canal formulario (digital) -->
+      <mat-card-footer *ngIf="canal.tipo === 'digital'" class="canal-acuse">
+        <div class="acuse-row">
+          <mat-icon [class.acuse-ok]="canal.acuse_configurado" [class.acuse-pendiente]="!canal.acuse_configurado">
+            {{ canal.acuse_configurado ? 'mark_email_read' : 'mark_email_unread' }}
+          </mat-icon>
+          <div class="acuse-texto">
+            <strong>Acuse de recibo automático</strong>
+            <span>
+              {{ canal.acuse_configurado
+                ? 'Configurado — el sistema enviará confirmación al ciudadano en máx. 24 h hábiles'
+                : 'Pendiente — confirme que el formulario generará acuse automático (RN-20)' }}
+            </span>
+          </div>
+          <mat-slide-toggle
+            [checked]="canal.acuse_configurado"
+            [disabled]="guardando[canal.id]"
+            (change)="toggleAcuse(canal)"
+            color="accent">
+          </mat-slide-toggle>
+        </div>
+      </mat-card-footer>
+
     </mat-card>
   </div>
 </div>

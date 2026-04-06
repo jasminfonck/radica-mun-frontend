@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { RecepcionService, RecepcionOut, RecepcionFiltros, ESTADOS_RECEPCION } from '../../../../core/services/recepcion.service';
@@ -23,6 +23,7 @@ export class BandejaComponent implements OnInit {
     private recepcionService: RecepcionService,
     private adminService: AdminService,
     private router: Router,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -46,8 +47,8 @@ export class BandejaComponent implements OnInit {
     if (raw.fecha_hasta) filtros.fecha_hasta = raw.fecha_hasta;
 
     this.recepcionService.listar(filtros).subscribe({
-      next: r  => { this.recepciones = r; this.cargando = false; },
-      error: () => { this.cargando = false; }
+      next: r  => { this.recepciones = r; this.cargando = false; this.cdr.detectChanges(); },
+      error: () => { this.cargando = false; this.cdr.detectChanges(); }
     });
   }
 

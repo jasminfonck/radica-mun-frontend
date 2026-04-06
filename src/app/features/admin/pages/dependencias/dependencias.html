@@ -1,8 +1,13 @@
 <div class="pagina">
   <div class="pagina-header">
-    <div>
-      <h1>Dependencias</h1>
-      <p>Áreas o dependencias que recibirán documentos radicados</p>
+    <div class="header-con-back">
+      <button mat-icon-button routerLink="/admin" matTooltip="Volver al panel">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        <h1>Dependencias</h1>
+        <p>Áreas o dependencias que recibirán documentos radicados</p>
+      </div>
     </div>
     <button mat-flat-button color="primary" (click)="nuevo()">
       <mat-icon>add</mat-icon> Nueva dependencia

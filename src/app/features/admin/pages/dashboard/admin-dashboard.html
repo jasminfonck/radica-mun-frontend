@@ -7,8 +7,11 @@
     </div>
   </div>
 
+  <!-- Cargando -->
+  <mat-progress-bar *ngIf="cargando" mode="indeterminate" style="margin-bottom:24px"></mat-progress-bar>
+
   <!-- Estado general -->
-  <mat-card class="estado-card" [class.listo]="sistemaListo" style="margin-bottom:28px">
+  <mat-card *ngIf="!cargando" class="estado-card" [class.listo]="sistemaListo" style="margin-bottom:28px">
     <mat-card-content>
       <div class="estado-row">
         <div class="estado-icono" [class.icono-listo]="sistemaListo">
@@ -31,34 +34,58 @@
   </mat-card>
 
   <!-- Pasos de configuración -->
-  <p class="seccion-titulo">Pasos de configuración</p>
-  <div class="pasos-grid">
+  <p *ngIf="!cargando" class="seccion-titulo">Pasos de configuración</p>
+  <div *ngIf="!cargando" class="pasos-grid">
+
     <mat-card *ngFor="let paso of pasos; let i = index"
               class="paso-card"
               [class.completado]="paso.completado"
-              (click)="ir(paso.ruta)">
+              [class.colapsado]="paso.completado && !paso.expandido"
+              (click)="clickPaso(paso)"
+              [matTooltip]="'Ir a: ' + paso.label">
       <mat-card-content>
+
         <div class="paso-numero">{{ i + 1 }}</div>
-        <div class="paso-icono-wrap">
+
+        <!-- Icono: solo visible cuando expandido -->
+        <div class="paso-icono-wrap" *ngIf="!paso.completado || paso.expandido">
           <mat-icon>{{ paso.icono }}</mat-icon>
         </div>
+
         <div class="paso-info">
           <strong>{{ paso.label }}</strong>
-          <span>{{ paso.descripcion }}</span>
+          <!-- Descripción: solo visible cuando expandido -->
+          <span *ngIf="!paso.completado || paso.expandido">{{ paso.descripcion }}</span>
         </div>
-        <mat-icon class="paso-estado-icon">{{ paso.completado ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+
+        <!-- Ícono de estado -->
+        <mat-icon class="paso-estado-icon">
+          {{ paso.completado ? 'check_circle' : 'radio_button_unchecked' }}
+        </mat-icon>
+
+        <!-- Chevron para pasos completados: colapsa/expande sin navegar -->
+        <mat-icon *ngIf="paso.completado"
+                  class="paso-toggle-icon"
+                  (click)="togglePaso($event, paso)"
+                  [matTooltip]="paso.expandido ? 'Colapsar' : 'Expandir'">
+          {{ paso.expandido ? 'expand_less' : 'expand_more' }}
+        </mat-icon>
+
       </mat-card-content>
     </mat-card>
+
   </div>
 
-  <!-- Accesos rápidos -->
-  <p class="seccion-titulo">Gestión</p>
-  <div class="admin-accesos-grid">
+  <!-- Gestión -->
+  <p *ngIf="!cargando" class="seccion-titulo">Gestión</p>
+  <div *ngIf="!cargando" class="admin-accesos-grid">
     <mat-card *ngFor="let acceso of accesosRapidos"
               class="admin-acceso-card"
               (click)="ir(acceso.ruta)">
       <mat-card-content>
-        <mat-icon>{{ acceso.icono }}</mat-icon>
+        <div class="acceso-icono-wrap">
+          <mat-icon>{{ acceso.icono }}</mat-icon>
+        </div>
         <span>{{ acceso.label }}</span>
       </mat-card-content>
     </mat-card>

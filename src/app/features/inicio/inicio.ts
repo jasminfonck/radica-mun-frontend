@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { AuthService } from '../../core/auth/auth.service';
 import { UsuarioToken } from '../../core/auth/auth.models';
 import { ConsultaService, EstadisticasOut } from '../../core/services/consulta.service';
@@ -17,15 +17,19 @@ export class InicioComponent implements OnInit {
   hoy = new Date();
 
   readonly accesos = [
-    { label: 'Registrar recepción',  icon: 'add_box',        ruta: '/recepcion/nueva',    color: '#1a237e', roles: ['administrador','operador'] },
-    { label: 'Bandeja de recepción', icon: 'inbox',           ruta: '/recepcion',          color: '#283593', roles: ['administrador','operador'] },
-    { label: 'Bandeja de radicados', icon: 'assignment',      ruta: '/radicado',           color: '#00695c', roles: ['administrador','operador'] },
-    { label: 'Búsqueda avanzada',    icon: 'manage_search',   ruta: '/consulta/busqueda',  color: '#4a148c', roles: ['administrador','operador','consultor'] },
-    { label: 'Estadísticas',         icon: 'bar_chart',       ruta: '/consulta',           color: '#bf360c', roles: ['administrador','operador','consultor'] },
-    { label: 'Configuración',        icon: 'settings',        ruta: '/admin',              color: '#37474f', roles: ['administrador'] },
+    { label: 'Registrar recepción',  icon: 'add_box',       ruta: '/recepcion/nueva',   color: '#1a237e', roles: ['administrador','operador'] },
+    { label: 'Bandeja de recepción', icon: 'inbox',          ruta: '/recepcion',         color: '#283593', roles: ['administrador','operador'] },
+    { label: 'Bandeja de radicados', icon: 'assignment',     ruta: '/radicado',          color: '#00695c', roles: ['administrador','operador'] },
+    { label: 'Búsqueda avanzada',    icon: 'manage_search',  ruta: '/consulta/busqueda', color: '#4a148c', roles: ['administrador','operador','consultor'] },
+    { label: 'Estadísticas',         icon: 'bar_chart',      ruta: '/consulta',          color: '#bf360c', roles: ['administrador','operador','consultor'] },
+    { label: 'Administración',       icon: 'settings',       ruta: '/admin',             color: '#37474f', roles: ['administrador'] },
   ];
 
-  constructor(private auth: AuthService, private consulta: ConsultaService) {
+  constructor(
+    private auth: AuthService,
+    private consulta: ConsultaService,
+    private cdr: ChangeDetectorRef,
+  ) {
     this.usuario = this.auth.getUsuario();
   }
 
@@ -36,8 +40,8 @@ export class InicioComponent implements OnInit {
     else                this.saludo = 'Buenas noches';
 
     this.consulta.estadisticas().subscribe({
-      next:  s  => { this.stats = s; this.cargando = false; },
-      error: () => { this.cargando = false; },
+      next:  s  => { this.stats = s;   this.cargando = false; this.cdr.markForCheck(); },
+      error: () => {                   this.cargando = false; this.cdr.markForCheck(); },
     });
   }
 

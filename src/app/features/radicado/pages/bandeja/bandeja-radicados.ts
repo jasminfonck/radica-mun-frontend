@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { RadicadoService, RadicadoResumen, FiltrosRadicado } from '../../../../core/services/radicado.service';
 import { AdminService, DependenciaOut } from '../../../../core/services/admin.service';
@@ -26,6 +26,7 @@ export class BandejaRadicadosComponent implements OnInit {
     private fb: FormBuilder,
     private radicadoService: RadicadoService,
     private adminService: AdminService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -50,8 +51,8 @@ export class BandejaRadicadosComponent implements OnInit {
     if (f.fecha_hasta)    filtros.fecha_hasta     = f.fecha_hasta;
 
     this.radicadoService.listar(filtros).subscribe({
-      next:  r  => { this.radicados = r; this.cargando = false; },
-      error: () => { this.cargando = false; },
+      next:  r  => { this.radicados = r; this.cargando = false; this.cdr.detectChanges(); },
+      error: () => { this.cargando = false; this.cdr.detectChanges(); },
     });
   }
 

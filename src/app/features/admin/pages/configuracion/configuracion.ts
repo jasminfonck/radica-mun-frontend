@@ -1,6 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { AdminService } from '../../../../core/services/admin.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { AdminService, RespaldoOut } from '../../../../core/services/admin.service';
+import { ThemeService } from '../../../../core/services/theme.service';
 
 export interface GrupoColor {
   nombre: string;
@@ -14,10 +16,11 @@ export interface GrupoColor {
 })
 export class ConfiguracionComponent implements OnInit {
   form!: FormGroup;
-  guardando = false;
-  guardado  = false;
-  ejemploRadicado = '';
-  paletaAbierta   = false;
+  guardando         = false;
+  guardado          = false;
+  ejemploRadicado   = '';
+  paletaAbierta     = false;
+  descargandoBackup = false;
 
   readonly PALETA: GrupoColor[] = [
     {
@@ -74,18 +77,29 @@ export class ConfiguracionComponent implements OnInit {
     },
   ];
 
-  constructor(private fb: FormBuilder, private adminService: AdminService) {}
+  constructor(
+    private fb: FormBuilder,
+    private adminService: AdminService,
+    private snack: MatSnackBar,
+    private cdr: ChangeDetectorRef,
+    private themeService: ThemeService,
+  ) {}
 
   ngOnInit(): void {
     this.form = this.fb.group({
-      prefijo_radicado:    ['', [Validators.required, Validators.maxLength(10)]],
-      ruta_almacenamiento: [''],
-      color_primario:      ['', Validators.pattern(/^#[0-9A-Fa-f]{6}$/)],
+      prefijo_radicado:           ['', [Validators.required, Validators.maxLength(10)]],
+      ruta_almacenamiento:        [''],
+      color_primario:             ['', Validators.pattern(/^#[0-9A-Fa-f]{6}$/)],
+      politica_privacidad_activa: [false],
+      politica_privacidad_texto:  [''],
     });
 
-    this.adminService.getConfiguracion().subscribe(c => {
-      this.form.patchValue(c);
-      this.actualizarEjemplo();
+    this.adminService.getConfiguracion().subscribe({
+      next: c => {
+        this.form.patchValue(c);
+        this.actualizarEjemplo();
+        this.cdr.markForCheck();
+      },
     });
 
     this.form.get('prefijo_radicado')?.valueChanges
@@ -94,18 +108,18 @@ export class ConfiguracionComponent implements OnInit {
 
   actualizarEjemplo(): void {
     const prefijo = this.form.get('prefijo_radicado')?.value || 'RAD';
-    const anio = new Date().getFullYear();
-    this.ejemploRadicado = `${prefijo}-${anio}-000001`;
+    this.ejemploRadicado = `${prefijo}-${new Date().getFullYear()}-000001`;
   }
 
   seleccionarColor(hex: string): void {
     this.form.get('color_primario')?.setValue(hex);
     this.paletaAbierta = false;
+    // Vista previa inmediata del color en toda la aplicación
+    this.themeService.aplicarColor(hex);
+    this.cdr.markForCheck();
   }
 
-  colorActual(): string {
-    return this.form.get('color_primario')?.value || '#cccccc';
-  }
+  colorActual(): string { return this.form.get('color_primario')?.value || '#cccccc'; }
 
   esColorSeleccionado(hex: string): boolean {
     return this.form.get('color_primario')?.value?.toLowerCase() === hex.toLowerCase();
@@ -115,8 +129,41 @@ export class ConfiguracionComponent implements OnInit {
     if (this.form.invalid) return;
     this.guardando = true;
     this.adminService.actualizarConfiguracion(this.form.value).subscribe({
-      next:  () => { this.guardando = false; this.guardado = true; setTimeout(() => this.guardado = false, 3000); },
-      error: () => { this.guardando = false; },
+      next: () => {
+        this.guardando = false;
+        this.guardado  = true;
+        this.cdr.markForCheck();
+        setTimeout(() => { this.guardado = false; this.cdr.markForCheck(); }, 3000);
+      },
+      error: err => {
+        this.guardando = false;
+        this.cdr.markForCheck();
+        this.snack.open(err?.error?.detail || 'Error al guardar.', 'Cerrar', { duration: 5000 });
+      },
+    });
+  }
+
+  descargarRespaldo(): void {
+    this.descargandoBackup = true;
+    this.adminService.getRespaldo().subscribe({
+      next: (data: RespaldoOut) => {
+        const json = JSON.stringify(data, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = `respaldo_radica_mun_${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.descargandoBackup = false;
+        this.cdr.markForCheck();
+        this.snack.open('Respaldo descargado correctamente.', 'OK', { duration: 4000 });
+      },
+      error: () => {
+        this.descargandoBackup = false;
+        this.cdr.markForCheck();
+        this.snack.open('No se pudo generar el respaldo.', 'Cerrar', { duration: 5000 });
+      },
     });
   }
 }

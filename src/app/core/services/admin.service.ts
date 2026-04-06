@@ -2,16 +2,47 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-export interface Rol          { id: number; nombre: string; descripcion?: string; }
-export interface UsuarioOut   { id: number; nombre: string; email: string; activo: boolean; rol: Rol; created_at: string; }
-export interface UsuarioCreate{ nombre: string; email: string; password: string; rol_id: number; }
-export interface UsuarioUpdate{ nombre?: string; email?: string; rol_id?: number; activo?: boolean; }
-export interface EntidadOut   { id: number; nombre: string; nit?: string; municipio?: string; departamento?: string; direccion?: string; telefono?: string; email_institucional?: string; configurada: boolean; }
-export interface DependenciaOut   { id: number; nombre: string; codigo?: string; responsable?: string; email?: string; activa: boolean; }
-export interface CanalOut         { id: number; nombre: string; tipo: string; activo: boolean; config_email?: any; }
-export interface TipoReqOut       { id: number; nombre: string; descripcion?: string; activo: boolean; }
-export interface PlazoOut         { id: number; nombre: string; dias_habiles: number; activo: boolean; }
-export interface ConfiguracionOut { id: number; prefijo_radicado: string; anio_radicado: number; secuencia_actual: number; ruta_almacenamiento?: string; color_primario: string; sistema_listo: boolean; }
+export interface Rol           { id: number; nombre: string; descripcion?: string; }
+export interface UsuarioOut    { id: number; nombre: string; email: string; activo: boolean; rol: Rol; created_at: string; }
+export interface UsuarioCreate { nombre: string; email: string; password: string; rol_id: number; }
+export interface UsuarioUpdate { nombre?: string; email?: string; rol_id?: number; activo?: boolean; }
+
+export interface EntidadOut {
+  id: number; nombre: string; nit?: string; municipio?: string;
+  departamento?: string; direccion?: string; telefono?: string;
+  email_institucional?: string; configurada: boolean;
+}
+
+export interface DependenciaOut { id: number; nombre: string; codigo?: string; responsable?: string; email?: string; activa: boolean; }
+
+export interface CanalOut {
+  id: number; nombre: string; tipo: string; activo: boolean;
+  config_email?: any; acuse_configurado: boolean;
+}
+export interface CanalUpdate {
+  activo: boolean; config_email?: any; acuse_configurado?: boolean;
+}
+
+export interface TipoReqOut { id: number; nombre: string; descripcion?: string; activo: boolean; }
+export interface PlazoOut   { id: number; nombre: string; dias_habiles: number; activo: boolean; }
+
+export interface ConfiguracionOut {
+  id: number; prefijo_radicado: string; anio_radicado: number;
+  secuencia_actual: number; ruta_almacenamiento?: string;
+  color_primario: string; sistema_listo: boolean;
+  politica_privacidad_activa: boolean; politica_privacidad_texto?: string;
+}
+
+export interface BitacoraOut {
+  id: number; usuario_nombre: string; accion: string;
+  entidad: string; entidad_id?: number; detalle?: string; created_at: string;
+}
+
+export interface RespaldoOut {
+  generado_en: string; entidad?: any; configuracion?: any;
+  dependencias: any[]; canales: any[]; tipos_requerimiento: any[];
+  plazos_respuesta: any[]; total_usuarios: number;
+}
 
 @Injectable({ providedIn: 'root' })
 export class AdminService {
@@ -23,35 +54,41 @@ export class AdminService {
   getRoles(): Observable<Rol[]> { return this.http.get<Rol[]>(`${this.base}/roles`); }
 
   // Usuarios
-  getUsuarios(): Observable<UsuarioOut[]>                              { return this.http.get<UsuarioOut[]>(`${this.base}/usuarios`); }
-  crearUsuario(d: UsuarioCreate): Observable<UsuarioOut>              { return this.http.post<UsuarioOut>(`${this.base}/usuarios`, d); }
-  actualizarUsuario(id: number, d: UsuarioUpdate): Observable<UsuarioOut> { return this.http.put<UsuarioOut>(`${this.base}/usuarios/${id}`, d); }
+  getUsuarios(): Observable<UsuarioOut[]>                                        { return this.http.get<UsuarioOut[]>(`${this.base}/usuarios`); }
+  crearUsuario(d: UsuarioCreate): Observable<UsuarioOut>                         { return this.http.post<UsuarioOut>(`${this.base}/usuarios`, d); }
+  actualizarUsuario(id: number, d: UsuarioUpdate): Observable<UsuarioOut>        { return this.http.put<UsuarioOut>(`${this.base}/usuarios/${id}`, d); }
 
   // Entidad
-  getEntidad(): Observable<EntidadOut>              { return this.http.get<EntidadOut>(`${this.base}/entidad`); }
-  actualizarEntidad(d: Partial<EntidadOut>): Observable<EntidadOut> { return this.http.put<EntidadOut>(`${this.base}/entidad`, d); }
+  getEntidad(): Observable<EntidadOut>                                            { return this.http.get<EntidadOut>(`${this.base}/entidad`); }
+  actualizarEntidad(d: Partial<EntidadOut>): Observable<EntidadOut>              { return this.http.put<EntidadOut>(`${this.base}/entidad`, d); }
 
   // Dependencias
-  getDependencias(soloActivas = false): Observable<DependenciaOut[]>       { return this.http.get<DependenciaOut[]>(`${this.base}/dependencias`, { params: { solo_activas: soloActivas } }); }
-  crearDependencia(d: Partial<DependenciaOut>): Observable<DependenciaOut> { return this.http.post<DependenciaOut>(`${this.base}/dependencias`, d); }
+  getDependencias(soloActivas = false): Observable<DependenciaOut[]>             { return this.http.get<DependenciaOut[]>(`${this.base}/dependencias`, { params: { solo_activas: soloActivas } }); }
+  crearDependencia(d: Partial<DependenciaOut>): Observable<DependenciaOut>       { return this.http.post<DependenciaOut>(`${this.base}/dependencias`, d); }
   actualizarDependencia(id: number, d: Partial<DependenciaOut>): Observable<DependenciaOut> { return this.http.put<DependenciaOut>(`${this.base}/dependencias/${id}`, d); }
 
   // Canales
-  getCanales(): Observable<CanalOut[]>                                  { return this.http.get<CanalOut[]>(`${this.base}/canales`); }
-  actualizarCanal(id: number, d: { activo: boolean; config_email?: any }): Observable<CanalOut> { return this.http.put<CanalOut>(`${this.base}/canales/${id}`, d); }
+  getCanales(): Observable<CanalOut[]>                                            { return this.http.get<CanalOut[]>(`${this.base}/canales`); }
+  actualizarCanal(id: number, d: CanalUpdate): Observable<CanalOut>              { return this.http.put<CanalOut>(`${this.base}/canales/${id}`, d); }
 
   // Tipos de requerimiento
-  getTipos(): Observable<TipoReqOut[]>                                  { return this.http.get<TipoReqOut[]>(`${this.base}/tipos-requerimiento`); }
-  crearTipo(d: { nombre: string; descripcion?: string }): Observable<TipoReqOut>    { return this.http.post<TipoReqOut>(`${this.base}/tipos-requerimiento`, d); }
-  actualizarTipo(id: number, d: Partial<TipoReqOut>): Observable<TipoReqOut>        { return this.http.put<TipoReqOut>(`${this.base}/tipos-requerimiento/${id}`, d); }
+  getTipos(): Observable<TipoReqOut[]>                                            { return this.http.get<TipoReqOut[]>(`${this.base}/tipos-requerimiento`); }
+  crearTipo(d: { nombre: string; descripcion?: string }): Observable<TipoReqOut> { return this.http.post<TipoReqOut>(`${this.base}/tipos-requerimiento`, d); }
+  actualizarTipo(id: number, d: Partial<TipoReqOut>): Observable<TipoReqOut>     { return this.http.put<TipoReqOut>(`${this.base}/tipos-requerimiento/${id}`, d); }
 
   // Plazos
-  getPlazos(): Observable<PlazoOut[]>                                   { return this.http.get<PlazoOut[]>(`${this.base}/plazos`); }
-  crearPlazo(d: { nombre: string; dias_habiles: number }): Observable<PlazoOut>     { return this.http.post<PlazoOut>(`${this.base}/plazos`, d); }
-  actualizarPlazo(id: number, d: Partial<PlazoOut>): Observable<PlazoOut>           { return this.http.put<PlazoOut>(`${this.base}/plazos/${id}`, d); }
+  getPlazos(): Observable<PlazoOut[]>                                             { return this.http.get<PlazoOut[]>(`${this.base}/plazos`); }
+  crearPlazo(d: { nombre: string; dias_habiles: number }): Observable<PlazoOut>  { return this.http.post<PlazoOut>(`${this.base}/plazos`, d); }
+  actualizarPlazo(id: number, d: Partial<PlazoOut>): Observable<PlazoOut>        { return this.http.put<PlazoOut>(`${this.base}/plazos/${id}`, d); }
 
   // Configuración
-  getConfiguracion(): Observable<ConfiguracionOut>                      { return this.http.get<ConfiguracionOut>(`${this.base}/configuracion`); }
+  getConfiguracion(): Observable<ConfiguracionOut>                                { return this.http.get<ConfiguracionOut>(`${this.base}/configuracion`); }
   actualizarConfiguracion(d: Partial<ConfiguracionOut>): Observable<ConfiguracionOut> { return this.http.put<ConfiguracionOut>(`${this.base}/configuracion`, d); }
-  getEstadoSistema(): Observable<{ sistema_listo: boolean }>            { return this.http.get<{ sistema_listo: boolean }>(`${this.base}/sistema/estado`); }
+  getEstadoSistema(): Observable<{ sistema_listo: boolean }>                      { return this.http.get<{ sistema_listo: boolean }>(`${this.base}/sistema/estado`); }
+
+  // Auditoría
+  getAuditoria(limite = 200): Observable<BitacoraOut[]>                          { return this.http.get<BitacoraOut[]>(`${this.base}/auditoria`, { params: { limite } }); }
+
+  // Respaldo
+  getRespaldo(): Observable<RespaldoOut>                                          { return this.http.get<RespaldoOut>(`${this.base}/respaldo`); }
 }

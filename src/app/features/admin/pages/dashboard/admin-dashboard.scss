@@ -1,5 +1,5 @@
 .dashboard {
-  max-width: 900px;
+  width: 100%;
 }
 
 // Estado card ----------------------------------------------------------------
@@ -28,7 +28,7 @@
   &.icono-listo { background: #e8f5e9; mat-icon { color: #43a047; } }
 }
 
-// Section labels ------------------------------------------------------------
+// Section labels -------------------------------------------------------------
 .seccion-titulo {
   font-size: 10px;
   font-weight: 700;
@@ -42,7 +42,7 @@
 .pasos-grid {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 32px;
 }
 
@@ -59,6 +59,11 @@
     align-items: center;
     gap: 14px;
     padding: 14px 18px !important;
+  }
+
+  // Estado colapsado: padding más compacto
+  &.colapsado mat-card-content {
+    padding: 9px 18px !important;
   }
 }
 
@@ -91,37 +96,63 @@
 .paso-estado-icon {
   color: var(--borde);
   transition: color 0.2s;
-  .completado & { color: #43a047; }
+  flex-shrink: 0;
 }
 .paso-card.completado .paso-estado-icon { color: #43a047; }
 
-// Quick access grid ----------------------------------------------------------
+.paso-toggle-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--texto-muy-suave);
+  flex-shrink: 0;
+  margin-left: -8px; // acercar al estado-icon
+}
+
+// Gestión grid ---------------------------------------------------------------
 .admin-accesos-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px;
 }
 
 .admin-acceso-card {
   cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s !important;
+
+  &:hover { transform: translateY(-3px); }
 
   mat-card-content {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    padding: 22px 16px !important;
+    gap: 14px;
+    padding: 30px 20px !important;
     text-align: center;
-
-    mat-icon {
-      font-size: 28px; width: 28px; height: 28px;
-      color: var(--azul);
-    }
-    span {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--texto-medio);
-      line-height: 1.3;
-    }
   }
+}
+
+.acceso-icono-wrap {
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  background: var(--azul-pale);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+
+  mat-icon {
+    font-size: 28px; width: 28px; height: 28px;
+    color: var(--azul);
+  }
+}
+
+.admin-acceso-card:hover .acceso-icono-wrap {
+  background: var(--azul-pale2);
+}
+
+.admin-acceso-card mat-card-content span {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--texto-medio);
+  line-height: 1.3;
 }

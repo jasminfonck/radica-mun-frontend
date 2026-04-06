@@ -1,12 +1,13 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { AdminDashboardComponent }    from './pages/dashboard/admin-dashboard';
-import { EntidadComponent }           from './pages/entidad/entidad';
-import { UsuariosComponent }          from './pages/usuarios/usuarios';
-import { DependenciasComponent }      from './pages/dependencias/dependencias';
-import { CanalesComponent }           from './pages/canales/canales';
-import { CatalogosComponent }         from './pages/catalogos/catalogos';
-import { ConfiguracionComponent }     from './pages/configuracion/configuracion';
+import { AdminDashboardComponent }  from './pages/dashboard/admin-dashboard';
+import { EntidadComponent }         from './pages/entidad/entidad';
+import { UsuariosComponent }        from './pages/usuarios/usuarios';
+import { DependenciasComponent }    from './pages/dependencias/dependencias';
+import { CanalesComponent }         from './pages/canales/canales';
+import { CatalogosComponent }       from './pages/catalogos/catalogos';
+import { ConfiguracionComponent }   from './pages/configuracion/configuracion';
+import { AuditoriaComponent }       from './pages/auditoria/auditoria';
 
 const routes: Routes = [
   { path: '',              component: AdminDashboardComponent },
@@ -16,6 +17,7 @@ const routes: Routes = [
   { path: 'canales',       component: CanalesComponent },
   { path: 'catalogos',     component: CatalogosComponent },
   { path: 'configuracion', component: ConfiguracionComponent },
+  { path: 'auditoria',     component: AuditoriaComponent },
 ];
 
 @NgModule({

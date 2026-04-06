@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard } from './core/auth/auth.guard';
+import { SistemaListoGuard } from './core/auth/sistema-listo.guard';
 import { LayoutComponent } from './core/layout/layout';
 
 const routes: Routes = [
@@ -10,12 +11,12 @@ const routes: Routes = [
     component: LayoutComponent,
     canActivate: [AuthGuard],
     children: [
-      { path: 'inicio',    loadChildren: () => import('./features/inicio/inicio-module').then(m => m.InicioModule) },
-      { path: 'admin',     loadChildren: () => import('./features/admin/admin-module').then(m => m.AdminModule) },
-      { path: 'recepcion', loadChildren: () => import('./features/recepcion/recepcion-module').then(m => m.RecepcionModule) },
-      { path: 'radicado',  loadChildren: () => import('./features/radicado/radicado-module').then(m => m.RadicadoModule) },
-      { path: 'consulta',  loadChildren: () => import('./features/consulta/consulta-module').then(m => m.ConsultaModule) },
-      { path: '', redirectTo: 'inicio', pathMatch: 'full' },
+      { path: 'inicio',    canActivate: [SistemaListoGuard], loadChildren: () => import('./features/inicio/inicio-module').then(m => m.InicioModule) },
+      { path: 'admin',                                        loadChildren: () => import('./features/admin/admin-module').then(m => m.AdminModule) },
+      { path: 'recepcion', canActivate: [SistemaListoGuard], loadChildren: () => import('./features/recepcion/recepcion-module').then(m => m.RecepcionModule) },
+      { path: 'radicado',  canActivate: [SistemaListoGuard], loadChildren: () => import('./features/radicado/radicado-module').then(m => m.RadicadoModule) },
+      { path: 'consulta',  canActivate: [SistemaListoGuard], loadChildren: () => import('./features/consulta/consulta-module').then(m => m.ConsultaModule) },
+      { path: '', redirectTo: 'admin', pathMatch: 'full' },
     ]
   },
   { path: '**', redirectTo: 'login' }
