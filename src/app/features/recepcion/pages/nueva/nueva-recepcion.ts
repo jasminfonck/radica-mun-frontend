@@ -7,6 +7,7 @@ import { AdminService, CanalOut } from '../../../../core/services/admin.service'
 @Component({
   selector: 'app-nueva-recepcion',
   templateUrl: './nueva-recepcion.html',
+  styleUrls: ['./nueva-recepcion.scss'],
   standalone: false
 })
 export class NuevaRecepcionComponent implements OnInit {

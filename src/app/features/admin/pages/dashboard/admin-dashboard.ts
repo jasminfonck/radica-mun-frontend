@@ -51,14 +51,15 @@ export class AdminDashboardComponent implements OnInit {
       dependencias: this.adminService.getDependencias(),
       canales:      this.adminService.getCanales(),
       tipos:        this.adminService.getTipos(),
+      plazos:       this.adminService.getPlazos(),
       config:       this.adminService.getConfiguracion(),
     }).subscribe({
-      next: ({ estado, entidad, dependencias, canales, tipos, config }) => {
+      next: ({ estado, entidad, dependencias, canales, tipos, plazos, config }) => {
         this.sistemaListo        = estado.sistema_listo;
         this.pasos[0].completado = entidad.configurada;
         this.pasos[1].completado = dependencias.some(x => x.activa);
         this.pasos[2].completado = canales.some(x => x.activo);
-        this.pasos[3].completado = tipos.some(x => x.activo);
+        this.pasos[3].completado = tipos.some(x => x.activo) && plazos.some(x => x.activo);
         this.pasos[4].completado = !!config.prefijo_radicado && config.politica_privacidad_activa;
 
         // Pasos completados arrancan colapsados

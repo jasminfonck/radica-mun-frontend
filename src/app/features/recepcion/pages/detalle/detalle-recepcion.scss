@@ -1,0 +1,48 @@
+.tab-contenido.detalle-grid {
+  gap: 20px;
+}
+
+.busqueda-full {
+  width: 100%;
+}
+
+.anular-field {
+  width: 100%;
+  margin-top: 16px;
+}
+
+.tab-label-con-estado {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tab-estado-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.tab-estado-ok {
+  color: #43a047;
+}
+
+.tab-estado-warning {
+  color: #f9a825;
+}
+
+.tab-estado-pendiente {
+  color: var(--texto-muy-suave);
+}
+
+.form-deshabilitado {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.metadatos-hint {
+  font-size: 12px;
+  color: var(--texto-suave);
+  font-weight: 400;
+  font-family: 'Lato', sans-serif;
+}

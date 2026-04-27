@@ -1,6 +1,9 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup } from '@angular/forms';
+import { forkJoin } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
+import { of } from 'rxjs';
 import { RecepcionService, RecepcionOut, RecepcionFiltros, ESTADOS_RECEPCION } from '../../../../core/services/recepcion.service';
 import { AdminService, CanalOut } from '../../../../core/services/admin.service';
 
@@ -8,7 +11,8 @@ import { AdminService, CanalOut } from '../../../../core/services/admin.service'
   selector: 'app-bandeja',
   templateUrl: './bandeja.html',
   styleUrls: ['./bandeja.scss'],
-  standalone: false
+  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BandejaComponent implements OnInit {
   recepciones: RecepcionOut[] = [];
@@ -16,7 +20,7 @@ export class BandejaComponent implements OnInit {
   estados = ESTADOS_RECEPCION;
   columnas = ['id', 'canal', 'asunto', 'estado', 'fecha', 'adjuntos', 'acciones'];
   filtrosForm!: FormGroup;
-  cargando = false;
+  cargando = true;
 
   constructor(
     private fb: FormBuilder,
@@ -33,8 +37,16 @@ export class BandejaComponent implements OnInit {
       fecha_desde: [null],
       fecha_hasta: [null],
     });
-    this.adminService.getCanales().subscribe(c => this.canales = c.filter(x => x.activo));
-    this.cargar();
+
+    forkJoin({
+      canales:     this.adminService.getCanales().pipe(catchError(() => of([]))),
+      recepciones: this.recepcionService.listar({}).pipe(catchError(() => of([]))),
+    }).subscribe(({ canales, recepciones }) => {
+      this.canales     = (canales as CanalOut[]).filter(x => x.activo);
+      this.recepciones = recepciones as RecepcionOut[];
+      this.cargando    = false;
+      this.cdr.markForCheck();
+    });
   }
 
   cargar(): void {
@@ -47,8 +59,8 @@ export class BandejaComponent implements OnInit {
     if (raw.fecha_hasta) filtros.fecha_hasta = raw.fecha_hasta;
 
     this.recepcionService.listar(filtros).subscribe({
-      next: r  => { this.recepciones = r; this.cargando = false; this.cdr.detectChanges(); },
-      error: () => { this.cargando = false; this.cdr.detectChanges(); }
+      next:  r  => { this.recepciones = r; this.cargando = false; this.cdr.markForCheck(); },
+      error: () => { this.cargando = false; this.cdr.markForCheck(); },
     });
   }
 
@@ -59,15 +71,4 @@ export class BandejaComponent implements OnInit {
 
   verDetalle(id: number): void { this.router.navigate(['/recepcion', id]); }
   nueva(): void               { this.router.navigate(['/recepcion/nueva']); }
-
-  colorEstado(estado: string): string {
-    const colores: Record<string, string> = {
-      recibido:    '#1a237e',
-      en_revision: '#e65100',
-      pendiente:   '#f57f17',
-      incompleto:  '#b71c1c',
-      incompetente:'#4a148c',
-    };
-    return colores[estado] || '#555';
-  }
 }

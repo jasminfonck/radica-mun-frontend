@@ -6,6 +6,7 @@ import { AdminService, DependenciaOut } from '../../../../core/services/admin.se
 @Component({
   selector: 'app-busqueda-avanzada',
   templateUrl: './busqueda-avanzada.html',
+  styleUrls: ['./busqueda-avanzada.scss'],
   standalone: false
 })
 export class BusquedaAvanzadaComponent implements OnInit {

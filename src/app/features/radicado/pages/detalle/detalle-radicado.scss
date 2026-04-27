@@ -1,0 +1,26 @@
+.radicado-card-content {
+  padding: 32px 24px !important;
+  text-align: center;
+}
+
+.numero-etiqueta {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--texto-muy-suave);
+  margin-bottom: 8px;
+}
+
+.radicado-fecha { margin-top: 10px; }
+
+.icono-fecha {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.botones-columna {
+  flex-direction: column;
+  align-items: stretch;
+}

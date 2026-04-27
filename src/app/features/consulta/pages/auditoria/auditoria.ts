@@ -5,6 +5,7 @@ import { ConsultaService, LogAuditoriaOut } from '../../../../core/services/cons
 @Component({
   selector: 'app-auditoria',
   templateUrl: './auditoria.html',
+  styleUrls: ['./auditoria.scss'],
   standalone: false
 })
 export class AuditoriaComponent implements OnInit {

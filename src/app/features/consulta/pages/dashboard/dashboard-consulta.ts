@@ -1,10 +1,12 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ConsultaService, EstadisticasOut } from '../../../../core/services/consulta.service';
 
 @Component({
   selector: 'app-dashboard-consulta',
   templateUrl: './dashboard-consulta.html',
-  standalone: false
+  styleUrls: ['./dashboard-consulta.scss'],
+  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DashboardConsultaComponent implements OnInit {
   stats?: EstadisticasOut;
@@ -17,8 +19,8 @@ export class DashboardConsultaComponent implements OnInit {
 
   ngOnInit(): void {
     this.consulta.estadisticas().subscribe({
-      next:  s  => { this.stats = s; this.cargando = false; this.cdr.detectChanges(); },
-      error: () => { this.cargando = false; this.cdr.detectChanges(); },
+      next:  s  => { this.stats = s; this.cargando = false; this.cdr.markForCheck(); },
+      error: () => { this.cargando = false; this.cdr.markForCheck(); },
     });
   }
 

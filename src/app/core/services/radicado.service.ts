@@ -79,7 +79,7 @@ export class RadicadoService {
     return this.http.post<RadicadoOut>(`${this.base}/${id}/constancia/regenerar`, {});
   }
 
-  urlDescargaConstancia(id: number): string {
-    return `${this.base}/${id}/constancia/descargar`;
+  descargarConstancia(id: number): Observable<Blob> {
+    return this.http.get(`${this.base}/${id}/constancia/descargar`, { responseType: 'blob' });
   }
 }

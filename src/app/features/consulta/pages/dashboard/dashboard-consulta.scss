@@ -1,0 +1,66 @@
+.stat-card mat-card-content {
+  padding: 20px 24px !important;
+}
+
+.stat-card-inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stat-icono {
+  width: 48px;
+  height: 48px;
+  background: var(--azul-pale);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  mat-icon {
+    color: var(--azul);
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+  }
+
+  &--exito {
+    background: #e8f5e9;
+    mat-icon { color: #2e7d32; }
+  }
+
+  &--alerta {
+    background: #ffebee;
+    mat-icon { color: #b71c1c; }
+  }
+}
+
+.stat-valor-compact {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--azul);
+  line-height: 1.1;
+
+  &--exito  { color: #2e7d32; }
+  &--alerta { color: #b71c1c; }
+}
+
+.estado-vacio {
+  text-align: center;
+  padding: 60px;
+  color: var(--texto-muy-suave);
+
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  p { margin: 0; }
+}

@@ -41,7 +41,7 @@
           <mat-card-title>Estado</mat-card-title>
           <mat-card-content>
             <div class="estado-actual">
-              <span [class]="'chip-estado ' + recepcion.estado" style="font-size:13px; padding:5px 14px">
+              <span [class]="'chip-estado ' + recepcion.estado">
                 {{ recepcion.estado | titlecase }}
               </span>
             </div>
@@ -91,7 +91,18 @@
     </mat-tab>
 
     <!-- ── Pestaña: Remitente y Metadatos ──────────────────────────────── -->
-    <mat-tab label="Remitente y Metadatos">
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <span class="tab-label-con-estado">
+          <mat-icon class="tab-estado-icon"
+            [class.tab-estado-ok]="!!metadatos"
+            [class.tab-estado-warning]="!metadatos"
+            [class.tab-estado-pendiente]="false">
+            {{ metadatos ? 'check_circle' : 'warning' }}
+          </mat-icon>
+          Remitente y Metadatos
+        </span>
+      </ng-template>
       <div class="tab-contenido">
 
         <!-- Vista de metadatos guardados -->
@@ -162,19 +173,18 @@
         <!-- Formulario de captura -->
         <ng-container *ngIf="!metadatos || remitenteSeleccionado !== undefined">
 
-          <!-- Paso 1: Buscar remitente -->
+          <!-- Paso 1: Buscar / seleccionar remitente -->
           <mat-card class="form-card" *ngIf="modoFormRemitente === 'ninguno'">
             <mat-card-title>1. Identificar remitente</mat-card-title>
             <mat-card-content>
 
               <div *ngIf="!remitenteSeleccionado">
-                <mat-form-field appearance="outline" style="width:100%">
+                <mat-form-field appearance="outline" class="busqueda-full">
                   <mat-label>Buscar por nombre o identificación</mat-label>
                   <input matInput [formControl]="busquedaCtrl" placeholder="Escriba mínimo 2 caracteres">
                   <mat-icon matSuffix>search</mat-icon>
                 </mat-form-field>
 
-                <!-- Resultados de búsqueda -->
                 <mat-list *ngIf="remitentesEncontrados.length > 0" class="lista-resultados">
                   <mat-list-item *ngFor="let r of remitentesEncontrados"
                                  class="resultado-item"
@@ -197,7 +207,7 @@
                 <mat-icon>check_circle</mat-icon>
                 <strong>{{ remitenteSeleccionado.nombre_completo }}</strong>
                 <span>{{ remitenteSeleccionado.numero_identificacion }}</span>
-                <button mat-icon-button (click)="remitenteSeleccionado = undefined; busquedaCtrl.setValue('')">
+                <button mat-icon-button (click)="limpiarRemitente()">
                   <mat-icon>close</mat-icon>
                 </button>
               </div>
@@ -210,7 +220,6 @@
             <mat-card-title>Nuevo remitente</mat-card-title>
             <mat-card-content>
 
-              <!-- Aviso de posibles duplicados -->
               <div *ngIf="duplicadosAviso.length > 0" class="aviso-duplicados">
                 <mat-icon>warning</mat-icon>
                 <span>Ya existen remitentes con datos similares:</span>
@@ -233,11 +242,13 @@
                 <div class="form-grid" *ngIf="formRemitente.get('tipo_persona')?.value === 'natural'">
                   <mat-form-field appearance="outline">
                     <mat-label>Nombres</mat-label>
-                    <input matInput formControlName="nombres">
+                    <input matInput formControlName="nombres"
+                           (keypress)="soloLetras($event)">
                   </mat-form-field>
                   <mat-form-field appearance="outline">
                     <mat-label>Apellidos</mat-label>
-                    <input matInput formControlName="apellidos">
+                    <input matInput formControlName="apellidos"
+                           (keypress)="soloLetras($event)">
                   </mat-form-field>
                 </div>
 
@@ -265,11 +276,18 @@
                   </mat-form-field>
                   <mat-form-field appearance="outline">
                     <mat-label>Email</mat-label>
-                    <input matInput formControlName="email" (blur)="verificarDuplicados()">
+                    <input matInput formControlName="email" type="email" (blur)="verificarDuplicados()">
+                    <mat-error *ngIf="formRemitente.get('email')?.hasError('email')">
+                      Ingrese un email válido
+                    </mat-error>
                   </mat-form-field>
                   <mat-form-field appearance="outline">
                     <mat-label>Teléfono</mat-label>
-                    <input matInput formControlName="telefono">
+                    <input matInput formControlName="telefono" type="tel"
+                           (keypress)="soloNumerosTel($event)">
+                    <mat-error *ngIf="formRemitente.get('telefono')?.hasError('pattern')">
+                      Solo números, +, espacios, paréntesis y guiones (7-20 caracteres)
+                    </mat-error>
                   </mat-form-field>
                   <mat-form-field appearance="outline" class="campo-ancho">
                     <mat-label>Dirección</mat-label>
@@ -277,7 +295,8 @@
                   </mat-form-field>
                   <mat-form-field appearance="outline">
                     <mat-label>Municipio</mat-label>
-                    <input matInput formControlName="municipio">
+                    <input matInput formControlName="municipio"
+                           (keypress)="soloLetras($event)">
                   </mat-form-field>
                 </div>
               </form>
@@ -294,15 +313,23 @@
             </mat-card-content>
           </mat-card>
 
-          <!-- Paso 2: Metadatos mínimos -->
-          <mat-card class="form-card" *ngIf="remitenteSeleccionado">
-            <mat-card-title>2. Metadatos del documento</mat-card-title>
+          <!-- Paso 2: Metadatos (siempre visible, deshabilitado si no hay remitente) -->
+          <mat-card class="form-card" [class.form-deshabilitado]="!remitenteSeleccionado">
+            <mat-card-title>
+              2. Metadatos del documento
+              <span *ngIf="!remitenteSeleccionado" class="metadatos-hint">
+                — seleccione o cree un remitente primero
+              </span>
+            </mat-card-title>
             <mat-card-content>
               <form [formGroup]="formMetadatos">
                 <div class="form-grid">
                   <mat-form-field appearance="outline" class="campo-ancho">
                     <mat-label>Asunto *</mat-label>
                     <input matInput formControlName="asunto">
+                    <mat-error *ngIf="formMetadatos.get('asunto')?.hasError('required')">
+                      El asunto es obligatorio
+                    </mat-error>
                   </mat-form-field>
 
                   <mat-form-field appearance="outline">
@@ -310,6 +337,9 @@
                     <mat-select formControlName="tipo_soporte">
                       <mat-option *ngFor="let s of TIPOS_SOPORTE" [value]="s.value">{{ s.label }}</mat-option>
                     </mat-select>
+                    <mat-error *ngIf="formMetadatos.get('tipo_soporte')?.hasError('required')">
+                      Seleccione el tipo de soporte
+                    </mat-error>
                   </mat-form-field>
 
                   <mat-form-field appearance="outline">
@@ -355,7 +385,7 @@
                   <mat-icon>check_circle</mat-icon> Guardado correctamente
                 </span>
                 <button mat-flat-button color="primary"
-                        [disabled]="formMetadatos.invalid || guardandoMetadatos"
+                        [disabled]="guardandoMetadatos"
                         (click)="guardarMetadatos()">
                   <mat-icon>save</mat-icon>
                   {{ guardandoMetadatos ? 'Guardando…' : 'Guardar metadatos' }}
@@ -371,7 +401,18 @@
     </mat-tab>
 
     <!-- ── Pestaña: Radicado ───────────────────────────────────────────── -->
-    <mat-tab label="Radicado">
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <span class="tab-label-con-estado">
+          <mat-icon class="tab-estado-icon"
+            [class.tab-estado-ok]="!!radicado"
+            [class.tab-estado-warning]="!radicado && !!metadatos"
+            [class.tab-estado-pendiente]="!radicado && !metadatos">
+            {{ radicado ? 'check_circle' : (metadatos ? 'pending' : 'radio_button_unchecked') }}
+          </mat-icon>
+          Radicado
+        </span>
+      </ng-template>
       <div class="tab-contenido">
 
         <!-- Radicado existente -->
@@ -407,9 +448,9 @@
           </mat-card>
 
           <div class="acciones" *ngIf="radicado.ruta_constancia">
-            <a mat-flat-button color="primary" [href]="urlConstancia()" target="_blank">
+            <button mat-flat-button color="primary" (click)="descargarConstancia()">
               <mat-icon>picture_as_pdf</mat-icon> Descargar constancia
-            </a>
+            </button>
           </div>
         </ng-container>
 

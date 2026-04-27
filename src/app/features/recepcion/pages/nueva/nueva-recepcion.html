@@ -17,7 +17,7 @@
 
         <mat-form-field appearance="outline" class="campo-ancho">
           <mat-label>Canal de recepción *</mat-label>
-          <mat-icon matPrefix style="margin-right:8px; color:var(--azul-hover)">swap_horiz</mat-icon>
+          <mat-icon matPrefix>swap_horiz</mat-icon>
           <mat-select formControlName="canal_id">
             <mat-option *ngFor="let c of canales" [value]="c.id">{{ c.nombre }}</mat-option>
           </mat-select>
@@ -26,7 +26,7 @@
 
         <mat-form-field appearance="outline" class="campo-ancho">
           <mat-label>Asunto provisional</mat-label>
-          <mat-icon matPrefix style="margin-right:8px; color:var(--azul-hover)">subject</mat-icon>
+          <mat-icon matPrefix>subject</mat-icon>
           <input matInput formControlName="asunto_provisional"
                  placeholder="Descripción breve del documento recibido">
         </mat-form-field>

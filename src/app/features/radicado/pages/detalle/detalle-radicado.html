@@ -12,13 +12,11 @@
 
   <!-- Número destacado -->
   <mat-card class="radicado-card" style="margin-bottom:20px">
-    <mat-card-content style="padding:32px 24px !important; text-align:center">
-      <div style="font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--texto-muy-suave); margin-bottom:8px">
-        Número de radicado
-      </div>
+    <mat-card-content class="radicado-card-content">
+      <div class="numero-etiqueta">Número de radicado</div>
       <div class="radicado-numero-grande">{{ radicado.numero_radicado }}</div>
-      <div class="radicado-fecha" style="margin-top:10px">
-        <mat-icon style="font-size:16px; width:16px; height:16px">calendar_today</mat-icon>
+      <div class="radicado-fecha">
+        <mat-icon class="icono-fecha">calendar_today</mat-icon>
         {{ radicado.fecha_radicacion | date:'dd/MM/yyyy' }} a las {{ radicado.fecha_radicacion | date:'HH:mm' }}
         &nbsp;—&nbsp;
         <span [class]="'chip-estado ' + radicado.estado">{{ radicado.estado | titlecase }}</span>
@@ -54,14 +52,13 @@
     <mat-card class="form-card">
       <mat-card-title>Acciones</mat-card-title>
       <mat-card-content>
-        <div class="estados-botones" style="flex-direction:column; align-items:stretch">
+        <div class="estados-botones botones-columna">
 
-          <a mat-flat-button color="primary"
-             *ngIf="radicado.ruta_constancia"
-             [href]="urlConstancia()" target="_blank"
-             style="text-align:center">
+          <button mat-flat-button color="primary"
+                  *ngIf="radicado.ruta_constancia"
+                  (click)="descargarConstancia()">
             <mat-icon>picture_as_pdf</mat-icon> Descargar constancia PDF
-          </a>
+          </button>
 
           <button mat-stroked-button
                   [routerLink]="['/recepcion', radicado.recepcion_id]">

@@ -15,13 +15,13 @@
     <div class="stats-grid">
 
       <mat-card class="stat-card">
-        <mat-card-content style="padding:20px 24px !important">
-          <div style="display:flex; align-items:center; gap:16px">
-            <div style="width:48px; height:48px; background:var(--azul-pale); border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0">
-              <mat-icon style="color:var(--azul); font-size:24px; width:24px; height:24px">inbox</mat-icon>
+        <mat-card-content>
+          <div class="stat-card-inner">
+            <div class="stat-icono">
+              <mat-icon>inbox</mat-icon>
             </div>
             <div>
-              <div class="stat-valor" style="font-size:32px">{{ stats.total_recepciones }}</div>
+              <div class="stat-valor-compact">{{ stats.total_recepciones }}</div>
               <div class="stat-label">Recepciones totales</div>
             </div>
           </div>
@@ -29,13 +29,13 @@
       </mat-card>
 
       <mat-card class="stat-card stat-card--primario">
-        <mat-card-content style="padding:20px 24px !important">
-          <div style="display:flex; align-items:center; gap:16px">
-            <div style="width:48px; height:48px; background:var(--azul-pale); border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0">
-              <mat-icon style="color:var(--azul); font-size:24px; width:24px; height:24px">assignment</mat-icon>
+        <mat-card-content>
+          <div class="stat-card-inner">
+            <div class="stat-icono">
+              <mat-icon>assignment</mat-icon>
             </div>
             <div>
-              <div class="stat-valor" style="font-size:32px">{{ stats.total_radicados }}</div>
+              <div class="stat-valor-compact">{{ stats.total_radicados }}</div>
               <div class="stat-label">Documentos radicados</div>
             </div>
           </div>
@@ -43,13 +43,13 @@
       </mat-card>
 
       <mat-card class="stat-card stat-card--exito">
-        <mat-card-content style="padding:20px 24px !important">
-          <div style="display:flex; align-items:center; gap:16px">
-            <div style="width:48px; height:48px; background:#e8f5e9; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0">
-              <mat-icon style="color:#2e7d32; font-size:24px; width:24px; height:24px">check_circle</mat-icon>
+        <mat-card-content>
+          <div class="stat-card-inner">
+            <div class="stat-icono stat-icono--exito">
+              <mat-icon>check_circle</mat-icon>
             </div>
             <div>
-              <div class="stat-valor" style="font-size:32px; color:#2e7d32">{{ stats.radicados_vigentes }}</div>
+              <div class="stat-valor-compact stat-valor-compact--exito">{{ stats.radicados_vigentes }}</div>
               <div class="stat-label">Radicados vigentes</div>
             </div>
           </div>
@@ -57,13 +57,13 @@
       </mat-card>
 
       <mat-card class="stat-card stat-card--alerta">
-        <mat-card-content style="padding:20px 24px !important">
-          <div style="display:flex; align-items:center; gap:16px">
-            <div style="width:48px; height:48px; background:#ffebee; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0">
-              <mat-icon style="color:#b71c1c; font-size:24px; width:24px; height:24px">cancel</mat-icon>
+        <mat-card-content>
+          <div class="stat-card-inner">
+            <div class="stat-icono stat-icono--alerta">
+              <mat-icon>cancel</mat-icon>
             </div>
             <div>
-              <div class="stat-valor" style="font-size:32px; color:#b71c1c">{{ stats.radicados_anulados }}</div>
+              <div class="stat-valor-compact stat-valor-compact--alerta">{{ stats.radicados_anulados }}</div>
               <div class="stat-label">Radicados anulados</div>
             </div>
           </div>
@@ -152,8 +152,8 @@
   </ng-container>
 
   <!-- Estado vacío -->
-  <div *ngIf="!cargando && !stats" style="text-align:center; padding:60px; color:var(--texto-muy-suave)">
-    <mat-icon style="font-size:48px; width:48px; height:48px; margin-bottom:12px">bar_chart</mat-icon>
+  <div *ngIf="!cargando && !stats" class="estado-vacio">
+    <mat-icon>bar_chart</mat-icon>
     <p>No hay datos estadísticos disponibles aún</p>
   </div>
 

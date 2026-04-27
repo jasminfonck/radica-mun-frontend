@@ -1,0 +1,31 @@
+.resultados-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--borde-suave);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.resultados-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--texto-suave);
+}
+
+.estado-vacio {
+  text-align: center;
+  padding: 60px;
+  color: var(--texto-muy-suave);
+
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  p { margin: 0; }
+}

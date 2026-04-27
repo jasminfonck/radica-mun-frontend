@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { forkJoin } from 'rxjs';
@@ -19,7 +19,8 @@ interface MenuItem {
   selector: 'app-layout',
   templateUrl: './layout.html',
   styleUrls: ['./layout.scss'],
-  standalone: false
+  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LayoutComponent implements OnInit {
   usuario: UsuarioToken | null;
@@ -41,6 +42,7 @@ export class LayoutComponent implements OnInit {
     private adminService: AdminService,
     private themeService: ThemeService,
     private snack: MatSnackBar,
+    private cdr: ChangeDetectorRef,
   ) {
     this.usuario = this.auth.getUsuario();
   }
@@ -57,6 +59,7 @@ export class LayoutComponent implements OnInit {
         if (config.color_primario) {
           this.themeService.aplicarColor(config.color_primario);
         }
+        this.cdr.markForCheck();
       },
     });
   }
