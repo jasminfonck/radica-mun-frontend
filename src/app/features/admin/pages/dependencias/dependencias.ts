@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { AdminService, DependenciaOut } from '../../../../core/services/admin.service';
+import { forkJoin } from 'rxjs';
+import { AdminService, DependenciaOut, UsuarioOut, nombreCompleto } from '../../../../core/services/admin.service';
 
 @Component({
   selector: 'app-dependencias',
@@ -9,10 +10,12 @@ import { AdminService, DependenciaOut } from '../../../../core/services/admin.se
 })
 export class DependenciasComponent implements OnInit {
   dependencias: DependenciaOut[] = [];
+  usuarios: UsuarioOut[] = [];
   columnas = ['nombre', 'codigo', 'responsable', 'estado', 'acciones'];
   form!: FormGroup;
   editando: DependenciaOut | null = null;
   mostrarForm = false;
+  readonly nombreCompleto = nombreCompleto;
 
   constructor(
     private fb: FormBuilder,
@@ -22,15 +25,24 @@ export class DependenciasComponent implements OnInit {
 
   ngOnInit(): void {
     this.inicializarForm();
-    this.cargar();
+    forkJoin({
+      dependencias: this.adminService.getDependencias(),
+      usuarios: this.adminService.getUsuarios(),
+    }).subscribe({
+      next: ({ dependencias, usuarios }) => {
+        this.dependencias = dependencias;
+        this.usuarios = usuarios.filter(u => u.activo);
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   inicializarForm(dep?: DependenciaOut): void {
     this.form = this.fb.group({
       nombre:      [dep?.nombre      || '', Validators.required],
       codigo:      [dep?.codigo      || ''],
-      responsable: [dep?.responsable || ''],
-      email:       [dep?.email       || ''],
+      responsable: [dep?.responsable || null, Validators.required],
+      email:       [dep?.email       || '', Validators.email],
     });
   }
 
@@ -55,7 +67,6 @@ export class DependenciasComponent implements OnInit {
     const obs = this.editando
       ? this.adminService.actualizarDependencia(this.editando.id, this.form.value)
       : this.adminService.crearDependencia(this.form.value);
-    // cancelar() ANTES de cargar() para evitar NG0100
     obs.subscribe(() => { this.cancelar(); this.cargar(); });
   }
 

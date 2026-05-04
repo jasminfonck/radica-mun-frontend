@@ -1,5 +1,6 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AdminService } from '../../../../core/services/admin.service';
 import { GeoService, DepartamentoOut, MunicipioOut } from '../../../../core/services/geo.service';
 import { forkJoin } from 'rxjs';
@@ -21,6 +22,7 @@ export class EntidadComponent implements OnInit {
     private fb: FormBuilder,
     private adminService: AdminService,
     private geoService: GeoService,
+    private router: Router,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -35,11 +37,11 @@ export class EntidadComponent implements OnInit {
       email_institucional: ['', Validators.email],
     });
 
-    // Cascada: al cambiar departamento, cargar municipios del backend
+    // Cascada: al cambiar departamento manualmente, limpiar y recargar municipios
     this.form.get('departamento')!.valueChanges.subscribe((depNombre: string) => {
       const dep = this.departamentos.find(d => d.nombre === depNombre);
       this.municipios = [];
-      this.form.get('municipio')!.setValue('');
+      this.form.get('municipio')!.setValue('', { emitEvent: false });
       if (dep) {
         this.geoService.getMunicipios(dep.id).subscribe(muns => {
           this.municipios = muns;
@@ -49,18 +51,28 @@ export class EntidadComponent implements OnInit {
       this.cdr.markForCheck();
     });
 
-    // Cargar departamentos y datos guardados en paralelo
+    // Cargar departamentos y datos guardados: primero los municipios del dep guardado,
+    // luego parchear sin emitir eventos para que el select encuentre sus opciones
     forkJoin({
       deps:    this.geoService.getDepartamentos(),
       entidad: this.adminService.getEntidad(),
     }).subscribe({
       next: ({ deps, entidad }) => {
         this.departamentos = deps;
+        const dep = deps.find(d => d.nombre === entidad.departamento);
 
-        // Parchear el formulario; el valueChanges del departamento
-        // disparará la carga de municipios automáticamente
-        this.form.patchValue(entidad);
-        this.cdr.markForCheck();
+        const aplicarPatch = (muns: MunicipioOut[]) => {
+          this.municipios = muns;
+          this.form.patchValue(entidad, { emitEvent: false });
+          this.form.markAsPristine();
+          this.cdr.markForCheck();
+        };
+
+        if (dep) {
+          this.geoService.getMunicipios(dep.id).subscribe(aplicarPatch);
+        } else {
+          aplicarPatch([]);
+        }
       },
     });
   }
@@ -77,9 +89,8 @@ export class EntidadComponent implements OnInit {
     this.adminService.actualizarEntidad(payload).subscribe({
       next: () => {
         this.guardando = false;
-        this.guardado  = true;
         this.cdr.markForCheck();
-        setTimeout(() => { this.guardado = false; this.cdr.markForCheck(); }, 3000);
+        this.router.navigate(['/admin']);
       },
       error: () => { this.guardando = false; this.cdr.markForCheck(); },
     });

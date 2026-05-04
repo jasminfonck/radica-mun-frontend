@@ -1,0 +1,378 @@
+:root {
+  --color-primario: #1a237e;
+}
+
+.pagina-publica {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f5f6fa;
+}
+
+// Header
+.header-publico {
+  background: var(--color-primario);
+  color: #fff;
+  padding: 0 16px;
+
+  .header-inner {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .header-icon {
+    font-size: 36px;
+    width: 36px;
+    height: 36px;
+    opacity: .9;
+  }
+
+  .header-entidad {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .header-sub {
+    font-size: 13px;
+    opacity: .75;
+    margin-top: 2px;
+  }
+}
+
+.barra-carga {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+// Contenedor central
+.contenedor {
+  max-width: 800px;
+  margin: 32px auto;
+  padding: 0 16px;
+  width: 100%;
+  box-sizing: border-box;
+  flex: 1;
+}
+
+// Intro
+.intro {
+  margin-bottom: 24px;
+
+  h1 {
+    margin: 0 0 8px;
+    font-size: 22px;
+    color: #1a1a2e;
+  }
+
+  p {
+    margin: 0;
+    color: #555;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+}
+
+// Secciones del formulario
+.seccion-card {
+  margin-bottom: 20px;
+  border-radius: 10px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .06) !important;
+
+  mat-card-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px !important;
+    color: var(--color-primario);
+    margin-bottom: 20px !important;
+
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+}
+
+// Grid de campos
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+
+  .campo-ancho {
+    grid-column: 1 / -1;
+  }
+
+  mat-form-field {
+    width: 100%;
+  }
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Radio tipo persona
+.radio-group {
+  margin-bottom: 20px;
+}
+
+.radio-label {
+  display: block;
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.radio-opciones {
+  display: flex;
+  gap: 24px;
+}
+
+// Política de privacidad
+.politica-texto {
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 16px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.error-check {
+  font-size: 12px;
+  color: #f44336;
+  margin-top: 4px;
+  padding-left: 2px;
+}
+
+// Botón y pie del form
+.acciones-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0 32px;
+}
+
+.btn-enviar {
+  min-width: 220px;
+  height: 48px;
+  font-size: 16px;
+
+  mat-icon {
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+}
+
+.aviso-legal {
+  font-size: 12px;
+  color: #888;
+  margin: 0;
+  text-align: center;
+}
+
+// Alertas
+.alerta-error,
+.alerta-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+
+  mat-icon { flex-shrink: 0; margin-top: 2px; }
+
+  p { margin: 6px 0 0; font-size: 13px; }
+
+  .icon-inline {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    vertical-align: middle;
+    margin-right: 4px;
+  }
+}
+
+.alerta-error {
+  background: #fdecea;
+  color: #b71c1c;
+  border: 1px solid #ef9a9a;
+}
+
+.alerta-info {
+  background: #e8eaf6;
+  color: #283593;
+  border: 1px solid #9fa8da;
+}
+
+// Confirmación
+.confirmacion-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, .1);
+  padding: 48px 40px;
+  text-align: center;
+
+  .confirmacion-icono {
+    mat-icon {
+      font-size: 64px;
+      width: 64px;
+      height: 64px;
+      color: #2e7d32;
+    }
+  }
+
+  h2 {
+    margin: 16px 0 8px;
+    color: #1a1a2e;
+    font-size: 22px;
+  }
+
+  p {
+    color: #555;
+    font-size: 14px;
+    margin: 0 0 24px;
+  }
+}
+
+.aviso-radicado {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 8px;
+  padding: 14px 20px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: #5d4037;
+
+  mat-icon { font-size: 20px; width: 20px; height: 20px; color: #f9a825; flex-shrink: 0; }
+}
+
+.aviso-email {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  font-size: 13px;
+  color: #2e7d32;
+  margin-bottom: 20px;
+
+  &--gris { color: #666; }
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+// Adjuntos
+.adjuntos-contador {
+  font-size: 13px;
+  font-weight: 400;
+  color: #888;
+  margin-left: 6px;
+}
+
+.adjuntos-ayuda {
+  font-size: 13px;
+  color: #777;
+  margin: 0 0 16px;
+}
+
+.adjuntos-lista {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+.adjunto-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  background: #fafafa;
+
+  .adjunto-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: var(--color-primario);
+    flex-shrink: 0;
+  }
+
+  .adjunto-nombre {
+    flex: 1;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .adjunto-tamano {
+    font-size: 12px;
+    color: #999;
+    flex-shrink: 0;
+  }
+
+  .adjunto-quitar {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+
+    mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  }
+}
+
+.btn-adjuntar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border: 1px dashed var(--color-primario);
+  border-radius: 6px;
+  color: var(--color-primario);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background .15s;
+
+  &:hover { background: rgba(0, 0, 0, .04); }
+
+  &--disabled {
+    opacity: .45;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  input[type="file"] { display: none; }
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+// Footer
+.footer-publico {
+  background: #263238;
+  color: rgba(255, 255, 255, .6);
+  font-size: 12px;
+  text-align: center;
+  padding: 16px;
+  margin-top: auto;
+}

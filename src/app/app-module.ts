@@ -5,6 +5,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
 
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { AppRoutingModule } from './app-routing-module';
 import { App } from './app';
 import { AuthInterceptor } from './core/auth/auth.interceptor';
@@ -18,6 +19,7 @@ registerLocaleData(localeEs);
     BrowserModule,
     AppRoutingModule,
     LayoutModule,
+    MatSnackBarModule,
   ],
   providers: [
     provideBrowserGlobalErrorListeners(),

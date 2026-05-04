@@ -3,9 +3,12 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 export interface Rol           { id: number; nombre: string; descripcion?: string; }
-export interface UsuarioOut    { id: number; nombre: string; email: string; activo: boolean; rol: Rol; created_at: string; }
-export interface UsuarioCreate { nombre: string; email: string; password: string; rol_id: number; }
-export interface UsuarioUpdate { nombre?: string; email?: string; rol_id?: number; activo?: boolean; }
+export interface UsuarioOut    { id: number; nombre: string; apellido?: string; email: string; activo: boolean; rol: Rol; created_at: string; }
+export interface UsuarioCreate { nombre: string; apellido?: string; email: string; password: string; rol_id: number; }
+export interface UsuarioUpdate { nombre?: string; apellido?: string; email?: string; rol_id?: number; activo?: boolean; }
+export function nombreCompleto(u: { nombre: string; apellido?: string | null }): string {
+  return u.apellido ? `${u.nombre} ${u.apellido}` : u.nombre;
+}
 
 export interface EntidadOut {
   id: number; nombre: string; nit?: string; municipio?: string;

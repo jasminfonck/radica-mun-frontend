@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { AdminService, UsuarioOut, Rol } from '../../../../core/services/admin.service';
+import { ToastService } from '../../../../core/services/toast.service';
 import { UsuarioDialogComponent } from './usuario-dialog';
 import { forkJoin } from 'rxjs';
 
@@ -18,7 +18,7 @@ export class UsuariosComponent implements OnInit {
   constructor(
     private adminService: AdminService,
     private dialog: MatDialog,
-    private snack: MatSnackBar,
+    private toast: ToastService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -48,8 +48,7 @@ export class UsuariosComponent implements OnInit {
     this.adminService.actualizarUsuario(usuario.id, { activo: !usuario.activo }).subscribe({
       next: () => this.cargar(),
       error: err => {
-        const msg = err?.error?.detail || 'No se pudo actualizar el usuario.';
-        this.snack.open(msg, 'Cerrar', { duration: 6000 });
+        this.toast.error(err?.error?.detail || 'No se pudo actualizar el usuario.');
       },
     });
   }

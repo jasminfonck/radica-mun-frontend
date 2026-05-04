@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { AdminService, CanalOut } from '../../../../core/services/admin.service';
+import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
   selector: 'app-canales',
@@ -21,7 +21,7 @@ export class CanalesComponent implements OnInit {
 
   constructor(
     private adminService: AdminService,
-    private snack: MatSnackBar,
+    private toast: ToastService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -36,8 +36,7 @@ export class CanalesComponent implements OnInit {
         this.cargando = false;
         this.error = true;
         this.cdr.markForCheck();
-        const msg = err?.error?.detail || 'No se pudieron cargar los canales. Verifique que la migración de base de datos esté aplicada.';
-        this.snack.open(msg, 'Cerrar', { duration: 8000 });
+        this.toast.error(err?.error?.detail || 'No se pudieron cargar los canales. Verifique que la migración esté aplicada.');
       },
     });
   }
@@ -45,10 +44,7 @@ export class CanalesComponent implements OnInit {
   toggleCanal(canal: CanalOut): void {
     const nuevoActivo = !canal.activo;
     if (canal.tipo === 'digital' && nuevoActivo && !canal.acuse_configurado) {
-      this.snack.open(
-        'Debe confirmar el mecanismo de acuse de recibo automático antes de activar el formulario web.',
-        'Entendido', { duration: 6000 }
-      );
+      this.toast.advertencia('Debe confirmar el mecanismo de acuse de recibo automático antes de activar el formulario web.');
       return;
     }
     this.guardando[canal.id] = true;
@@ -60,8 +56,7 @@ export class CanalesComponent implements OnInit {
         this.cdr.markForCheck();
       },
       error: err => {
-        const msg = err?.error?.detail || 'No se pudo actualizar el canal.';
-        this.snack.open(msg, 'Cerrar', { duration: 6000 });
+        this.toast.error(err?.error?.detail || 'No se pudo actualizar el canal.');
         this.guardando[canal.id] = false;
         this.cdr.markForCheck();
       },
@@ -78,12 +73,11 @@ export class CanalesComponent implements OnInit {
         this.guardando[canal.id] = false;
         this.cdr.markForCheck();
         if (nuevoAcuse) {
-          this.snack.open('Acuse de recibo configurado. Ya puede activar el canal.', 'OK', { duration: 4000 });
+          this.toast.exito('Acuse de recibo configurado. Ya puede activar el canal.');
         }
       },
       error: err => {
-        const msg = err?.error?.detail || 'No se pudo actualizar el canal.';
-        this.snack.open(msg, 'Cerrar', { duration: 6000 });
+        this.toast.error(err?.error?.detail || 'No se pudo actualizar el canal.');
         this.guardando[canal.id] = false;
         this.cdr.markForCheck();
       },

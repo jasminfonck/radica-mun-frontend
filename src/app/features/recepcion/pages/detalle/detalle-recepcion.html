@@ -45,15 +45,41 @@
                 {{ recepcion.estado | titlecase }}
               </span>
             </div>
-            <p class="estado-label">Cambiar estado:</p>
-            <div class="estados-botones">
-              <button *ngFor="let e of estados"
-                      mat-stroked-button
-                      [color]="recepcion.estado === e.value ? 'primary' : ''"
-                      (click)="cambiarEstado(e.value)">
-                {{ e.label }}
-              </button>
-            </div>
+
+            <ng-container *ngIf="!estadoPendiente">
+              <p class="estado-label">Cambiar estado:</p>
+              <div class="estados-botones">
+                <button *ngFor="let e of estados"
+                        mat-stroked-button
+                        [color]="recepcion.estado === e.value ? 'primary' : ''"
+                        [disabled]="recepcion.estado === e.value"
+                        (click)="iniciarCambioEstado(e.value)">
+                  {{ e.label }}
+                </button>
+              </div>
+            </ng-container>
+
+            <!-- Inline form: observaciones obligatorias para incompleto/incompetente -->
+            <ng-container *ngIf="estadoPendiente">
+              <p class="estado-label">
+                <mat-icon style="font-size:16px;vertical-align:middle">warning</mat-icon>
+                Indique el motivo para marcar como <strong>{{ estadoPendiente }}</strong>:
+              </p>
+              <mat-form-field appearance="outline" style="width:100%">
+                <mat-label>Observaciones *</mat-label>
+                <textarea matInput rows="3" [(ngModel)]="obsEstadoPendiente"
+                          placeholder="Describa el motivo..."></textarea>
+              </mat-form-field>
+              <div class="acciones">
+                <button mat-button (click)="cancelarCambioEstado()">Cancelar</button>
+                <button mat-flat-button color="warn"
+                        [disabled]="!obsEstadoPendiente.trim()"
+                        (click)="confirmarCambioEstado()">
+                  Confirmar cambio
+                </button>
+              </div>
+            </ng-container>
+
           </mat-card-content>
         </mat-card>
 
@@ -104,6 +130,15 @@
         </span>
       </ng-template>
       <div class="tab-contenido">
+
+        <!-- Bloqueo cuando recepción es incompetente -->
+        <div *ngIf="esIncompetente" class="aviso-sin-metadatos aviso-incompetente">
+          <mat-icon>block</mat-icon>
+          <span>Esta recepción fue marcada como <strong>incompetente</strong>.
+            No es posible registrar remitente ni metadatos. Revise el motivo en la pestaña de Información.</span>
+        </div>
+
+        <ng-container *ngIf="!esIncompetente">
 
         <!-- Vista de metadatos guardados -->
         <ng-container *ngIf="metadatos && !remitenteSeleccionado">
@@ -348,19 +383,23 @@
                   </mat-form-field>
 
                   <mat-form-field appearance="outline">
-                    <mat-label>Tipo de requerimiento</mat-label>
+                    <mat-label>Tipo de requerimiento *</mat-label>
                     <mat-select formControlName="tipo_requerimiento_id">
-                      <mat-option [value]="null">— Sin clasificar —</mat-option>
                       <mat-option *ngFor="let t of tiposRequerimiento" [value]="t.id">{{ t.nombre }}</mat-option>
                     </mat-select>
+                    <mat-error *ngIf="formMetadatos.get('tipo_requerimiento_id')?.hasError('required')">
+                      Seleccione el tipo de requerimiento
+                    </mat-error>
                   </mat-form-field>
 
                   <mat-form-field appearance="outline">
-                    <mat-label>Plazo de respuesta</mat-label>
+                    <mat-label>Plazo de respuesta *</mat-label>
                     <mat-select formControlName="plazo_respuesta_id">
-                      <mat-option [value]="null">— Sin definir —</mat-option>
                       <mat-option *ngFor="let p of plazosRespuesta" [value]="p.id">{{ p.nombre }} ({{ p.dias_habiles }} días)</mat-option>
                     </mat-select>
+                    <mat-error *ngIf="formMetadatos.get('plazo_respuesta_id')?.hasError('required')">
+                      Seleccione el plazo de respuesta
+                    </mat-error>
                   </mat-form-field>
 
                   <mat-form-field appearance="outline">
@@ -380,12 +419,26 @@
                 </div>
               </form>
 
+              <!-- Indicador de completitud -->
+              <div class="completitud-check" *ngIf="remitenteSeleccionado">
+                <ng-container *ngIf="completitudMetadatos.completo; else faltanCampos">
+                  <mat-icon class="completitud-ok">check_circle</mat-icon>
+                  <span class="completitud-ok">Registro completo — listo para radicar</span>
+                </ng-container>
+                <ng-template #faltanCampos>
+                  <mat-icon class="completitud-warn">warning</mat-icon>
+                  <span class="completitud-warn">Faltan campos obligatorios:
+                    <strong>{{ completitudMetadatos.faltantes.join(', ') }}</strong>
+                  </span>
+                </ng-template>
+              </div>
+
               <div class="acciones">
                 <span class="exito" *ngIf="exito">
                   <mat-icon>check_circle</mat-icon> Guardado correctamente
                 </span>
                 <button mat-flat-button color="primary"
-                        [disabled]="guardandoMetadatos"
+                        [disabled]="guardandoMetadatos || formMetadatos.invalid || !remitenteSeleccionado"
                         (click)="guardarMetadatos()">
                   <mat-icon>save</mat-icon>
                   {{ guardandoMetadatos ? 'Guardando…' : 'Guardar metadatos' }}
@@ -397,6 +450,7 @@
 
         </ng-container>
 
+        </ng-container> <!-- /!esIncompetente -->
       </div>
     </mat-tab>
 

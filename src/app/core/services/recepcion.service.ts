@@ -30,6 +30,42 @@ export interface RecepcionCreate {
   observaciones?: string;
 }
 
+export interface TipoReqResumen { id: number; nombre: string; }
+
+export interface InfoPublica {
+  entidad_nombre: string;
+  entidad_municipio?: string;
+  entidad_departamento?: string;
+  entidad_telefono?: string;
+  entidad_email?: string;
+  color_primario: string;
+  canal_id?: number;
+  canal_activo: boolean;
+  tipos_requerimiento: TipoReqResumen[];
+  politica_privacidad_activa: boolean;
+  politica_privacidad_texto?: string;
+}
+
+export interface FormularioPublicoCreate {
+  tipo_persona: string;
+  nombres?: string;
+  apellidos?: string;
+  razon_social?: string;
+  tipo_identificacion?: string;
+  numero_identificacion?: string;
+  email?: string;
+  telefono?: string;
+  asunto: string;
+  tipo_requerimiento_id?: number | null;
+  observaciones?: string;
+  acepta_politica: boolean;
+}
+
+export interface FormularioPublicoOut {
+  recibido: boolean;
+  acuse_enviado: boolean;
+}
+
 export interface RecepcionFiltros {
   canal_id?: number;
   estado?: string;
@@ -80,5 +116,28 @@ export class RecepcionService {
 
   eliminarAdjunto(recepcionId: number, adjuntoId: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/${recepcionId}/adjuntos/${adjuntoId}`);
+  }
+
+  getInfoPublica(): Observable<InfoPublica> {
+    return this.http.get<InfoPublica>(`${this.base}/publica/info`);
+  }
+
+  crearPublico(data: FormularioPublicoCreate, archivos: File[] = []): Observable<FormularioPublicoOut> {
+    const fd = new FormData();
+    fd.append('tipo_persona',  data.tipo_persona);
+    fd.append('asunto',        data.asunto);
+    fd.append('acepta_politica', String(data.acepta_politica));
+    if (data.nombres)               fd.append('nombres',               data.nombres);
+    if (data.apellidos)             fd.append('apellidos',             data.apellidos);
+    if (data.razon_social)          fd.append('razon_social',          data.razon_social);
+    if (data.tipo_identificacion)   fd.append('tipo_identificacion',   data.tipo_identificacion);
+    if (data.numero_identificacion) fd.append('numero_identificacion', data.numero_identificacion);
+    if (data.email)                 fd.append('email',                 data.email);
+    if (data.telefono)              fd.append('telefono',              data.telefono);
+    if (data.tipo_requerimiento_id != null)
+                                    fd.append('tipo_requerimiento_id', String(data.tipo_requerimiento_id));
+    if (data.observaciones)         fd.append('observaciones',         data.observaciones);
+    archivos.forEach(f => fd.append('adjuntos', f, f.name));
+    return this.http.post<FormularioPublicoOut>(`${this.base}/publica`, fd);
   }
 }

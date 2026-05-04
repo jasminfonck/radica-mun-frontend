@@ -10,23 +10,31 @@ import { AdminService, UsuarioOut, Rol } from '../../../../core/services/admin.s
     <h2 mat-dialog-title>{{ data.usuario ? 'Editar usuario' : 'Nuevo usuario' }}</h2>
     <mat-dialog-content>
       <form [formGroup]="form" class="form-dialogo">
+        <div class="fila-nombres">
+          <mat-form-field appearance="outline" class="campo-nombre">
+            <mat-label>Nombre(s) *</mat-label>
+            <input matInput formControlName="nombre">
+            <mat-error *ngIf="form.get('nombre')?.hasError('required')">Obligatorio</mat-error>
+            <mat-error *ngIf="form.get('nombre')?.hasError('minlength')">Mínimo 2 caracteres</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="campo-nombre">
+            <mat-label>Apellido(s)</mat-label>
+            <input matInput formControlName="apellido">
+          </mat-form-field>
+        </div>
         <mat-form-field appearance="outline" class="campo-ancho">
-          <mat-label>Nombre completo</mat-label>
-          <input matInput formControlName="nombre">
-          <mat-error>Obligatorio</mat-error>
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="campo-ancho">
-          <mat-label>Correo electrónico</mat-label>
-          <input matInput formControlName="email" type="email">
-          <mat-error>Obligatorio</mat-error>
+          <mat-label>Correo electrónico *</mat-label>
+          <input matInput formControlName="email" type="email" inputmode="email">
+          <mat-error *ngIf="form.get('email')?.hasError('required')">Obligatorio</mat-error>
+          <mat-error *ngIf="form.get('email')?.hasError('email')">Ingrese un correo electrónico válido</mat-error>
         </mat-form-field>
         <mat-form-field appearance="outline" class="campo-ancho" *ngIf="!data.usuario">
-          <mat-label>Contraseña inicial</mat-label>
+          <mat-label>Contraseña inicial *</mat-label>
           <input matInput formControlName="password" type="password">
           <mat-error>Mínimo 6 caracteres</mat-error>
         </mat-form-field>
         <mat-form-field appearance="outline" class="campo-ancho">
-          <mat-label>Rol</mat-label>
+          <mat-label>Rol *</mat-label>
           <mat-select formControlName="rol_id">
             <mat-option *ngFor="let rol of data.roles" [value]="rol.id">{{ rol.nombre }}</mat-option>
           </mat-select>
@@ -41,7 +49,12 @@ import { AdminService, UsuarioOut, Rol } from '../../../../core/services/admin.s
       </button>
     </mat-dialog-actions>
   `,
-  styles: ['.form-dialogo { display:flex; flex-direction:column; gap:4px; padding-top:8px; } .campo-ancho { width:100%; }']
+  styles: [`
+    .form-dialogo { display:flex; flex-direction:column; gap:4px; padding-top:8px; }
+    .campo-ancho { width:100%; }
+    .fila-nombres { display:flex; gap:12px; }
+    .campo-nombre { flex:1; }
+  `]
 })
 export class UsuarioDialogComponent implements OnInit {
   form!: FormGroup;
@@ -56,10 +69,11 @@ export class UsuarioDialogComponent implements OnInit {
 
   ngOnInit(): void {
     this.form = this.fb.group({
-      nombre:   [this.data.usuario?.nombre || '', Validators.required],
-      email:    [this.data.usuario?.email  || '', Validators.required],
+      nombre:   [this.data.usuario?.nombre   || '', [Validators.required, Validators.minLength(2)]],
+      apellido: [this.data.usuario?.apellido || ''],
+      email:    [this.data.usuario?.email    || '', [Validators.required, Validators.email]],
       password: ['', this.data.usuario ? [] : [Validators.required, Validators.minLength(6)]],
-      rol_id:   [this.data.usuario?.rol?.id || null, Validators.required],
+      rol_id:   [this.data.usuario?.rol?.id  || null, Validators.required],
     });
   }
 

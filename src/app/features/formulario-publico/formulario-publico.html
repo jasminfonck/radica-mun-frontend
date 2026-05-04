@@ -1,0 +1,278 @@
+<div class="pagina-publica">
+
+  <!-- Header -->
+  <header class="header-publico">
+    <div class="header-inner">
+      <mat-icon class="header-icon">account_balance</mat-icon>
+      <div>
+        <div class="header-entidad">{{ info?.entidad_nombre || 'Sistema de Radicación' }}</div>
+        <div class="header-sub">
+          {{ info?.entidad_municipio }}{{ info?.entidad_departamento ? ' — ' + info?.entidad_departamento : '' }}
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Cargando -->
+  <mat-progress-bar *ngIf="cargando" mode="indeterminate" class="barra-carga"></mat-progress-bar>
+
+  <!-- Error de carga -->
+  <div *ngIf="errorCarga" class="contenedor">
+    <div class="alerta-error">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ errorCarga }}</span>
+    </div>
+  </div>
+
+  <!-- Canal inactivo -->
+  <div *ngIf="!cargando && !errorCarga && !info?.canal_activo" class="contenedor">
+    <div class="alerta-info">
+      <mat-icon>info_outline</mat-icon>
+      <div>
+        <strong>Canal no disponible</strong>
+        <p>El formulario web no está habilitado en este momento.
+           Contáctenos a través de nuestros otros canales de atención.</p>
+        <p *ngIf="info?.entidad_telefono"><mat-icon class="icon-inline">phone</mat-icon> {{ info?.entidad_telefono }}</p>
+        <p *ngIf="info?.entidad_email"><mat-icon class="icon-inline">email</mat-icon> {{ info?.entidad_email }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmación exitosa -->
+  <div *ngIf="confirmacion" class="contenedor">
+    <div class="confirmacion-card">
+      <div class="confirmacion-icono">
+        <mat-icon>check_circle</mat-icon>
+      </div>
+      <h2>Se ha recibido su formulario</h2>
+      <p>Su comunicación ha sido registrada exitosamente en nuestro sistema.</p>
+
+      <div class="aviso-radicado">
+        <mat-icon>schedule</mat-icon>
+        <span>En un plazo máximo de <strong>24 horas hábiles</strong> recibirá el número de radicado oficial.</span>
+      </div>
+
+      <div *ngIf="confirmacion.acuse_enviado" class="aviso-email">
+        <mat-icon>mark_email_read</mat-icon>
+        <span>Se envió un acuse de recibo al correo electrónico registrado.</span>
+      </div>
+      <div *ngIf="!confirmacion.acuse_enviado" class="aviso-email aviso-email--gris">
+        <mat-icon>info_outline</mat-icon>
+        <span>Esté atento al correo electrónico registrado para recibir el número de radicado.</span>
+      </div>
+
+      <button mat-flat-button color="primary"
+              (click)="confirmacion = null; archivosAdjuntos = []; form.reset({ tipo_persona: 'natural', tipo_identificacion: 'CC' })">
+        Enviar otra solicitud
+      </button>
+    </div>
+  </div>
+
+  <!-- Formulario -->
+  <div *ngIf="!cargando && !errorCarga && info?.canal_activo && !confirmacion" class="contenedor">
+
+    <div class="intro">
+      <h1>Radicación de comunicaciones</h1>
+      <p>
+        Complete el formulario para enviar su comunicación oficial.
+        Todos los campos marcados con <strong>*</strong> son obligatorios.
+      </p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="enviar()">
+
+      <!-- Sección 1: Datos del solicitante -->
+      <mat-card class="seccion-card">
+        <mat-card-title>
+          <mat-icon>person</mat-icon> Datos del solicitante
+        </mat-card-title>
+        <mat-card-content>
+
+          <!-- Tipo de persona -->
+          <div class="radio-group">
+            <label class="radio-label">Tipo de persona</label>
+            <mat-radio-group formControlName="tipo_persona" class="radio-opciones">
+              <mat-radio-button value="natural">Persona natural</mat-radio-button>
+              <mat-radio-button value="juridico">Persona jurídica</mat-radio-button>
+            </mat-radio-group>
+          </div>
+
+          <div class="form-grid">
+            <!-- Persona natural -->
+            <ng-container *ngIf="!esJuridico">
+              <mat-form-field appearance="outline">
+                <mat-label>Nombres *</mat-label>
+                <input matInput formControlName="nombres" autocomplete="given-name">
+                <mat-error>Los nombres son obligatorios</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Apellidos</mat-label>
+                <input matInput formControlName="apellidos" autocomplete="family-name">
+              </mat-form-field>
+            </ng-container>
+
+            <!-- Persona jurídica -->
+            <ng-container *ngIf="esJuridico">
+              <mat-form-field appearance="outline" class="campo-ancho">
+                <mat-label>Razón social *</mat-label>
+                <input matInput formControlName="razon_social" autocomplete="organization">
+                <mat-error>La razón social es obligatoria</mat-error>
+              </mat-form-field>
+            </ng-container>
+
+            <!-- Identificación -->
+            <mat-form-field appearance="outline">
+              <mat-label>Tipo de identificación</mat-label>
+              <mat-select formControlName="tipo_identificacion">
+                <mat-option *ngFor="let t of tiposIdentificacion" [value]="t.value">
+                  {{ t.label }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Número de identificación *</mat-label>
+              <input matInput formControlName="numero_identificacion" inputmode="numeric">
+              <mat-error>El número de identificación es obligatorio</mat-error>
+            </mat-form-field>
+
+            <!-- Contacto -->
+            <mat-form-field appearance="outline">
+              <mat-label>Correo electrónico *</mat-label>
+              <mat-icon matPrefix>alternate_email</mat-icon>
+              <input matInput formControlName="email" type="email" inputmode="email" autocomplete="email">
+              <mat-hint>Se usará para enviarle el acuse de recibo</mat-hint>
+              <mat-error *ngIf="form.get('email')?.hasError('required')">El correo es obligatorio</mat-error>
+              <mat-error *ngIf="form.get('email')?.hasError('email')">Ingrese un correo válido</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Teléfono de contacto</mat-label>
+              <mat-icon matPrefix>phone</mat-icon>
+              <input matInput formControlName="telefono" inputmode="tel" autocomplete="tel">
+            </mat-form-field>
+          </div>
+
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Sección 2: Datos de la comunicación -->
+      <mat-card class="seccion-card">
+        <mat-card-title>
+          <mat-icon>description</mat-icon> Datos de la comunicación
+        </mat-card-title>
+        <mat-card-content>
+          <div class="form-grid">
+
+            <mat-form-field appearance="outline" class="campo-ancho">
+              <mat-label>Asunto *</mat-label>
+              <input matInput formControlName="asunto" maxlength="300"
+                     placeholder="Describa brevemente el motivo de su comunicación">
+              <mat-hint align="end">{{ form.get('asunto')?.value?.length || 0 }}/300</mat-hint>
+              <mat-error>El asunto es obligatorio</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" *ngIf="info?.tipos_requerimiento?.length">
+              <mat-label>Tipo de requerimiento</mat-label>
+              <mat-select formControlName="tipo_requerimiento_id">
+                <mat-option [value]="null">— Sin especificar —</mat-option>
+                <mat-option *ngFor="let t of info!.tipos_requerimiento" [value]="t.id">
+                  {{ t.nombre }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="campo-ancho">
+              <mat-label>Descripción u observaciones</mat-label>
+              <textarea matInput formControlName="observaciones" rows="4" maxlength="1000"
+                        placeholder="Puede ampliar los detalles de su solicitud aquí..."></textarea>
+              <mat-hint align="end">{{ form.get('observaciones')?.value?.length || 0 }}/1000</mat-hint>
+            </mat-form-field>
+
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Política de privacidad -->
+      <mat-card class="seccion-card" *ngIf="info?.politica_privacidad_activa">
+        <mat-card-title>
+          <mat-icon>privacy_tip</mat-icon> Política de privacidad
+        </mat-card-title>
+        <mat-card-content>
+          <div class="politica-texto" *ngIf="info?.politica_privacidad_texto">
+            {{ info!.politica_privacidad_texto }}
+          </div>
+          <mat-checkbox formControlName="acepta_politica" color="primary">
+            Acepto el tratamiento de mis datos personales conforme a la
+            Ley 1581 de 2012 y la política de privacidad de la entidad *
+          </mat-checkbox>
+          <div class="error-check" *ngIf="form.get('acepta_politica')?.touched && form.get('acepta_politica')?.invalid">
+            Debe aceptar la política de privacidad para continuar
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Sección 3: Documentos adjuntos -->
+      <mat-card class="seccion-card">
+        <mat-card-title>
+          <mat-icon>attach_file</mat-icon> Documentos adjuntos
+          <span class="adjuntos-contador">({{ archivosAdjuntos.length }}/{{ MAX_ADJUNTOS }})</span>
+        </mat-card-title>
+        <mat-card-content>
+
+          <p class="adjuntos-ayuda">
+            Puede adjuntar hasta {{ MAX_ADJUNTOS }} archivos (máx. {{ MAX_MB_ADJUNTO }} MB cada uno).
+          </p>
+
+          <ul class="adjuntos-lista" *ngIf="archivosAdjuntos.length > 0">
+            <li *ngFor="let f of archivosAdjuntos; let i = index" class="adjunto-item">
+              <mat-icon class="adjunto-icon">description</mat-icon>
+              <span class="adjunto-nombre">{{ f.name }}</span>
+              <span class="adjunto-tamano">{{ formatBytes(f.size) }}</span>
+              <button mat-icon-button type="button" (click)="quitarArchivo(i)"
+                      aria-label="Quitar archivo" class="adjunto-quitar">
+                <mat-icon>close</mat-icon>
+              </button>
+            </li>
+          </ul>
+
+          <label class="btn-adjuntar" [class.btn-adjuntar--disabled]="archivosAdjuntos.length >= MAX_ADJUNTOS">
+            <mat-icon>add</mat-icon>
+            Seleccionar archivo
+            <input type="file" multiple (change)="agregarArchivos($event)"
+                   [disabled]="archivosAdjuntos.length >= MAX_ADJUNTOS"
+                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.xls,.xlsx,.txt,.zip">
+          </label>
+
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Error de envío -->
+      <div *ngIf="errorEnvio" class="alerta-error">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ errorEnvio }}</span>
+      </div>
+
+      <!-- Botón enviar -->
+      <div class="acciones-form">
+        <button mat-flat-button color="primary" type="submit"
+                [disabled]="form.invalid || enviando" class="btn-enviar">
+          <span *ngIf="!enviando">
+            <mat-icon>send</mat-icon> Enviar solicitud
+          </span>
+          <span *ngIf="enviando">Enviando...</span>
+        </button>
+        <p class="aviso-legal">
+          Al enviar este formulario, su comunicación quedará registrada oficialmente.
+        </p>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer-publico" *ngIf="!cargando">
+    <span>{{ info?.entidad_nombre }}</span>
+    <span *ngIf="info?.entidad_email"> · {{ info?.entidad_email }}</span>
+    <span *ngIf="info?.entidad_telefono"> · {{ info?.entidad_telefono }}</span>
+  </footer>
+
+</div>

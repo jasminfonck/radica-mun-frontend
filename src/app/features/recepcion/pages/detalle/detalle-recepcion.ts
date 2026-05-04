@@ -127,8 +127,8 @@ export class DetalleRecepcionComponent implements OnInit {
       asunto:                ['', Validators.required],
       tipo_soporte:          ['fisico', Validators.required],
       numero_anexos:         [0],
-      tipo_requerimiento_id: [null],
-      plazo_respuesta_id:    [null],
+      tipo_requerimiento_id: [null, Validators.required],
+      plazo_respuesta_id:    [null, Validators.required],
       observaciones:         [''],
       numero_referencia:     [''],
       fecha_documento:       [''],
@@ -148,12 +148,44 @@ export class DetalleRecepcionComponent implements OnInit {
   }
 
   // ── Estado ─────────────────────────────────────────────────────────────────
-  cambiarEstado(estado: string): void {
+  readonly ESTADOS_REQUIEREN_OBS = new Set(['incompleto', 'incompetente']);
+  estadoPendiente: string | null = null;
+  obsEstadoPendiente = '';
+
+  iniciarCambioEstado(estado: string): void {
+    if (this.recepcion?.estado === estado) return;
+    if (this.ESTADOS_REQUIEREN_OBS.has(estado)) {
+      this.estadoPendiente = estado;
+      this.obsEstadoPendiente = '';
+    } else {
+      this._ejecutarCambioEstado(estado, '');
+    }
+  }
+
+  confirmarCambioEstado(): void {
+    if (!this.estadoPendiente || !this.obsEstadoPendiente.trim()) return;
+    this._ejecutarCambioEstado(this.estadoPendiente, this.obsEstadoPendiente.trim());
+  }
+
+  cancelarCambioEstado(): void {
+    this.estadoPendiente = null;
+    this.obsEstadoPendiente = '';
+  }
+
+  private _ejecutarCambioEstado(estado: string, observaciones: string): void {
     if (!this.recepcion) return;
-    this.recepcionService.actualizar(this.recepcion.id, { estado } as any).subscribe(r => {
+    const payload: any = { estado };
+    if (observaciones) payload.observaciones = observaciones;
+    this.recepcionService.actualizar(this.recepcion.id, payload).subscribe(r => {
       this.recepcion = r;
+      this.estadoPendiente = null;
+      this.obsEstadoPendiente = '';
       this.cdr.markForCheck();
     });
+  }
+
+  get esIncompetente(): boolean {
+    return this.recepcion?.estado === 'incompetente';
   }
 
   // ── Adjuntos ───────────────────────────────────────────────────────────────
@@ -260,6 +292,17 @@ export class DetalleRecepcionComponent implements OnInit {
       },
       error: () => { this.guardandoMetadatos = false; this.cdr.markForCheck(); }
     });
+  }
+
+  get completitudMetadatos(): { completo: boolean; faltantes: string[] } {
+    const v = this.formMetadatos.value;
+    const faltantes: string[] = [];
+    if (!v.asunto?.trim())           faltantes.push('Asunto');
+    if (!v.tipo_soporte)             faltantes.push('Tipo de soporte');
+    if (!v.tipo_requerimiento_id)    faltantes.push('Tipo de requerimiento');
+    if (!v.plazo_respuesta_id)       faltantes.push('Plazo de respuesta');
+    if (!this.remitenteSeleccionado) faltantes.push('Remitente');
+    return { completo: faltantes.length === 0, faltantes };
   }
 
   // ── Radicado ───────────────────────────────────────────────────────────────

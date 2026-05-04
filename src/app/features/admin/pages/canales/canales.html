@@ -47,7 +47,7 @@
           [disabled]="guardando[canal.id]"
           (change)="toggleCanal(canal)"
           color="primary"
-          matTooltip="{{ canal.tipo === 'digital' && !canal.acuse_configurado ? 'Primero configure el acuse de recibo' : '' }}">
+          [matTooltip]="canal.activo ? 'Desactivar canal' : 'Activar canal'">
         </mat-slide-toggle>
 
       </mat-card-content>
@@ -70,7 +70,8 @@
             [checked]="canal.acuse_configurado"
             [disabled]="guardando[canal.id]"
             (change)="toggleAcuse(canal)"
-            color="accent">
+            color="accent"
+            [matTooltip]="canal.acuse_configurado ? 'Desactivar acuse automático' : 'Activar acuse automático'">
           </mat-slide-toggle>
         </div>
       </mat-card-footer>

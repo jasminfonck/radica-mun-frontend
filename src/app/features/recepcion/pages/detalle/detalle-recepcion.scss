@@ -46,3 +46,35 @@
   font-weight: 400;
   font-family: 'Lato', sans-serif;
 }
+
+.aviso-incompetente {
+  background: #fce4ec;
+  border: 1px solid #f48fb1;
+  border-radius: 8px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #880e4f;
+  font-size: 14px;
+  margin-bottom: 16px;
+
+  mat-icon { flex-shrink: 0; color: #c62828; }
+}
+
+.completitud-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  padding: 10px 0 4px;
+
+  .completitud-ok  { color: #2e7d32; }
+  .completitud-warn { color: #e65100; }
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}

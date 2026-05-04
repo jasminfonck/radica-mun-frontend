@@ -1,8 +1,9 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
 import { AdminService, RespaldoOut } from '../../../../core/services/admin.service';
 import { ThemeService } from '../../../../core/services/theme.service';
+import { ToastService } from '../../../../core/services/toast.service';
 
 export interface GrupoColor {
   nombre: string;
@@ -80,7 +81,8 @@ export class ConfiguracionComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private adminService: AdminService,
-    private snack: MatSnackBar,
+    private toast: ToastService,
+    private router: Router,
     private cdr: ChangeDetectorRef,
     private themeService: ThemeService,
   ) {}
@@ -131,14 +133,13 @@ export class ConfiguracionComponent implements OnInit {
     this.adminService.actualizarConfiguracion(this.form.value).subscribe({
       next: () => {
         this.guardando = false;
-        this.guardado  = true;
         this.cdr.markForCheck();
-        setTimeout(() => { this.guardado = false; this.cdr.markForCheck(); }, 3000);
+        this.router.navigate(['/admin']);
       },
       error: err => {
         this.guardando = false;
         this.cdr.markForCheck();
-        this.snack.open(err?.error?.detail || 'Error al guardar.', 'Cerrar', { duration: 5000 });
+        this.toast.error(err?.error?.detail || 'Error al guardar la configuración.');
       },
     });
   }
@@ -157,12 +158,12 @@ export class ConfiguracionComponent implements OnInit {
         URL.revokeObjectURL(url);
         this.descargandoBackup = false;
         this.cdr.markForCheck();
-        this.snack.open('Respaldo descargado correctamente.', 'OK', { duration: 4000 });
+        this.toast.exito('Respaldo descargado correctamente.');
       },
       error: () => {
         this.descargandoBackup = false;
         this.cdr.markForCheck();
-        this.snack.open('No se pudo generar el respaldo.', 'Cerrar', { duration: 5000 });
+        this.toast.error('No se pudo generar el respaldo de configuración.');
       },
     });
   }

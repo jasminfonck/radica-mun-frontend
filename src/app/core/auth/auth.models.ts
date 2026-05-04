@@ -6,6 +6,7 @@ export interface LoginRequest {
 export interface UsuarioToken {
   id: number;
   nombre: string;
+  apellido?: string;
   email: string;
   rol: string;
 }

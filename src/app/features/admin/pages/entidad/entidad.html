@@ -90,7 +90,7 @@
             <mat-icon>check_circle</mat-icon> Guardado correctamente
           </span>
           <button mat-flat-button color="primary" type="submit"
-                  [disabled]="guardando || form.invalid" class="btn-guardar">
+                  [disabled]="guardando || form.invalid || form.pristine" class="btn-guardar">
             <span *ngIf="!guardando">Guardar datos</span>
             <span *ngIf="guardando" class="btn-spinner">
               <svg class="spinner-svg" viewBox="0 0 24 24"><circle class="spinner-circle" cx="12" cy="12" r="10"/></svg>

@@ -29,6 +29,7 @@
               <mat-form-field appearance="outline">
                 <mat-label>Nombre *</mat-label>
                 <input matInput formControlName="nombre" placeholder="Ej: Derecho de petición">
+                <mat-error>Obligatorio</mat-error>
               </mat-form-field>
               <mat-form-field appearance="outline">
                 <mat-label>Descripción</mat-label>
@@ -48,8 +49,10 @@
             <span matListItemTitle>{{ t.nombre }}</span>
             <span matListItemLine>{{ t.descripcion }}</span>
             <div matListItemMeta>
-              <button mat-icon-button (click)="editarTipo(t)"><mat-icon>edit</mat-icon></button>
-              <button mat-icon-button (click)="toggleTipo(t)"><mat-icon>{{ t.activo ? 'block' : 'check_circle' }}</mat-icon></button>
+              <button mat-icon-button (click)="editarTipo(t)" matTooltip="Editar"><mat-icon>edit</mat-icon></button>
+              <button mat-icon-button (click)="toggleTipo(t)" [matTooltip]="t.activo ? 'Inactivar' : 'Activar'">
+                <mat-icon>{{ t.activo ? 'block' : 'check_circle' }}</mat-icon>
+              </button>
             </div>
           </mat-list-item>
         </mat-list>
@@ -72,10 +75,13 @@
               <mat-form-field appearance="outline">
                 <mat-label>Nombre *</mat-label>
                 <input matInput formControlName="nombre" placeholder="Ej: 15 días hábiles">
+                <mat-error>Obligatorio</mat-error>
               </mat-form-field>
               <mat-form-field appearance="outline">
                 <mat-label>Días hábiles *</mat-label>
-                <input matInput formControlName="dias_habiles" type="number" min="1">
+                <input matInput formControlName="dias_habiles" type="number" min="1" inputmode="numeric">
+                <mat-error *ngIf="formPlazo.get('dias_habiles')?.hasError('required')">Obligatorio</mat-error>
+                <mat-error *ngIf="formPlazo.get('dias_habiles')?.hasError('min')">Debe ser mínimo 1 día hábil</mat-error>
               </mat-form-field>
               <div class="acciones campo-ancho">
                 <button mat-button type="button" (click)="mostrarFormPlazo = false">Cancelar</button>
@@ -91,8 +97,10 @@
             <span matListItemTitle>{{ p.nombre }}</span>
             <span matListItemLine>{{ p.dias_habiles }} días hábiles</span>
             <div matListItemMeta>
-              <button mat-icon-button (click)="editarPlazo(p)"><mat-icon>edit</mat-icon></button>
-              <button mat-icon-button (click)="togglePlazo(p)"><mat-icon>{{ p.activo ? 'block' : 'check_circle' }}</mat-icon></button>
+              <button mat-icon-button (click)="editarPlazo(p)" matTooltip="Editar"><mat-icon>edit</mat-icon></button>
+              <button mat-icon-button (click)="togglePlazo(p)" [matTooltip]="p.activo ? 'Inactivar' : 'Activar'">
+                <mat-icon>{{ p.activo ? 'block' : 'check_circle' }}</mat-icon>
+              </button>
             </div>
           </mat-list-item>
         </mat-list>
