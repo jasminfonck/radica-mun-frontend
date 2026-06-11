@@ -4,13 +4,15 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
-import { RecepcionService, RecepcionOut, ESTADOS_RECEPCION } from '../../../../core/services/recepcion.service';
+import { RecepcionService, RecepcionOut, AdjuntoOut, BitacoraEvento, ESTADOS_RECEPCION } from '../../../../core/services/recepcion.service';
 import {
-  RemitenteService, RemitenteResumen, MetadatosOut,
-  TipoRequerimientoResumen, PlazoRespuestaResumen,
+  RemitenteService, RemitenteResumen, RemitenteOut, MetadatosOut,
+  PlazoRespuestaResumen,
 } from '../../../../core/services/remitente.service';
-import { AdminService, DependenciaOut } from '../../../../core/services/admin.service';
+import { AdminService, DependenciaOut, TipoReqOut } from '../../../../core/services/admin.service';
 import { RadicadoService, RadicadoOut } from '../../../../core/services/radicado.service';
+import { GeoService, DepartamentoOut, MunicipioOut } from '../../../../core/services/geo.service';
+import { AuthService } from '../../../../core/auth/auth.service';
 
 @Component({
   selector: 'app-detalle-recepcion',
@@ -29,13 +31,22 @@ export class DetalleRecepcionComponent implements OnInit {
   remitentesEncontrados: RemitenteResumen[] = [];
   duplicadosAviso: RemitenteResumen[] = [];
   remitenteSeleccionado?: RemitenteResumen;
+  remitenteCompleto?: RemitenteOut;
   modoFormRemitente: 'ninguno' | 'nuevo' | 'edicion' = 'ninguno';
   guardandoRemitente = false;
   guardandoMetadatos = false;
   exito = false;
 
-  tiposRequerimiento: TipoRequerimientoResumen[] = [];
-  plazosRespuesta:    PlazoRespuestaResumen[]    = [];
+  tiposRequerimiento: TipoReqOut[] = [];
+  plazosRespuesta:    PlazoRespuestaResumen[] = [];
+
+  // ── Geo ────────────────────────────────────────────────────────────────────
+  departamentos: DepartamentoOut[] = [];
+  municipiosFiltrados: MunicipioOut[] = [];
+
+  // ── Bitácora ───────────────────────────────────────────────────────────────
+  bitacora: BitacoraEvento[] = [];
+  cargandoBitacora = false;
 
   // ── Radicado ───────────────────────────────────────────────────────────────
   radicado?: RadicadoOut | null;
@@ -63,6 +74,8 @@ export class DetalleRecepcionComponent implements OnInit {
     private remitenteService: RemitenteService,
     private adminService: AdminService,
     private radicadoService: RadicadoService,
+    private geoService: GeoService,
+    private auth: AuthService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -71,20 +84,22 @@ export class DetalleRecepcionComponent implements OnInit {
     this._buildForms();
 
     forkJoin({
-      recepcion: this.recepcionService.obtener(id).pipe(catchError(() => of(null))),
-      metadatos: this.remitenteService.obtenerMetadatos(id).pipe(catchError(() => of(null))),
-      tipos:     this.adminService.getTipos().pipe(catchError(() => of([]))),
-      plazos:    this.adminService.getPlazos().pipe(catchError(() => of([]))),
-      deps:      this.adminService.getDependencias(true).pipe(catchError(() => of([]))),
-      radicado:  this.radicadoService.obtenerPorRecepcion(id).pipe(catchError(() => of(null))),
-    }).subscribe(({ recepcion, metadatos, tipos, plazos, deps, radicado }) => {
+      recepcion:    this.recepcionService.obtener(id).pipe(catchError(() => of(null))),
+      metadatos:    this.remitenteService.obtenerMetadatos(id).pipe(catchError(() => of(null))),
+      tipos:        this.adminService.getTipos().pipe(catchError(() => of([]))),
+      plazos:       this.adminService.getPlazos().pipe(catchError(() => of([]))),
+      deps:         this.adminService.getDependencias(true).pipe(catchError(() => of([]))),
+      radicado:     this.radicadoService.obtenerPorRecepcion(id).pipe(catchError(() => of(null))),
+      departamentos: this.geoService.getDepartamentos().pipe(catchError(() => of([]))),
+    }).subscribe(({ recepcion, metadatos, tipos, plazos, deps, radicado, departamentos }) => {
       if (!recepcion) { this.router.navigate(['/recepcion']); return; }
       this.recepcion          = recepcion;
       this.metadatos          = metadatos;
-      this.tiposRequerimiento = tipos as any;
-      this.plazosRespuesta    = plazos as any;
+      this.tiposRequerimiento = tipos as TipoReqOut[];
+      this.plazosRespuesta    = plazos as PlazoRespuestaResumen[];
       this.dependencias       = deps;
       this.radicado           = radicado;
+      this.departamentos      = departamentos as DepartamentoOut[];
       this.cargando           = false;
       this.cdr.markForCheck();
     });
@@ -110,12 +125,58 @@ export class DetalleRecepcionComponent implements OnInit {
       apellidos:             [''],
       razon_social:          [''],
       nit:                   [''],
-      tipo_identificacion:   ['CC'],
-      numero_identificacion: [''],
+      digito_verificacion:   [''],
+      tipo_identificacion:   ['CC', Validators.required],
+      numero_identificacion: ['', [Validators.required, Validators.minLength(4), Validators.maxLength(20)]],
       email:                 ['', Validators.email],
       telefono:              ['', Validators.pattern(/^[0-9+\s()\-]{7,20}$/)],
       direccion:             [''],
+      departamento:          [''],
       municipio:             [''],
+    });
+
+    // Actualizar validadores de nombre/razón social según tipo persona
+    this.formRemitente.get('tipo_persona')!.valueChanges.subscribe((tipo: string) => {
+      const nombres     = this.formRemitente.get('nombres')!;
+      const razonSocial = this.formRemitente.get('razon_social')!;
+      const numId       = this.formRemitente.get('numero_identificacion')!;
+      const tipoId      = this.formRemitente.get('tipo_identificacion')!;
+      if (tipo === 'juridico') {
+        nombres.clearValidators();
+        razonSocial.setValidators(Validators.required);
+        tipoId.setValue('NIT', { emitEvent: false });
+        numId.setValidators([Validators.required, Validators.pattern(/^\d{7,15}$/)]);
+      } else {
+        nombres.setValidators(Validators.required);
+        razonSocial.clearValidators();
+        tipoId.setValue('CC', { emitEvent: false });
+        numId.setValidators([Validators.required, Validators.minLength(4), Validators.maxLength(20)]);
+      }
+      nombres.updateValueAndValidity({ emitEvent: false });
+      razonSocial.updateValueAndValidity({ emitEvent: false });
+      numId.updateValueAndValidity({ emitEvent: false });
+      this.cdr.markForCheck();
+    });
+
+    // Ajustar validador según tipo identificación
+    this.formRemitente.get('tipo_identificacion')!.valueChanges.subscribe((tipo: string) => {
+      const numId  = this.formRemitente.get('numero_identificacion')!;
+      const dvCtrl = this.formRemitente.get('digito_verificacion')!;
+      if (tipo === 'CC') {
+        numId.setValidators([Validators.required, Validators.pattern(/^\d{5,10}$/)]);
+        dvCtrl.clearValidators(); dvCtrl.setValue('', { emitEvent: false });
+      } else if (tipo === 'NIT') {
+        numId.setValidators([Validators.required, Validators.pattern(/^\d{7,15}$/)]);
+        dvCtrl.setValidators([Validators.required, Validators.pattern(/^\d$/)]);
+      } else if (tipo === 'CE') {
+        numId.setValidators([Validators.required, Validators.pattern(/^[A-Za-z0-9]{4,15}$/)]);
+        dvCtrl.clearValidators(); dvCtrl.setValue('', { emitEvent: false });
+      } else {
+        numId.setValidators([Validators.required, Validators.minLength(3), Validators.maxLength(20)]);
+        dvCtrl.clearValidators(); dvCtrl.setValue('', { emitEvent: false });
+      }
+      numId.updateValueAndValidity({ emitEvent: false });
+      dvCtrl.updateValueAndValidity({ emitEvent: false });
     });
 
     this.formRadicado = this.fb.group({
@@ -135,6 +196,18 @@ export class DetalleRecepcionComponent implements OnInit {
     });
 
     this.formMetadatos.disable();
+
+    // Auto-fill plazo al seleccionar tipo de requerimiento
+    this.formMetadatos.get('tipo_requerimiento_id')!.valueChanges.subscribe((id: number | null) => {
+      const plazoCtrl = this.formMetadatos.get('plazo_respuesta_id')!;
+      const tipo = this.tiposRequerimiento.find(t => t.id === id);
+      if (tipo?.plazo_respuesta_id) {
+        plazoCtrl.setValue(tipo.plazo_respuesta_id, { emitEvent: false });
+        plazoCtrl.disable({ emitEvent: false });
+      } else {
+        plazoCtrl.enable({ emitEvent: false });
+      }
+    });
   }
 
   // ── Helpers teclado ────────────────────────────────────────────────────────
@@ -148,7 +221,7 @@ export class DetalleRecepcionComponent implements OnInit {
   }
 
   // ── Estado ─────────────────────────────────────────────────────────────────
-  readonly ESTADOS_REQUIEREN_OBS = new Set(['incompleto', 'incompetente']);
+  readonly ESTADOS_REQUIEREN_OBS = new Set(['incompleto', 'no_competente']);
   estadoPendiente: string | null = null;
   obsEstadoPendiente = '';
 
@@ -185,15 +258,38 @@ export class DetalleRecepcionComponent implements OnInit {
   }
 
   get esIncompetente(): boolean {
-    return this.recepcion?.estado === 'incompetente';
+    return this.recepcion?.estado === 'no_competente';
+  }
+
+  get esCompetente(): boolean {
+    return this.recepcion?.estado === 'competente';
+  }
+
+  get esCanaleEmail(): boolean {
+    return this.recepcion?.canal?.tipo === 'email';
   }
 
   // ── Adjuntos ───────────────────────────────────────────────────────────────
-  eliminarAdjunto(adjuntoId: number): void {
+  descargarAdjuntoDirecto(adj: AdjuntoOut): void {
     if (!this.recepcion) return;
-    this.recepcionService.eliminarAdjunto(this.recepcion.id, adjuntoId).subscribe(() => {
-      this.recepcion!.adjuntos = this.recepcion!.adjuntos.filter(a => a.id !== adjuntoId);
-      this.cdr.markForCheck();
+    this.recepcionService.descargarAdjunto(this.recepcion.id, adj.id).subscribe(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = adj.nombre_original;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  verAdjunto(adj: AdjuntoOut): void {
+    if (!this.recepcion) return;
+    this.recepcionService.descargarAdjunto(this.recepcion.id, adj.id).subscribe(blob => {
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 30_000);
     });
   }
 
@@ -214,17 +310,98 @@ export class DetalleRecepcionComponent implements OnInit {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
+  // ── Geo ────────────────────────────────────────────────────────────────────
+  onDepartamentoChange(nombre: string): void {
+    this.municipiosFiltrados = [];
+    this.formRemitente.get('municipio')?.setValue('');
+    if (!nombre) return;
+    this.geoService.getMunicipiosPorNombreDep(nombre).subscribe(ms => {
+      this.municipiosFiltrados = ms;
+      this.cdr.markForCheck();
+    });
+  }
+
+  cargarMunicipiosDeDepartamento(nombre: string): void {
+    if (!nombre) return;
+    this.geoService.getMunicipiosPorNombreDep(nombre).subscribe(ms => {
+      this.municipiosFiltrados = ms;
+      this.cdr.markForCheck();
+    });
+  }
+
+  // ── Bitácora ───────────────────────────────────────────────────────────────
+  cargarBitacora(): void {
+    if (!this.recepcion || this.bitacora.length > 0) return;
+    this.cargandoBitacora = true;
+    this.recepcionService.getBitacora(this.recepcion.id).subscribe({
+      next: eventos => {
+        this.bitacora = eventos;
+        this.cargandoBitacora = false;
+        this.cdr.markForCheck();
+      },
+      error: () => { this.cargandoBitacora = false; this.cdr.markForCheck(); }
+    });
+  }
+
+  private readonly _etiquetas: Record<string, string> = {
+    crear_recepcion:    'Recepción creada',
+    cambio_estado_recepcion: 'Cambio de estado',
+    subir_adjunto:      'Adjunto subido',
+    eliminar_adjunto:   'Adjunto eliminado',
+    registrar_metadatos: 'Metadatos registrados',
+    editar_metadatos:   'Metadatos actualizados',
+    generar_radicado:   'Radicado generado',
+  };
+
+  private readonly _iconos: Record<string, string> = {
+    crear_recepcion:    'inbox',
+    cambio_estado_recepcion: 'swap_horiz',
+    subir_adjunto:      'attach_file',
+    eliminar_adjunto:   'delete',
+    registrar_metadatos: 'description',
+    editar_metadatos:   'edit',
+    generar_radicado:   'assignment_turned_in',
+  };
+
+  private readonly _clases: Record<string, string> = {
+    crear_recepcion:    'acc-verde',
+    cambio_estado_recepcion: 'acc-azul',
+    subir_adjunto:      'acc-naranja',
+    eliminar_adjunto:   'acc-rojo',
+    registrar_metadatos: 'acc-teal',
+    editar_metadatos:   'acc-teal',
+    generar_radicado:   'acc-morado',
+  };
+
+  etiquetaAccion(accion: string): string {
+    return this._etiquetas[accion] ?? accion;
+  }
+
+  iconoAccion(accion: string): string {
+    return this._iconos[accion] ?? 'circle';
+  }
+
+  claseAccion(accion: string): string {
+    return this._clases[accion] ?? 'acc-gris';
+  }
+
   // ── Remitente ──────────────────────────────────────────────────────────────
   seleccionarRemitente(r: RemitenteResumen): void {
     this.remitenteSeleccionado = r;
+    this.remitenteCompleto = undefined;
     this.remitentesEncontrados = [];
     this.busquedaCtrl.setValue(r.nombre_completo, { emitEvent: false });
     this.modoFormRemitente = 'ninguno';
     this.formMetadatos.enable();
+    this.remitenteService.obtener(r.id).subscribe(full => {
+      this.remitenteCompleto = full;
+      this.cdr.markForCheck();
+    });
   }
 
   limpiarRemitente(): void {
     this.remitenteSeleccionado = undefined;
+    this.remitenteCompleto = undefined;
     this.busquedaCtrl.setValue('', { emitEvent: false });
     this.remitentesEncontrados = [];
     this.formMetadatos.disable();
@@ -233,9 +410,14 @@ export class DetalleRecepcionComponent implements OnInit {
   iniciarNuevoRemitente(): void {
     this.modoFormRemitente = 'nuevo';
     this.remitenteSeleccionado = undefined;
+    this.remitenteCompleto = undefined;
     this.duplicadosAviso = [];
+    this.municipiosFiltrados = [];
     this.formMetadatos.disable();
     this.formRemitente.reset({ tipo_persona: 'natural', tipo_identificacion: 'CC', numero_anexos: 0 });
+    if (this.recepcion?.email_remitente) {
+      this.formRemitente.patchValue({ email: this.recepcion.email_remitente });
+    }
   }
 
   verificarDuplicados(): void {
@@ -250,18 +432,36 @@ export class DetalleRecepcionComponent implements OnInit {
   guardarRemitente(): void {
     this.formRemitente.markAllAsTouched();
     if (this.formRemitente.invalid) return;
+    if (this.duplicadosAviso.length > 0) return;
     this.guardandoRemitente = true;
     this.remitenteService.crear(this.formRemitente.value).subscribe({
       next: r => {
         this.remitenteSeleccionado = r;
+        this.remitenteCompleto = r;
         this.modoFormRemitente = 'ninguno';
         this.guardandoRemitente = false;
         this.duplicadosAviso = [];
         this.formMetadatos.enable();
         this.cdr.markForCheck();
       },
-      error: () => { this.guardandoRemitente = false; this.cdr.markForCheck(); }
+      error: (err) => {
+        this.guardandoRemitente = false;
+        if (err.status === 409) {
+          this.verificarDuplicados();
+        }
+        this.cdr.markForCheck();
+      }
     });
+  }
+
+  puedeEditarRemitente(): boolean {
+    return this.auth.tieneRol('administrador', 'operador');
+  }
+
+  irAEditarRemitente(): void {
+    if (this.remitenteSeleccionado) {
+      this.router.navigate(['/remitentes', this.remitenteSeleccionado.id, 'editar']);
+    }
   }
 
   guardarMetadatos(): void {
@@ -269,7 +469,7 @@ export class DetalleRecepcionComponent implements OnInit {
     if (this.formMetadatos.invalid || !this.remitenteSeleccionado || !this.recepcion) return;
     this.guardandoMetadatos = true;
 
-    const raw = this.formMetadatos.value;
+    const raw = this.formMetadatos.getRawValue();
     const payload = {
       remitente_id:          this.remitenteSeleccionado.id,
       asunto:                raw.asunto,
@@ -341,8 +541,17 @@ export class DetalleRecepcionComponent implements OnInit {
 
   editarMetadatos(): void {
     if (!this.metadatos) return;
-    this.remitenteSeleccionado = this.metadatos.remitente;
-    this.busquedaCtrl.setValue(this.metadatos.remitente.nombre_completo, { emitEvent: false });
+    const rem = this.metadatos.remitente as any;
+    this.remitenteSeleccionado = rem;
+    this.remitenteCompleto = undefined;
+    this.busquedaCtrl.setValue(rem.nombre_completo, { emitEvent: false });
+    this.remitenteService.obtener(rem.id).subscribe(full => {
+      this.remitenteCompleto = full;
+      this.cdr.markForCheck();
+    });
+    if (rem.departamento) {
+      this.cargarMunicipiosDeDepartamento(rem.departamento);
+    }
     this.formMetadatos.enable();
     this.formMetadatos.patchValue({
       asunto:                this.metadatos.asunto,

@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
@@ -14,6 +14,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
   form: FormGroup;
   cargando = false;
   error = '';
+  tipoError: 'credenciales' | 'inactivo' | 'desplazado' | null = null;
   ocultarPassword = true;
   nombreEntidad = 'Municipio de Ejemplo';
   anio = new Date().getFullYear();
@@ -24,6 +25,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
     private auth: AuthService,
     private router: Router,
     private adminService: AdminService,
+    private cdr: ChangeDetectorRef,
   ) {
     this.form = this.fb.group({
       email:    ['', Validators.required],
@@ -32,6 +34,10 @@ export class LoginComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
+    if (this.auth.consumirDesplazado()) {
+      this.tipoError = 'desplazado';
+    }
+
     this.adminService.getEntidad().subscribe({
       next: entidad => {
         if (entidad.nombre) this.nombreEntidad = entidad.nombre;
@@ -64,10 +70,13 @@ export class LoginComponent implements OnInit, AfterViewInit {
     this.error = '';
 
     this.auth.login(this.form.value).subscribe({
-      next: () => this.router.navigate(['/inicio']),
+      next: () => { this.tipoError = null; this.router.navigate(['/inicio']); },
       error: (err) => {
-        this.error = err.error?.detail || 'No se pudo iniciar sesión. Verifique sus datos.';
+        const detail: string = err.error?.detail || '';
+        this.tipoError = detail.toLowerCase().includes('inactivo') ? 'inactivo' : 'credenciales';
+        this.error = detail || 'No se pudo iniciar sesión. Verifique sus datos.';
         this.cargando = false;
+        this.cdr.detectChanges();
       }
     });
   }

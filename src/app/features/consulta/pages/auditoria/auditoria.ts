@@ -14,9 +14,29 @@ export class AuditoriaComponent implements OnInit {
   filtros!: FormGroup;
 
   readonly ACCIONES = [
-    { value: '',                label: 'Todas' },
-    { value: 'crear_radicado',  label: 'Crear radicado' },
-    { value: 'anular_radicado', label: 'Anular radicado' },
+    { value: '',                           label: 'Todas' },
+    // Radicado
+    { value: 'crear_radicado',             label: 'Crear radicado' },
+    { value: 'anular_radicado',            label: 'Anular radicado' },
+    // Recepción
+    { value: 'cambio_estado_recepcion',    label: 'Cambio de estado (recepción)' },
+    { value: 'formulario_publico',         label: 'Formulario web ciudadano' },
+    { value: 'envio_acuse_email',          label: 'Acuse por email' },
+    // Remitente y metadatos
+    { value: 'crear_remitente',            label: 'Crear remitente' },
+    { value: 'actualizar_remitente',       label: 'Actualizar remitente' },
+    { value: 'crear_metadatos',            label: 'Crear metadatos' },
+    { value: 'actualizar_metadatos',       label: 'Actualizar metadatos' },
+    // Administración
+    { value: 'crear_usuario',              label: 'Crear usuario' },
+    { value: 'actualizar_usuario',         label: 'Actualizar usuario' },
+    { value: 'actualizar_entidad',         label: 'Actualizar entidad' },
+    { value: 'crear_dependencia',          label: 'Crear dependencia' },
+    { value: 'actualizar_dependencia',     label: 'Actualizar dependencia' },
+    { value: 'actualizar_canal',           label: 'Actualizar canal' },
+    { value: 'crear_tipo_requerimiento',   label: 'Crear tipo requerimiento' },
+    { value: 'actualizar_tipo_requerimiento', label: 'Actualizar tipo requerimiento' },
+    { value: 'actualizar_configuracion',   label: 'Actualizar configuración' },
   ];
 
   columnas = ['fecha', 'usuario', 'accion', 'entidad', 'descripcion', 'ip'];

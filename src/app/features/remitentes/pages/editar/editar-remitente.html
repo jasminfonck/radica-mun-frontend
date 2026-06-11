@@ -1,0 +1,144 @@
+<div class="pagina" *ngIf="!cargando && remitente">
+
+  <div class="pagina-header">
+    <div>
+      <h1>Editar remitente</h1>
+      <p>{{ remitente.nombre_completo }}</p>
+    </div>
+    <button mat-stroked-button (click)="volver()">
+      <mat-icon>arrow_back</mat-icon> Volver
+    </button>
+  </div>
+
+  <!-- Datos de identidad (sólo lectura) -->
+  <mat-card class="form-card datos-fijos">
+    <mat-card-title>
+      <mat-icon>lock</mat-icon>
+      Datos de identidad — no modificables
+    </mat-card-title>
+    <mat-card-content>
+      <div class="campos-fijos-grid">
+        <div class="campo-fijo">
+          <span class="campo-etiqueta">Tipo de persona</span>
+          <span>{{ remitente.tipo_persona === 'juridico' ? 'Persona jurídica' : 'Persona natural' }}</span>
+        </div>
+        <div class="campo-fijo">
+          <span class="campo-etiqueta">Tipo de identificación</span>
+          <span>{{ remitente.tipo_identificacion || '—' }}</span>
+        </div>
+        <div class="campo-fijo">
+          <span class="campo-etiqueta">Número de identificación</span>
+          <span class="num-id">{{ remitente.numero_identificacion || '—' }}</span>
+        </div>
+      </div>
+      <p class="aviso-fijos">
+        <mat-icon>info</mat-icon>
+        Estos datos no pueden modificarse para garantizar la integridad de la trazabilidad documental.
+        Si hay un error en la identificación, cree un nuevo remitente.
+      </p>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Formulario de edición -->
+  <mat-card class="form-card">
+    <mat-card-title>Datos de contacto y ubicación</mat-card-title>
+    <mat-card-content>
+      <form [formGroup]="form">
+
+        <!-- Persona natural -->
+        <ng-container *ngIf="remitente.tipo_persona === 'natural'">
+          <div class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombres</mat-label>
+              <input matInput formControlName="nombres" (keypress)="soloLetras($event)">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Apellidos</mat-label>
+              <input matInput formControlName="apellidos" (keypress)="soloLetras($event)">
+            </mat-form-field>
+          </div>
+        </ng-container>
+
+        <!-- Persona jurídica -->
+        <ng-container *ngIf="remitente.tipo_persona === 'juridico'">
+          <div class="form-grid">
+            <mat-form-field appearance="outline" class="campo-ancho">
+              <mat-label>Razón social</mat-label>
+              <input matInput formControlName="razon_social">
+            </mat-form-field>
+            <div class="nit-row">
+              <mat-form-field appearance="outline" class="nit-numero">
+                <mat-label>NIT</mat-label>
+                <input matInput formControlName="nit" inputmode="numeric" maxlength="15"
+                       (keypress)="soloNumeros($event)">
+              </mat-form-field>
+              <span class="nit-guion">–</span>
+              <mat-form-field appearance="outline" class="nit-dv">
+                <mat-label>DV</mat-label>
+                <input matInput formControlName="digito_verificacion" inputmode="numeric" maxlength="1"
+                       (keypress)="soloNumeros($event)">
+              </mat-form-field>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Contacto y ubicación -->
+        <div class="form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Email</mat-label>
+            <input matInput formControlName="email" type="email">
+            <mat-error *ngIf="form.get('email')?.hasError('email')">Ingrese un email válido</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Teléfono</mat-label>
+            <input matInput formControlName="telefono" type="tel">
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="campo-ancho">
+            <mat-label>Dirección</mat-label>
+            <input matInput formControlName="direccion">
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Departamento</mat-label>
+            <mat-select formControlName="departamento"
+                        (selectionChange)="onDepartamentoChange($event.value)">
+              <mat-option value="">— Sin departamento —</mat-option>
+              <mat-option *ngFor="let d of departamentos" [value]="d.nombre">{{ d.nombre }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Municipio</mat-label>
+            <mat-select formControlName="municipio">
+              <mat-option value="">— Sin municipio —</mat-option>
+              <mat-option *ngFor="let m of municipiosFiltrados" [value]="m.nombre">{{ m.nombre }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <!-- Estado -->
+        <div class="campo-activo">
+          <mat-checkbox formControlName="activo">Remitente activo</mat-checkbox>
+          <span class="activo-hint" *ngIf="!form.get('activo')?.value">
+            Un remitente inactivo no aparecerá en las búsquedas de nuevas recepciones
+          </span>
+        </div>
+
+      </form>
+
+      <div class="acciones">
+        <button mat-button (click)="volver()">Cancelar</button>
+        <button mat-flat-button color="primary"
+                [disabled]="guardando || form.invalid"
+                (click)="guardar()">
+          <mat-icon>save</mat-icon>
+          {{ guardando ? 'Guardando…' : 'Guardar cambios' }}
+        </button>
+      </div>
+
+    </mat-card-content>
+  </mat-card>
+
+</div>
+
+<div *ngIf="cargando" class="cargando">
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+</div>

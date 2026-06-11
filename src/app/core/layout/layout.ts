@@ -29,11 +29,12 @@ export class LayoutComponent implements OnInit {
   nombreEntidad  = '';
 
   menu: MenuItem[] = [
-    { label: 'Inicio',          icon: 'home',       ruta: '/inicio',    roles: ['administrador','operador','consultor'], requiereConfig: true  },
-    { label: 'Recepción',       icon: 'inbox',       ruta: '/recepcion', roles: ['administrador','operador'],            requiereConfig: true  },
-    { label: 'Radicación',      icon: 'assignment',  ruta: '/radicado',  roles: ['administrador','operador'],            requiereConfig: true  },
-    { label: 'Consulta',        icon: 'search',      ruta: '/consulta',  roles: ['administrador','operador','consultor'],requiereConfig: true  },
-    { label: 'Administración',  icon: 'settings',    ruta: '/admin',     roles: ['administrador'],                      requiereConfig: false },
+    { label: 'Inicio',          icon: 'home',        ruta: '/inicio',      roles: ['administrador','operador','consultor'], requiereConfig: true  },
+    { label: 'Recepción',       icon: 'inbox',        ruta: '/recepcion',   roles: ['administrador','operador'],            requiereConfig: true  },
+    { label: 'Radicación',      icon: 'assignment',   ruta: '/radicado',    roles: ['administrador','operador'],            requiereConfig: true  },
+    { label: 'Remitentes',      icon: 'people',       ruta: '/remitentes',  roles: ['administrador','operador'],            requiereConfig: true  },
+    { label: 'Consulta',        icon: 'search',       ruta: '/consulta',    roles: ['administrador','operador','consultor'],requiereConfig: true  },
+    { label: 'Administración',  icon: 'settings',     ruta: '/admin',       roles: ['administrador'],                      requiereConfig: false },
   ];
 
   constructor(

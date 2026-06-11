@@ -1,7 +1,9 @@
 <div class="pagina-publica">
 
+  <a href="#formulario-principal" class="skip-link">Ir al contenido principal</a>
+
   <!-- Header -->
-  <header class="header-publico">
+  <header class="header-publico" role="banner">
     <div class="header-inner">
       <mat-icon class="header-icon">account_balance</mat-icon>
       <div>
@@ -14,10 +16,11 @@
   </header>
 
   <!-- Cargando -->
-  <mat-progress-bar *ngIf="cargando" mode="indeterminate" class="barra-carga"></mat-progress-bar>
+  <mat-progress-bar *ngIf="cargando" mode="indeterminate" class="barra-carga"
+                    aria-live="polite" role="status" aria-label="Cargando información"></mat-progress-bar>
 
   <!-- Error de carga -->
-  <div *ngIf="errorCarga" class="contenedor">
+  <div *ngIf="errorCarga" class="contenedor" role="alert">
     <div class="alerta-error">
       <mat-icon>error_outline</mat-icon>
       <span>{{ errorCarga }}</span>
@@ -69,7 +72,8 @@
   </div>
 
   <!-- Formulario -->
-  <div *ngIf="!cargando && !errorCarga && info?.canal_activo && !confirmacion" class="contenedor">
+  <div *ngIf="!cargando && !errorCarga && info?.canal_activo && !confirmacion"
+       class="contenedor" role="main" id="formulario-principal">
 
     <div class="intro">
       <h1>Radicación de comunicaciones</h1>
@@ -91,7 +95,7 @@
           <!-- Tipo de persona -->
           <div class="radio-group">
             <label class="radio-label">Tipo de persona</label>
-            <mat-radio-group formControlName="tipo_persona" class="radio-opciones">
+            <mat-radio-group formControlName="tipo_persona" class="radio-opciones" aria-label="Tipo de persona">
               <mat-radio-button value="natural">Persona natural</mat-radio-button>
               <mat-radio-button value="juridico">Persona jurídica</mat-radio-button>
             </mat-radio-group>
@@ -124,16 +128,68 @@
             <mat-form-field appearance="outline">
               <mat-label>Tipo de identificación</mat-label>
               <mat-select formControlName="tipo_identificacion">
-                <mat-option *ngFor="let t of tiposIdentificacion" [value]="t.value">
+                <mat-option *ngFor="let t of tiposIdentificacionActuales" [value]="t.value">
                   {{ t.label }}
                 </mat-option>
               </mat-select>
             </mat-form-field>
-            <mat-form-field appearance="outline">
+            <!-- CC / CE / PP: campo único -->
+            <mat-form-field appearance="outline"
+                            *ngIf="form.get('tipo_identificacion')?.value !== 'NIT'">
               <mat-label>Número de identificación *</mat-label>
-              <input matInput formControlName="numero_identificacion" inputmode="numeric">
-              <mat-error>El número de identificación es obligatorio</mat-error>
+              <input matInput formControlName="numero_identificacion"
+                     [attr.inputmode]="form.get('tipo_identificacion')?.value === 'CC' ? 'numeric' : 'text'"
+                     [maxlength]="maxlengthNumId"
+                     autocomplete="off"
+                     (keypress)="restriccionNumId($event)">
+              <mat-hint align="end">
+                {{ form.get('numero_identificacion')?.value?.length || 0 }}/{{ maxlengthNumId }}
+              </mat-hint>
+              <mat-error *ngIf="form.get('numero_identificacion')?.hasError('required')">
+                El número de identificación es obligatorio
+              </mat-error>
+              <mat-error *ngIf="form.get('numero_identificacion')?.hasError('pattern')">
+                <ng-container [ngSwitch]="form.get('tipo_identificacion')?.value">
+                  <span *ngSwitchCase="'CC'">La cédula debe tener entre 5 y 10 dígitos</span>
+                  <span *ngSwitchCase="'CE'">4–15 caracteres alfanuméricos</span>
+                  <span *ngSwitchCase="'PP'">5–20 caracteres alfanuméricos</span>
+                  <span *ngSwitchDefault>Formato inválido</span>
+                </ng-container>
+              </mat-error>
             </mat-form-field>
+
+            <!-- NIT: campo número + campo dígito verificación separados -->
+            <div class="nit-row" *ngIf="form.get('tipo_identificacion')?.value === 'NIT'">
+              <mat-form-field appearance="outline" class="nit-numero">
+                <mat-label>NIT *</mat-label>
+                <input matInput formControlName="numero_identificacion"
+                       inputmode="numeric" maxlength="15" autocomplete="off"
+                       (keypress)="soloDigitos($event)">
+                <mat-hint align="end">
+                  {{ form.get('numero_identificacion')?.value?.length || 0 }}/15
+                </mat-hint>
+                <mat-error *ngIf="form.get('numero_identificacion')?.hasError('required')">
+                  Obligatorio
+                </mat-error>
+                <mat-error *ngIf="form.get('numero_identificacion')?.hasError('pattern')">
+                  7–15 dígitos
+                </mat-error>
+              </mat-form-field>
+              <span class="nit-guion">–</span>
+              <mat-form-field appearance="outline" class="nit-dv">
+                <mat-label>DV *</mat-label>
+                <input matInput formControlName="digito_verificacion"
+                       inputmode="numeric" maxlength="1" autocomplete="off"
+                       (keypress)="soloDigitos($event)"
+                       placeholder="0">
+                <mat-error *ngIf="form.get('digito_verificacion')?.hasError('required')">
+                  Requerido
+                </mat-error>
+                <mat-error *ngIf="form.get('digito_verificacion')?.hasError('pattern')">
+                  1 dígito
+                </mat-error>
+              </mat-form-field>
+            </div>
 
             <!-- Contacto -->
             <mat-form-field appearance="outline">
@@ -147,7 +203,12 @@
             <mat-form-field appearance="outline">
               <mat-label>Teléfono de contacto</mat-label>
               <mat-icon matPrefix>phone</mat-icon>
-              <input matInput formControlName="telefono" inputmode="tel" autocomplete="tel">
+              <input matInput formControlName="telefono" inputmode="tel" autocomplete="tel"
+                     maxlength="10" (keypress)="soloDigitosTel($event)">
+              <mat-hint>Solo dígitos, máximo 10</mat-hint>
+              <mat-error *ngIf="form.get('telefono')?.hasError('pattern')">
+                El teléfono debe tener entre 7 y 10 dígitos
+              </mat-error>
             </mat-form-field>
           </div>
 
@@ -165,8 +226,9 @@
             <mat-form-field appearance="outline" class="campo-ancho">
               <mat-label>Asunto *</mat-label>
               <input matInput formControlName="asunto" maxlength="300"
-                     placeholder="Describa brevemente el motivo de su comunicación">
-              <mat-hint align="end">{{ form.get('asunto')?.value?.length || 0 }}/300</mat-hint>
+                     placeholder="Describa brevemente el motivo de su comunicación"
+                     aria-describedby="asunto-contador">
+              <mat-hint align="end" id="asunto-contador">{{ form.get('asunto')?.value?.length || 0 }}/300</mat-hint>
               <mat-error>El asunto es obligatorio</mat-error>
             </mat-form-field>
 
@@ -200,11 +262,15 @@
           <div class="politica-texto" *ngIf="info?.politica_privacidad_texto">
             {{ info!.politica_privacidad_texto }}
           </div>
-          <mat-checkbox formControlName="acepta_politica" color="primary">
+          <mat-checkbox formControlName="acepta_politica" color="primary"
+                        aria-required="true"
+                        [attr.aria-describedby]="form.get('acepta_politica')?.touched && form.get('acepta_politica')?.invalid ? 'error-politica' : null">
             Acepto el tratamiento de mis datos personales conforme a la
             Ley 1581 de 2012 y la política de privacidad de la entidad *
           </mat-checkbox>
-          <div class="error-check" *ngIf="form.get('acepta_politica')?.touched && form.get('acepta_politica')?.invalid">
+          <div id="error-politica" role="alert" aria-live="assertive" class="error-check"
+               *ngIf="form.get('acepta_politica')?.touched && form.get('acepta_politica')?.invalid">
+            <mat-icon aria-hidden="true" class="error-check__icon">error_outline</mat-icon>
             Debe aceptar la política de privacidad para continuar
           </div>
         </mat-card-content>
@@ -218,35 +284,50 @@
         </mat-card-title>
         <mat-card-content>
 
-          <p class="adjuntos-ayuda">
+          <p class="adjuntos-ayuda" id="adjuntos-ayuda">
             Puede adjuntar hasta {{ MAX_ADJUNTOS }} archivos (máx. {{ MAX_MB_ADJUNTO }} MB cada uno).
+            Formatos aceptados: PDF, Word, Excel, imágenes, ZIP.
           </p>
 
-          <ul class="adjuntos-lista" *ngIf="archivosAdjuntos.length > 0">
+          <ul class="adjuntos-lista" *ngIf="archivosAdjuntos.length > 0"
+              aria-label="Archivos adjuntos seleccionados">
             <li *ngFor="let f of archivosAdjuntos; let i = index" class="adjunto-item">
-              <mat-icon class="adjunto-icon">description</mat-icon>
+              <mat-icon class="adjunto-icon" aria-hidden="true">description</mat-icon>
               <span class="adjunto-nombre">{{ f.name }}</span>
               <span class="adjunto-tamano">{{ formatBytes(f.size) }}</span>
               <button mat-icon-button type="button" (click)="quitarArchivo(i)"
-                      aria-label="Quitar archivo" class="adjunto-quitar">
-                <mat-icon>close</mat-icon>
+                      [attr.aria-label]="'Quitar archivo ' + f.name" class="adjunto-quitar">
+                <mat-icon aria-hidden="true">close</mat-icon>
               </button>
             </li>
           </ul>
 
-          <label class="btn-adjuntar" [class.btn-adjuntar--disabled]="archivosAdjuntos.length >= MAX_ADJUNTOS">
-            <mat-icon>add</mat-icon>
-            Seleccionar archivo
-            <input type="file" multiple (change)="agregarArchivos($event)"
-                   [disabled]="archivosAdjuntos.length >= MAX_ADJUNTOS"
-                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.xls,.xlsx,.txt,.zip">
-          </label>
+          <!-- Input real oculto de forma accesible (no display:none) -->
+          <input #fileInputRef type="file" multiple
+                 class="visually-hidden"
+                 tabindex="-1"
+                 aria-hidden="true"
+                 (change)="agregarArchivos($event)"
+                 [disabled]="archivosAdjuntos.length >= MAX_ADJUNTOS"
+                 accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.xls,.xlsx,.txt,.zip">
+
+          <!-- Botón semántico nativo — Tab + Enter/Space lo activan -->
+          <button type="button" class="btn-adjuntar"
+                  (click)="fileInputRef.click()"
+                  [disabled]="archivosAdjuntos.length >= MAX_ADJUNTOS"
+                  aria-describedby="adjuntos-ayuda"
+                  [attr.aria-label]="archivosAdjuntos.length >= MAX_ADJUNTOS
+                    ? 'Límite de ' + MAX_ADJUNTOS + ' archivos alcanzado'
+                    : 'Adjuntar archivo (' + archivosAdjuntos.length + ' de ' + MAX_ADJUNTOS + ' seleccionados)'">
+            <mat-icon aria-hidden="true">attach_file</mat-icon>
+            <span>Seleccionar archivo</span>
+          </button>
 
         </mat-card-content>
       </mat-card>
 
       <!-- Error de envío -->
-      <div *ngIf="errorEnvio" class="alerta-error">
+      <div *ngIf="errorEnvio" class="alerta-error" role="alert" aria-live="assertive">
         <mat-icon>error_outline</mat-icon>
         <span>{{ errorEnvio }}</span>
       </div>
@@ -254,7 +335,9 @@
       <!-- Botón enviar -->
       <div class="acciones-form">
         <button mat-flat-button color="primary" type="submit"
-                [disabled]="form.invalid || enviando" class="btn-enviar">
+                [disabled]="form.invalid || enviando"
+                [attr.aria-busy]="enviando"
+                class="btn-enviar">
           <span *ngIf="!enviando">
             <mat-icon>send</mat-icon> Enviar solicitud
           </span>

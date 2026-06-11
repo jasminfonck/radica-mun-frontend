@@ -6,8 +6,9 @@ import { LoginRequest, TokenResponse, UsuarioToken } from './auth.models';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly TOKEN_KEY = 'radica_token';
-  private readonly USER_KEY  = 'radica_usuario';
+  private readonly TOKEN_KEY      = 'radica_token';
+  private readonly USER_KEY       = 'radica_usuario';
+  private readonly DESPLAZADO_KEY = 'radica_sesion_desplazada';
 
   private usuarioSubject = new BehaviorSubject<UsuarioToken | null>(this.getUsuarioStorage());
   usuario$ = this.usuarioSubject.asObservable();
@@ -24,11 +25,20 @@ export class AuthService {
     );
   }
 
-  logout(): void {
+  logout(desplazado = false): void {
+    if (desplazado) {
+      localStorage.setItem(this.DESPLAZADO_KEY, '1');
+    }
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
     this.usuarioSubject.next(null);
     this.router.navigate(['/login']);
+  }
+
+  consumirDesplazado(): boolean {
+    const fue = localStorage.getItem(this.DESPLAZADO_KEY) === '1';
+    localStorage.removeItem(this.DESPLAZADO_KEY);
+    return fue;
   }
 
   getToken(): string | null {

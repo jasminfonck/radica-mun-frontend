@@ -2,8 +2,44 @@
 
   <div class="pagina-header">
     <div>
-      <h1>Estadísticas del sistema</h1>
-      <p>Resumen de actividad y métricas del sistema de radicación</p>
+      <h1>Consulta y reportes</h1>
+      <p>Búsqueda de radicados, reportes operativos, estadísticas y trazabilidad</p>
+    </div>
+  </div>
+
+  <!-- Tarjetas de navegación -->
+  <div class="nav-cards">
+
+    <a routerLink="busqueda" class="nav-card">
+      <div class="nav-card__icono nav-card__icono--busqueda">
+        <mat-icon>manage_search</mat-icon>
+      </div>
+      <div class="nav-card__texto">
+        <strong>Búsqueda avanzada</strong>
+        <span>Localice radicados por número, remitente, asunto, canal o estado</span>
+      </div>
+      <mat-icon class="nav-card__arrow">chevron_right</mat-icon>
+    </a>
+
+    <a routerLink="reportes" class="nav-card">
+      <div class="nav-card__icono nav-card__icono--reportes">
+        <mat-icon>summarize</mat-icon>
+      </div>
+      <div class="nav-card__texto">
+        <strong>Reportes operativos</strong>
+        <span>Genere listados por periodo o dependencia y expórtelos en CSV</span>
+      </div>
+      <mat-icon class="nav-card__arrow">chevron_right</mat-icon>
+    </a>
+
+  </div>
+
+  <mat-divider style="margin: 8px 0 24px"></mat-divider>
+
+  <div class="pagina-header" style="padding-top:0">
+    <div>
+      <h2 style="margin:0; font-size:17px; color:var(--texto-principal)">Estadísticas del sistema</h2>
+      <p style="margin:4px 0 0; font-size:13px; color:var(--texto-suave)">Métricas globales acumuladas</p>
     </div>
   </div>
 

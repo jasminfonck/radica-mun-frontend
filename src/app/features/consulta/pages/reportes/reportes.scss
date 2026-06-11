@@ -1,0 +1,156 @@
+.resumen-grid {
+  display: grid;
+  grid-template-columns: 200px 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.resumen-total mat-card-content {
+  padding: 20px 24px !important;
+}
+
+.total-inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.total-icono {
+  width: 48px;
+  height: 48px;
+  background: var(--azul-pale);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  mat-icon {
+    color: var(--azul);
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.total-numero {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--azul);
+  line-height: 1;
+}
+
+.total-label {
+  font-size: 12px;
+  color: var(--texto-suave);
+  margin-top: 4px;
+}
+
+// Mini gráficos de barras en el resumen
+.mini-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mini-fila {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.mini-label {
+  width: 120px;
+  min-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--texto-principal);
+}
+
+.mini-track {
+  flex: 1;
+  height: 8px;
+  background: var(--fondo-neutro, #f0f0f0);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.mini-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--azul);
+  transition: width .3s ease;
+
+  &--canal { background: #5c6bc0; }
+  &--dep   { background: #26a69a; }
+}
+
+.mini-valor {
+  width: 30px;
+  text-align: right;
+  font-weight: 600;
+  color: var(--texto-suave);
+  font-size: 12px;
+}
+
+// Barra de exportación
+.export-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0 12px;
+}
+
+.export-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--texto-suave);
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.numero-radicado {
+  font-family: monospace;
+  color: var(--azul);
+}
+
+.estado-vacio {
+  text-align: center;
+  padding: 60px;
+  color: var(--texto-muy-suave);
+
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  p { margin: 0; }
+}
+
+// Ocultar controles en impresión
+@media print {
+  .no-print { display: none !important; }
+
+  .resumen-grid { grid-template-columns: 1fr 1fr 1fr; }
+
+  .mini-track { border: 1px solid #ccc; }
+  .mini-fill  { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+}

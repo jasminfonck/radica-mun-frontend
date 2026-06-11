@@ -13,6 +13,8 @@ import { MatListModule }           from '@angular/material/list';
 import { MatTooltipModule }        from '@angular/material/tooltip';
 import { MatProgressBarModule }    from '@angular/material/progress-bar';
 import { MatTabsModule }           from '@angular/material/tabs';
+import { MatSortModule }           from '@angular/material/sort';
+import { MatCheckboxModule }       from '@angular/material/checkbox';
 
 import { RecepcionRoutingModule }     from './recepcion-routing-module';
 import { BandejaComponent }           from './pages/bandeja/bandeja';
@@ -32,8 +34,8 @@ import { DetalleRecepcionComponent }  from './pages/detalle/detalle-recepcion';
     RecepcionRoutingModule,
     MatCardModule, MatButtonModule, MatIconModule,
     MatFormFieldModule, MatInputModule, MatSelectModule,
-    MatTableModule, MatListModule, MatTooltipModule,
-    MatProgressBarModule, MatTabsModule,
+    MatTableModule, MatSortModule, MatListModule, MatTooltipModule,
+    MatProgressBarModule, MatTabsModule, MatCheckboxModule,
   ]
 })
 export class RecepcionModule {}

@@ -10,7 +10,7 @@
     </button>
   </div>
 
-  <!-- Filtros -->
+  <!-- Filtros del servidor -->
   <mat-card class="form-card" style="margin-bottom: 20px">
     <mat-card-title>Filtrar recepciones</mat-card-title>
     <mat-card-content>
@@ -52,50 +52,66 @@
     </mat-card-content>
   </mat-card>
 
+  <!-- Búsqueda por asunto -->
+  <mat-form-field appearance="outline" class="busqueda-asunto">
+    <mat-label>Buscar por asunto</mat-label>
+    <mat-icon matPrefix>search</mat-icon>
+    <input matInput [formControl]="busquedaCtrl" placeholder="Escriba palabras del asunto...">
+    <button *ngIf="busquedaCtrl.value" mat-icon-button matSuffix
+            (click)="busquedaCtrl.setValue('')" matTooltip="Limpiar búsqueda">
+      <mat-icon>close</mat-icon>
+    </button>
+    <mat-hint *ngIf="dataSource.filter">
+      {{ dataSource.filteredData.length }} resultado{{ dataSource.filteredData.length !== 1 ? 's' : '' }}
+      de {{ dataSource.data.length }}
+    </mat-hint>
+  </mat-form-field>
+
   <!-- Tabla -->
   <mat-card>
     <mat-progress-bar mode="indeterminate" *ngIf="cargando"></mat-progress-bar>
-    <table mat-table [dataSource]="recepciones" class="tabla-completa">
+    <table mat-table [dataSource]="dataSource" matSort class="tabla-completa">
 
       <ng-container matColumnDef="id">
-        <th mat-header-cell *matHeaderCellDef>ID</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header="id">ID</th>
         <td mat-cell *matCellDef="let r">
           <strong style="color: var(--azul); font-family: 'Playfair Display', serif">#{{ r.id }}</strong>
         </td>
       </ng-container>
 
       <ng-container matColumnDef="canal">
-        <th mat-header-cell *matHeaderCellDef>Canal</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header="canal">Canal</th>
         <td mat-cell *matCellDef="let r">
           <span class="canal-chip">{{ r.canal.nombre }}</span>
         </td>
       </ng-container>
 
       <ng-container matColumnDef="asunto">
-        <th mat-header-cell *matHeaderCellDef>Asunto provisional</th>
-        <td mat-cell *matCellDef="let r" style="max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header="asunto">Asunto provisional</th>
+        <td mat-cell *matCellDef="let r" class="celda-asunto">
           {{ r.asunto_provisional || '—' }}
         </td>
       </ng-container>
 
       <ng-container matColumnDef="estado">
-        <th mat-header-cell *matHeaderCellDef>Estado</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header="estado">Estado</th>
         <td mat-cell *matCellDef="let r">
           <span [class]="'chip-estado ' + r.estado">{{ r.estado | titlecase }}</span>
         </td>
       </ng-container>
 
       <ng-container matColumnDef="fecha">
-        <th mat-header-cell *matHeaderCellDef>Fecha</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header="fecha">Fecha</th>
         <td mat-cell *matCellDef="let r" style="white-space:nowrap">
-          {{ r.created_at | date:'dd/MM/yyyy HH:mm' }}
+          {{ r.created_at | date:'dd/MM/yyyy HH:mm':'America/Bogota' }}
         </td>
       </ng-container>
 
       <ng-container matColumnDef="adjuntos">
-        <th mat-header-cell *matHeaderCellDef>Adjuntos</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header="adjuntos">Adjuntos</th>
         <td mat-cell *matCellDef="let r">
-          <span *ngIf="r.adjuntos.length > 0" style="display:flex; align-items:center; gap:4px; color:var(--texto-suave); font-size:13px;">
+          <span *ngIf="r.adjuntos.length > 0"
+                style="display:flex; align-items:center; gap:4px; color:var(--texto-suave); font-size:13px;">
             <mat-icon style="font-size:15px; width:15px; height:15px">attach_file</mat-icon>
             {{ r.adjuntos.length }}
           </span>
@@ -106,20 +122,26 @@
       <ng-container matColumnDef="acciones">
         <th mat-header-cell *matHeaderCellDef></th>
         <td mat-cell *matCellDef="let r">
-          <button mat-icon-button (click)="verDetalle(r.id)" matTooltip="Ver detalle" style="color:var(--azul-hover)">
+          <button mat-icon-button (click)="verDetalle(r.id)" matTooltip="Ver detalle"
+                  style="color:var(--azul-hover)">
             <mat-icon>chevron_right</mat-icon>
           </button>
         </td>
       </ng-container>
 
       <tr mat-header-row *matHeaderRowDef="columnas"></tr>
-      <tr mat-row *matRowDef="let row; columns: columnas;" (click)="verDetalle(row.id)" style="cursor:pointer"></tr>
+      <tr mat-row *matRowDef="let row; columns: columnas;"
+          (click)="verDetalle(row.id)" style="cursor:pointer"></tr>
 
       <tr *matNoDataRow>
         <td [colSpan]="columnas.length" class="sin-datos">
           <div class="sin-datos-contenido">
             <mat-icon class="sin-datos-icon">inbox</mat-icon>
-            <span class="sin-datos-texto">No hay recepciones con los filtros seleccionados</span>
+            <span class="sin-datos-texto">
+              {{ busquedaCtrl.value
+                ? 'Sin resultados para "' + busquedaCtrl.value + '"'
+                : 'No hay recepciones con los filtros seleccionados' }}
+            </span>
           </div>
         </td>
       </tr>

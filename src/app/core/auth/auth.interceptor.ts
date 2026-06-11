@@ -17,8 +17,9 @@ export class AuthInterceptor implements HttpInterceptor {
 
     return next.handle(authReq).pipe(
       catchError((error: HttpErrorResponse) => {
-        if (error.status === 401) {
-          this.auth.logout();
+        if (error.status === 401 && this.auth.getToken()) {
+          const desplazado = error.error?.detail === 'sesion_desplazada';
+          this.auth.logout(desplazado);
         }
         return throwError(() => error);
       })

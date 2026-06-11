@@ -35,6 +35,15 @@
                 <mat-label>Descripción</mat-label>
                 <input matInput formControlName="descripcion">
               </mat-form-field>
+              <mat-form-field appearance="outline" class="campo-ancho">
+                <mat-label>Plazo de respuesta por defecto</mat-label>
+                <mat-select formControlName="plazo_respuesta_id">
+                  <mat-option [value]="null">— Sin plazo asignado —</mat-option>
+                  <mat-option *ngFor="let p of plazos" [value]="p.id">
+                    {{ p.nombre }} ({{ p.dias_habiles }} días hábiles)
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
               <div class="acciones campo-ancho">
                 <button mat-button type="button" (click)="mostrarFormTipo = false">Cancelar</button>
                 <button mat-flat-button color="primary" type="submit" [disabled]="formTipo.invalid">Guardar</button>
@@ -47,7 +56,14 @@
           <mat-list-item *ngFor="let t of tipos">
             <mat-icon matListItemIcon [style.color]="t.activo ? '#43a047' : '#ccc'">label</mat-icon>
             <span matListItemTitle>{{ t.nombre }}</span>
-            <span matListItemLine>{{ t.descripcion }}</span>
+            <span matListItemLine>
+              {{ t.descripcion }}
+              <ng-container *ngIf="t.plazo_respuesta_id">
+                <ng-container *ngIf="t.descripcion"> · </ng-container>
+                <mat-icon style="font-size:13px;vertical-align:middle;height:13px;width:13px">schedule</mat-icon>
+                {{ plazoNombre(t.plazo_respuesta_id) }}
+              </ng-container>
+            </span>
             <div matListItemMeta>
               <button mat-icon-button (click)="editarTipo(t)" matTooltip="Editar"><mat-icon>edit</mat-icon></button>
               <button mat-icon-button (click)="toggleTipo(t)" [matTooltip]="t.activo ? 'Inactivar' : 'Activar'">

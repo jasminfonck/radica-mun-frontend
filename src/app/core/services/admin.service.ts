@@ -26,8 +26,12 @@ export interface CanalUpdate {
   activo: boolean; config_email?: any; acuse_configurado?: boolean;
 }
 
-export interface TipoReqOut { id: number; nombre: string; descripcion?: string; activo: boolean; }
 export interface PlazoOut   { id: number; nombre: string; dias_habiles: number; activo: boolean; }
+export interface TipoReqOut {
+  id: number; nombre: string; descripcion?: string; activo: boolean;
+  plazo_respuesta_id?: number | null;
+  plazo_respuesta?: Pick<PlazoOut, 'id' | 'nombre' | 'dias_habiles'> | null;
+}
 
 export interface ConfiguracionOut {
   id: number; prefijo_radicado: string; anio_radicado: number;
@@ -38,13 +42,51 @@ export interface ConfiguracionOut {
 
 export interface BitacoraOut {
   id: number; usuario_nombre: string; accion: string;
-  entidad: string; entidad_id?: number; detalle?: string; created_at: string;
+  modulo: string; modulo_id?: number; detalle?: string; created_at: string;
 }
 
 export interface RespaldoOut {
   generado_en: string; entidad?: any; configuracion?: any;
   dependencias: any[]; canales: any[]; tipos_requerimiento: any[];
   plazos_respuesta: any[]; total_usuarios: number;
+}
+
+export interface BuzonCorreoOut {
+  id: number;
+  canal_id: number;
+  proveedor: string;
+  correo: string;
+  servidor_imap: string;
+  puerto: number;
+  intervalo_minutos: number;
+  max_adjuntos: number;
+  max_tamano_adjunto_mb: number;
+  activo: boolean;
+  ultimo_polling?: string;
+  estado_conexion: 'ok' | 'error' | 'sin_probar';
+  ultimo_error?: string;
+}
+
+export interface BuzonCorreoCreate {
+  canal_id: number;
+  proveedor: string;
+  correo: string;
+  password_app: string;
+  intervalo_minutos: number;
+  max_adjuntos: number;
+  max_tamano_adjunto_mb: number;
+}
+
+export interface BuzonCorreoUpdate {
+  password_app?: string;
+  intervalo_minutos?: number;
+  max_adjuntos?: number;
+  max_tamano_adjunto_mb?: number;
+}
+
+export interface TestConexionResult {
+  ok: boolean;
+  mensaje: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -94,4 +136,11 @@ export class AdminService {
 
   // Respaldo
   getRespaldo(): Observable<RespaldoOut>                                          { return this.http.get<RespaldoOut>(`${this.base}/respaldo`); }
+
+  // Buzón de correo oficial
+  getBuzon(): Observable<BuzonCorreoOut | null>                                   { return this.http.get<BuzonCorreoOut | null>(`${this.base}/buzon-correo`); }
+  crearBuzon(d: BuzonCorreoCreate): Observable<BuzonCorreoOut>                   { return this.http.post<BuzonCorreoOut>(`${this.base}/buzon-correo`, d); }
+  actualizarBuzon(id: number, d: BuzonCorreoUpdate): Observable<BuzonCorreoOut>  { return this.http.put<BuzonCorreoOut>(`${this.base}/buzon-correo/${id}`, d); }
+  probarBuzon(id: number): Observable<TestConexionResult>                         { return this.http.post<TestConexionResult>(`${this.base}/buzon-correo/${id}/probar`, {}); }
+  activarBuzon(id: number, activo: boolean): Observable<BuzonCorreoOut>          { return this.http.post<BuzonCorreoOut>(`${this.base}/buzon-correo/${id}/activar`, null, { params: { activo } }); }
 }

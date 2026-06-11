@@ -2,14 +2,14 @@
   <div class="pagina-header">
     <div>
       <h1>Recepción #{{ recepcion.id }}</h1>
-      <p>{{ recepcion.created_at | date:'dd/MM/yyyy HH:mm' }} — {{ recepcion.canal.nombre }}</p>
+      <p>{{ recepcion.created_at | date:'dd/MM/yyyy HH:mm':'America/Bogota' }} — {{ recepcion.canal.nombre }}</p>
     </div>
     <button mat-stroked-button routerLink="/recepcion">
       <mat-icon>arrow_back</mat-icon> Volver
     </button>
   </div>
 
-  <mat-tab-group animationDuration="200ms">
+  <mat-tab-group animationDuration="200ms" (selectedTabChange)="$event.index === 4 && cargarBitacora()">
 
     <!-- ── Pestaña: Información ────────────────────────────────────────── -->
     <mat-tab label="Información">
@@ -30,6 +30,10 @@
               <span class="campo-etiqueta">Observaciones</span>
               <span>{{ recepcion.observaciones || 'Sin observaciones' }}</span>
             </div>
+            <div class="campo-detalle" *ngIf="recepcion.email_remitente">
+              <span class="campo-etiqueta">Email del remitente</span>
+              <span>{{ recepcion.email_remitente }}</span>
+            </div>
             <div class="campo-detalle" *ngIf="recepcion.recibido_por">
               <span class="campo-etiqueta">Recibido por</span>
               <span>{{ recepcion.recibido_por.nombre }}</span>
@@ -46,7 +50,14 @@
               </span>
             </div>
 
-            <ng-container *ngIf="!estadoPendiente">
+            <ng-container *ngIf="radicado">
+              <p class="estado-label" style="color:#757575;font-style:italic;margin-top:8px">
+                <mat-icon style="font-size:15px;vertical-align:middle">lock</mat-icon>
+                El estado no puede modificarse — recepción ya radicada.
+              </p>
+            </ng-container>
+
+            <ng-container *ngIf="!radicado && !estadoPendiente">
               <p class="estado-label">Cambiar estado:</p>
               <div class="estados-botones">
                 <button *ngFor="let e of estados"
@@ -59,7 +70,7 @@
               </div>
             </ng-container>
 
-            <!-- Inline form: observaciones obligatorias para incompleto/incompetente -->
+            <!-- Inline form: observaciones obligatorias para incompleto/no_competente -->
             <ng-container *ngIf="estadoPendiente">
               <p class="estado-label">
                 <mat-icon style="font-size:16px;vertical-align:middle">warning</mat-icon>
@@ -90,13 +101,7 @@
     <mat-tab label="Adjuntos ({{ recepcion.adjuntos.length }})">
       <div class="tab-contenido">
         <mat-card>
-          <mat-card-title>
-            Documentos adjuntos
-            <label class="btn-adjunto-label">
-              <mat-icon>attach_file</mat-icon> Agregar archivo
-              <input type="file" (change)="subirAdjunto($event)" hidden>
-            </label>
-          </mat-card-title>
+          <mat-card-title>Documentos adjuntos</mat-card-title>
           <mat-card-content>
             <p *ngIf="recepcion.adjuntos.length === 0" class="sin-adjuntos">
               No hay documentos adjuntos
@@ -106,9 +111,14 @@
                 <mat-icon matListItemIcon>insert_drive_file</mat-icon>
                 <span matListItemTitle>{{ adj.nombre_original }}</span>
                 <span matListItemLine>{{ adj.tipo_mime }} · {{ formatoTamano(adj.tamano_bytes) }}</span>
-                <button mat-icon-button matListItemMeta (click)="eliminarAdjunto(adj.id)" matTooltip="Eliminar">
-                  <mat-icon>delete</mat-icon>
-                </button>
+                <div matListItemMeta>
+                  <button mat-icon-button (click)="verAdjunto(adj)" matTooltip="Ver en nueva pestaña">
+                    <mat-icon>open_in_new</mat-icon>
+                  </button>
+                  <button mat-icon-button (click)="descargarAdjuntoDirecto(adj)" matTooltip="Descargar">
+                    <mat-icon>download</mat-icon>
+                  </button>
+                </div>
               </mat-list-item>
             </mat-list>
           </mat-card-content>
@@ -131,10 +141,10 @@
       </ng-template>
       <div class="tab-contenido">
 
-        <!-- Bloqueo cuando recepción es incompetente -->
+        <!-- Bloqueo cuando recepción es no competente -->
         <div *ngIf="esIncompetente" class="aviso-sin-metadatos aviso-incompetente">
           <mat-icon>block</mat-icon>
-          <span>Esta recepción fue marcada como <strong>incompetente</strong>.
+          <span>Esta recepción fue marcada como <strong>no competente</strong>.
             No es posible registrar remitente ni metadatos. Revise el motivo en la pestaña de Información.</span>
         </div>
 
@@ -238,13 +248,42 @@
               </div>
 
               <!-- Remitente seleccionado -->
-              <div *ngIf="remitenteSeleccionado" class="remitente-chip">
-                <mat-icon>check_circle</mat-icon>
-                <strong>{{ remitenteSeleccionado.nombre_completo }}</strong>
-                <span>{{ remitenteSeleccionado.numero_identificacion }}</span>
-                <button mat-icon-button (click)="limpiarRemitente()">
-                  <mat-icon>close</mat-icon>
-                </button>
+              <div *ngIf="remitenteSeleccionado" class="remitente-seleccionado-panel">
+                <div class="remitente-chip">
+                  <mat-icon>check_circle</mat-icon>
+                  <strong>{{ remitenteSeleccionado.nombre_completo }}</strong>
+                  <span>{{ remitenteSeleccionado.numero_identificacion }}</span>
+                  <button mat-icon-button (click)="limpiarRemitente()" matTooltip="Cambiar remitente">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div>
+
+                <!-- Datos completos del remitente -->
+                <div class="remitente-datos-completos" *ngIf="remitenteCompleto">
+                  <div class="rem-info-grid">
+                    <div class="rem-info-campo" *ngIf="remitenteCompleto.email">
+                      <span class="campo-etiqueta">Email</span>
+                      <span>{{ remitenteCompleto.email }}</span>
+                    </div>
+                    <div class="rem-info-campo" *ngIf="remitenteCompleto.telefono">
+                      <span class="campo-etiqueta">Teléfono</span>
+                      <span>{{ remitenteCompleto.telefono }}</span>
+                    </div>
+                    <div class="rem-info-campo" *ngIf="remitenteCompleto.direccion">
+                      <span class="campo-etiqueta">Dirección</span>
+                      <span>{{ remitenteCompleto.direccion }}</span>
+                    </div>
+                    <div class="rem-info-campo" *ngIf="remitenteCompleto.municipio">
+                      <span class="campo-etiqueta">Municipio</span>
+                      <span>{{ remitenteCompleto.municipio }}{{ remitenteCompleto.departamento ? ', ' + remitenteCompleto.departamento : '' }}</span>
+                    </div>
+                  </div>
+                  <div class="rem-acciones" *ngIf="puedeEditarRemitente()">
+                    <button mat-stroked-button (click)="irAEditarRemitente()">
+                      <mat-icon>edit</mat-icon> Editar datos del remitente
+                    </button>
+                  </div>
+                </div>
               </div>
 
             </mat-card-content>
@@ -256,11 +295,17 @@
             <mat-card-content>
 
               <div *ngIf="duplicadosAviso.length > 0" class="aviso-duplicados">
-                <mat-icon>warning</mat-icon>
-                <span>Ya existen remitentes con datos similares:</span>
+                <div class="aviso-duplicados-cabecera">
+                  <mat-icon>block</mat-icon>
+                  <strong>Ya existe un remitente registrado con esa identificación o email.
+                    Selecciónelo de la lista para continuar:</strong>
+                </div>
                 <ul>
                   <li *ngFor="let d of duplicadosAviso">
-                    <a (click)="seleccionarRemitente(d)">{{ d.nombre_completo }} — {{ d.numero_identificacion }}</a>
+                    <a (click)="seleccionarRemitente(d)" class="dup-link">
+                      <mat-icon>person</mat-icon>
+                      {{ d.nombre_completo }} — {{ d.numero_identificacion }}
+                    </a>
                   </li>
                 </ul>
               </div>
@@ -276,9 +321,10 @@
 
                 <div class="form-grid" *ngIf="formRemitente.get('tipo_persona')?.value === 'natural'">
                   <mat-form-field appearance="outline">
-                    <mat-label>Nombres</mat-label>
+                    <mat-label>Nombres *</mat-label>
                     <input matInput formControlName="nombres"
                            (keypress)="soloLetras($event)">
+                    <mat-error>Los nombres son obligatorios</mat-error>
                   </mat-form-field>
                   <mat-form-field appearance="outline">
                     <mat-label>Apellidos</mat-label>
@@ -289,13 +335,30 @@
 
                 <div class="form-grid" *ngIf="formRemitente.get('tipo_persona')?.value === 'juridico'">
                   <mat-form-field appearance="outline" class="campo-ancho">
-                    <mat-label>Razón social</mat-label>
+                    <mat-label>Razón social *</mat-label>
                     <input matInput formControlName="razon_social">
+                    <mat-error>La razón social es obligatoria</mat-error>
                   </mat-form-field>
-                  <mat-form-field appearance="outline">
-                    <mat-label>NIT</mat-label>
-                    <input matInput formControlName="nit">
-                  </mat-form-field>
+                  <!-- NIT + Dígito de verificación en campos separados -->
+                  <div class="nit-row">
+                    <mat-form-field appearance="outline" class="nit-numero">
+                      <mat-label>NIT *</mat-label>
+                      <input matInput formControlName="numero_identificacion"
+                             inputmode="numeric" maxlength="15"
+                             (keypress)="soloNumerosTel($event)">
+                      <mat-error *ngIf="formRemitente.get('numero_identificacion')?.hasError('pattern')">
+                        7–15 dígitos
+                      </mat-error>
+                    </mat-form-field>
+                    <span class="nit-guion">–</span>
+                    <mat-form-field appearance="outline" class="nit-dv">
+                      <mat-label>DV *</mat-label>
+                      <input matInput formControlName="digito_verificacion"
+                             inputmode="numeric" maxlength="1" placeholder="0"
+                             (keypress)="soloNumerosTel($event)">
+                      <mat-error>Requerido</mat-error>
+                    </mat-form-field>
+                  </div>
                 </div>
 
                 <div class="form-grid">
@@ -306,8 +369,17 @@
                     </mat-select>
                   </mat-form-field>
                   <mat-form-field appearance="outline">
-                    <mat-label>Número de identificación</mat-label>
+                    <mat-label>Número de identificación *</mat-label>
                     <input matInput formControlName="numero_identificacion" (blur)="verificarDuplicados()">
+                    <mat-error *ngIf="formRemitente.get('numero_identificacion')?.hasError('required')">
+                      El número de identificación es obligatorio
+                    </mat-error>
+                    <mat-error *ngIf="formRemitente.get('numero_identificacion')?.hasError('pattern')">
+                      Formato inválido para el tipo de documento seleccionado
+                    </mat-error>
+                    <mat-error *ngIf="formRemitente.get('numero_identificacion')?.hasError('minlength')">
+                      Mínimo 4 caracteres
+                    </mat-error>
                   </mat-form-field>
                   <mat-form-field appearance="outline">
                     <mat-label>Email</mat-label>
@@ -329,9 +401,24 @@
                     <input matInput formControlName="direccion">
                   </mat-form-field>
                   <mat-form-field appearance="outline">
+                    <mat-label>Departamento</mat-label>
+                    <mat-select formControlName="departamento"
+                                (selectionChange)="onDepartamentoChange($event.value)">
+                      <mat-option value="">— Sin departamento —</mat-option>
+                      <mat-option *ngFor="let d of departamentos" [value]="d.nombre">
+                        {{ d.nombre }}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
                     <mat-label>Municipio</mat-label>
-                    <input matInput formControlName="municipio"
-                           (keypress)="soloLetras($event)">
+                    <mat-select formControlName="municipio"
+                                [disabled]="municipiosFiltrados.length === 0">
+                      <mat-option value="">— Sin municipio —</mat-option>
+                      <mat-option *ngFor="let m of municipiosFiltrados" [value]="m.nombre">
+                        {{ m.nombre }}
+                      </mat-option>
+                    </mat-select>
                   </mat-form-field>
                 </div>
               </form>
@@ -339,7 +426,8 @@
               <div class="acciones">
                 <button mat-button (click)="modoFormRemitente = 'ninguno'">Cancelar</button>
                 <button mat-flat-button color="primary"
-                        [disabled]="guardandoRemitente"
+                        [disabled]="guardandoRemitente || duplicadosAviso.length > 0"
+                        [matTooltip]="duplicadosAviso.length > 0 ? 'Seleccione el remitente existente de la lista anterior' : ''"
                         (click)="guardarRemitente()">
                   Guardar remitente
                 </button>
@@ -397,6 +485,10 @@
                     <mat-select formControlName="plazo_respuesta_id">
                       <mat-option *ngFor="let p of plazosRespuesta" [value]="p.id">{{ p.nombre }} ({{ p.dias_habiles }} días)</mat-option>
                     </mat-select>
+                    <mat-hint *ngIf="formMetadatos.get('plazo_respuesta_id')?.disabled">
+                      <mat-icon style="font-size:12px;vertical-align:middle">lock</mat-icon>
+                      Asignado automáticamente por el tipo de requerimiento
+                    </mat-hint>
                     <mat-error *ngIf="formMetadatos.get('plazo_respuesta_id')?.hasError('required')">
                       Seleccione el plazo de respuesta
                     </mat-error>
@@ -475,7 +567,7 @@
             <mat-card-content>
               <div class="radicado-numero-grande">{{ radicado.numero_radicado }}</div>
               <div class="radicado-fecha">
-                {{ radicado.fecha_radicacion | date:'dd/MM/yyyy HH:mm' }} —
+                {{ radicado.fecha_radicacion | date:'dd/MM/yyyy HH:mm':'America/Bogota' }} —
                 <span [class]="'chip-estado ' + radicado.estado">{{ radicado.estado | titlecase }}</span>
               </div>
             </mat-card-content>
@@ -510,6 +602,27 @@
 
         <!-- Formulario de radicación -->
         <ng-container *ngIf="!radicado">
+
+          <!-- Bloqueo: no competente -->
+          <div *ngIf="esIncompetente" class="aviso-sin-metadatos aviso-incompetente">
+            <mat-icon>block</mat-icon>
+            <span>Esta recepción fue marcada como <strong>no competente</strong>. No es posible radicarla.</span>
+          </div>
+
+          <!-- Bloqueo: aún no marcada como competente -->
+          <div *ngIf="!esIncompetente && !esCompetente" class="aviso-sin-metadatos aviso-competencia">
+            <mat-icon>lock_clock</mat-icon>
+            <div>
+              <strong>Requiere revisión previa</strong>
+              <p>Para radicar este documento debe primero marcarlo como <strong>Competente</strong>
+                en la pestaña <em>Información</em>, verificando que es de competencia de esta entidad.</p>
+              <p style="margin-top:4px;font-size:12px;color:#757575">
+                Estado actual: <span [class]="'chip-estado ' + (recepcion?.estado || '')">{{ recepcion?.estado | titlecase }}</span>
+              </p>
+            </div>
+          </div>
+
+          <ng-container *ngIf="esCompetente">
 
           <div *ngIf="!metadatos" class="aviso-sin-metadatos">
             <mat-icon>info</mat-icon>
@@ -553,8 +666,84 @@
             </mat-card-content>
           </mat-card>
 
+          </ng-container> <!-- /esCompetente -->
         </ng-container>
 
+      </div>
+    </mat-tab>
+
+    <!-- ── Pestaña: Bitácora ──────────────────────────────────────────── -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <span class="tab-label-con-estado">
+          <mat-icon class="tab-estado-icon"
+            [class.tab-estado-ok]="bitacora.length > 0"
+            [class.tab-estado-pendiente]="bitacora.length === 0">
+            history
+          </mat-icon>
+          Bitácora
+        </span>
+      </ng-template>
+
+      <div class="tab-contenido">
+        <mat-card>
+          <mat-card-title>
+            <div class="bitacora-header">
+              <div>
+                <span>Trazabilidad de la recepción</span>
+                <span class="bitacora-total" *ngIf="bitacora.length > 0">
+                  {{ bitacora.length }} evento{{ bitacora.length !== 1 ? 's' : '' }}
+                </span>
+              </div>
+              <button mat-icon-button
+                      (click)="bitacora = []; cargarBitacora()"
+                      matTooltip="Actualizar bitácora">
+                <mat-icon>refresh</mat-icon>
+              </button>
+            </div>
+          </mat-card-title>
+
+          <mat-card-content>
+            <mat-progress-bar *ngIf="cargandoBitacora" mode="indeterminate"></mat-progress-bar>
+
+            <div *ngIf="!cargandoBitacora && bitacora.length === 0" class="bitacora-vacia">
+              <mat-icon>history_toggle_off</mat-icon>
+              <p>No hay eventos registrados para esta recepción.</p>
+              <button mat-stroked-button (click)="cargarBitacora()">
+                <mat-icon>refresh</mat-icon> Cargar bitácora
+              </button>
+            </div>
+
+            <div class="bitacora-timeline" *ngIf="bitacora.length > 0">
+              <div class="bitacora-evento" *ngFor="let e of bitacora; let ultimo = last">
+                <div class="evento-linea">
+                  <div class="evento-icono" [ngClass]="claseAccion(e.accion)">
+                    <mat-icon>{{ iconoAccion(e.accion) }}</mat-icon>
+                  </div>
+                  <div class="evento-linea-vertical" *ngIf="!ultimo"></div>
+                </div>
+                <div class="evento-contenido">
+                  <div class="evento-cabecera">
+                    <span class="evento-etiqueta" [ngClass]="claseAccion(e.accion)">
+                      {{ etiquetaAccion(e.accion) }}
+                    </span>
+                    <span class="evento-fecha">
+                      {{ e.created_at | date:'dd/MM/yyyy':'America/Bogota' }}
+                      <strong>{{ e.created_at | date:'HH:mm':'America/Bogota' }}</strong>
+                    </span>
+                  </div>
+                  <p class="evento-descripcion">{{ e.descripcion }}</p>
+                  <span class="evento-usuario" *ngIf="e.usuario">
+                    <mat-icon>person</mat-icon> {{ e.usuario.nombre }}
+                  </span>
+                  <span class="evento-usuario evento-sistema" *ngIf="!e.usuario">
+                    <mat-icon>settings</mat-icon> Sistema
+                  </span>
+                </div>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
       </div>
     </mat-tab>
 

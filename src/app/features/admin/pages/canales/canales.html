@@ -23,25 +23,24 @@
       <div>
         <strong>No se pudieron cargar los canales</strong>
         <p style="margin:4px 0 0; font-size:13px; color:var(--texto-suave)">
-          Asegúrese de haber ejecutado <code>alembic upgrade head</code> en el backend para aplicar la migración pendiente.
+          Asegúrese de haber ejecutado <code>alembic upgrade head</code> en el backend.
         </p>
       </div>
     </mat-card-content>
   </mat-card>
 
   <div *ngIf="!cargando && !error" class="canales-grid">
+
+    <!-- ── Tarjeta de cada canal ─────────────────────────────────────────── -->
     <mat-card *ngFor="let canal of canales" class="canal-card" [class.activo]="canal.activo">
       <mat-card-content>
-
         <div class="canal-icono">
           <mat-icon>{{ iconos[canal.tipo] }}</mat-icon>
         </div>
-
         <div class="canal-info">
           <strong>{{ canal.nombre }}</strong>
           <span class="canal-tipo">{{ canal.tipo }}</span>
         </div>
-
         <mat-slide-toggle
           [checked]="canal.activo"
           [disabled]="guardando[canal.id]"
@@ -49,10 +48,9 @@
           color="primary"
           [matTooltip]="canal.activo ? 'Desactivar canal' : 'Activar canal'">
         </mat-slide-toggle>
-
       </mat-card-content>
 
-      <!-- Sección acuse de recibo — solo canal formulario (digital) -->
+      <!-- Acuse de recibo — solo canal formulario (digital) -->
       <mat-card-footer *ngIf="canal.tipo === 'digital'" class="canal-acuse">
         <div class="acuse-row">
           <mat-icon [class.acuse-ok]="canal.acuse_configurado" [class.acuse-pendiente]="!canal.acuse_configurado">
@@ -71,11 +69,201 @@
             [disabled]="guardando[canal.id]"
             (change)="toggleAcuse(canal)"
             color="accent"
-            [matTooltip]="canal.acuse_configurado ? 'Desactivar acuse automático' : 'Activar acuse automático'">
+            [matTooltip]="canal.acuse_configurado ? 'Desactivar acuse' : 'Activar acuse'">
           </mat-slide-toggle>
         </div>
       </mat-card-footer>
 
     </mat-card>
+  </div>
+
+  <!-- ── Sección buzón de correo oficial ──────────────────────────────────── -->
+  <div *ngIf="!cargando && !error && canalEmail" style="margin-top: 32px;">
+
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+      <mat-icon style="color:var(--color-primario)">mail_lock</mat-icon>
+      <h2 style="margin:0; font-size:18px;">Buzón oficial de radicación por correo</h2>
+    </div>
+
+    <!-- Estado del buzón si ya existe -->
+    <mat-card *ngIf="buzon && !mostrarFormBuzon" style="margin-bottom: 16px;">
+      <mat-card-content>
+        <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap; padding: 8px 0;">
+
+          <div style="display:flex; align-items:center; gap:8px;">
+            <mat-icon [style.color]="estadoColor[buzon.estado_conexion]">
+              {{ estadoIcono[buzon.estado_conexion] }}
+            </mat-icon>
+            <div>
+              <div style="font-weight:600;">{{ buzon.correo }}</div>
+              <div style="font-size:12px; color:var(--texto-suave)">
+                {{ buzon.proveedor === 'gmail' ? 'Gmail' : 'Outlook' }} ·
+                Revisa cada {{ buzon.intervalo_minutos }} min ·
+                Máx. {{ buzon.max_adjuntos }} adjuntos · {{ buzon.max_tamano_adjunto_mb }} MB c/u
+              </div>
+              <div *ngIf="buzon.ultimo_polling" style="font-size:12px; color:var(--texto-suave);">
+                Último polling: {{ buzon.ultimo_polling | date:'dd/MM/yyyy HH:mm' }}
+              </div>
+              <div *ngIf="buzon.ultimo_error" style="font-size:12px; color:#b71c1c; margin-top:4px;">
+                Error: {{ buzon.ultimo_error }}
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <button mat-stroked-button (click)="probarConexion()" [disabled]="probandoConexion">
+              <mat-icon>cable</mat-icon>
+              {{ probandoConexion ? 'Probando...' : 'Probar conexión' }}
+            </button>
+            <button mat-stroked-button (click)="abrirFormBuzon()">
+              <mat-icon>edit</mat-icon> Editar
+            </button>
+            <mat-slide-toggle
+              [checked]="buzon.activo"
+              [disabled]="activandoBuzon || buzon.estado_conexion !== 'ok'"
+              (change)="toggleBuzonActivo()"
+              color="primary"
+              [matTooltip]="buzon.estado_conexion !== 'ok' ? 'Pruebe la conexión antes de activar' : (buzon.activo ? 'Desactivar polling' : 'Activar polling')">
+            </mat-slide-toggle>
+          </div>
+        </div>
+
+        <!-- Badge de estado -->
+        <div style="margin-top: 8px;">
+          <span
+            style="display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:12px; font-size:12px; font-weight:600;"
+            [style.background]="buzon.estado_conexion === 'ok' ? '#e8f5e9' : buzon.estado_conexion === 'error' ? '#ffebee' : '#f5f5f5'"
+            [style.color]="estadoColor[buzon.estado_conexion]">
+            <mat-icon style="font-size:14px; width:14px; height:14px;">{{ estadoIcono[buzon.estado_conexion] }}</mat-icon>
+            {{ buzon.estado_conexion === 'ok' ? 'Conectado' : buzon.estado_conexion === 'error' ? 'Error de conexión' : 'Sin probar' }}
+          </span>
+          <span *ngIf="buzon.activo" style="margin-left:8px; display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:12px; font-size:12px; font-weight:600; background:#e8f5e9; color:#2e7d32;">
+            <mat-icon style="font-size:14px; width:14px; height:14px;">play_circle</mat-icon>
+            Polling activo
+          </span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Botón configurar si no hay buzón -->
+    <mat-card *ngIf="!buzon && !mostrarFormBuzon" style="border: 2px dashed #ccc; background: transparent; margin-bottom:16px;">
+      <mat-card-content style="display:flex; align-items:center; justify-content:center; gap:12px; padding:24px; flex-direction:column;">
+        <mat-icon style="font-size:40px; width:40px; height:40px; color:#9e9e9e;">inbox</mat-icon>
+        <p style="color:var(--texto-suave); margin:0; text-align:center;">
+          No hay buzón de correo configurado.<br>Configure el buzón para que el sistema lea automáticamente los correos recibidos.
+        </p>
+        <button mat-flat-button color="primary" (click)="abrirFormBuzon()">
+          <mat-icon>add</mat-icon> Configurar buzón
+        </button>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Formulario de configuración del buzón -->
+    <mat-card *ngIf="mostrarFormBuzon" style="margin-bottom: 16px;">
+      <mat-card-header>
+        <mat-card-title>{{ buzon ? 'Editar buzón' : 'Configurar buzón oficial' }}</mat-card-title>
+        <mat-card-subtitle>Solo se aceptan cuentas Gmail o Outlook con contraseña de aplicación habilitada</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="buzonForm" style="display:flex; flex-direction:column; gap:16px; margin-top:16px;">
+
+          <!-- Proveedor -->
+          <mat-form-field appearance="outline">
+            <mat-label>Proveedor de correo</mat-label>
+            <mat-select formControlName="proveedor">
+              <mat-option value="gmail">Gmail</mat-option>
+              <mat-option value="outlook">Outlook / Microsoft 365</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Ayuda según proveedor -->
+          <mat-card *ngIf="buzonForm.get('proveedor')?.value === 'gmail'"
+            style="background:#e3f2fd; border-left:4px solid #1565c0; margin:0;">
+            <mat-card-content style="padding:12px; font-size:13px;">
+              <strong>Gmail:</strong> Active la verificación en 2 pasos y genere una
+              <em>Contraseña de aplicación</em> en <strong>Gestionar cuenta de Google → Seguridad → Contraseñas de aplicaciones</strong>.
+              Use esa contraseña de 16 caracteres en el campo de abajo.
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card *ngIf="buzonForm.get('proveedor')?.value === 'outlook'"
+            style="background:#e3f2fd; border-left:4px solid #1565c0; margin:0;">
+            <mat-card-content style="padding:12px; font-size:13px;">
+              <strong>Outlook / Microsoft 365:</strong> Active la autenticación multifactor y genere una
+              <em>Contraseña de aplicación</em> en <strong>Mi cuenta → Seguridad → Contraseñas de aplicaciones</strong>.
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Correo -->
+          <mat-form-field appearance="outline">
+            <mat-label>Dirección de correo del buzón</mat-label>
+            <input matInput formControlName="correo" type="email" placeholder="radicacion@municipio.gov.co">
+            <mat-error *ngIf="buzonForm.get('correo')?.hasError('required')">El correo es obligatorio</mat-error>
+            <mat-error *ngIf="buzonForm.get('correo')?.hasError('email')">Ingrese un correo válido</mat-error>
+          </mat-form-field>
+
+          <!-- Contraseña de aplicación -->
+          <mat-form-field appearance="outline">
+            <mat-label>{{ buzon ? 'Nueva contraseña de aplicación (dejar vacío para no cambiar)' : 'Contraseña de aplicación' }}</mat-label>
+            <input matInput formControlName="password_app"
+              [type]="mostrarPassword ? 'text' : 'password'"
+              placeholder="{{ buzon ? 'Dejar vacío para mantener la actual' : 'Contraseña de 16 caracteres' }}">
+            <button mat-icon-button matSuffix type="button" (click)="mostrarPassword = !mostrarPassword"
+              [matTooltip]="mostrarPassword ? 'Ocultar' : 'Mostrar'">
+              <mat-icon>{{ mostrarPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            <mat-hint *ngIf="!buzon">La contraseña se cifra antes de almacenarse</mat-hint>
+            <mat-error *ngIf="buzonForm.get('password_app')?.hasError('required')">La contraseña es obligatoria para configurar el buzón</mat-error>
+            <mat-error *ngIf="buzonForm.get('password_app')?.hasError('minlength')">Mínimo 8 caracteres</mat-error>
+          </mat-form-field>
+
+          <!-- Parámetros de operación -->
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+            <mat-form-field appearance="outline">
+              <mat-label>Intervalo de revisión (min)</mat-label>
+              <input matInput type="number" formControlName="intervalo_minutos" min="1" max="60">
+              <mat-hint>1–60 minutos</mat-hint>
+              <mat-error>Entre 1 y 60</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Máx. adjuntos por correo</mat-label>
+              <input matInput type="number" formControlName="max_adjuntos" min="1" max="20">
+              <mat-hint>1–20 archivos</mat-hint>
+              <mat-error>Entre 1 y 20</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Tamaño máx. por adjunto (MB)</mat-label>
+              <input matInput type="number" formControlName="max_tamano_adjunto_mb" min="1" max="50">
+              <mat-hint>1–50 MB</mat-hint>
+              <mat-error>Entre 1 y 50</mat-error>
+            </mat-form-field>
+          </div>
+
+          <!-- Aviso de seguridad -->
+          <mat-card style="background:#fff8e1; border-left:4px solid #f9a825; margin:0;">
+            <mat-card-content style="padding:12px; font-size:12px; color:#5d4037;">
+              <mat-icon style="font-size:16px; vertical-align:middle;">security</mat-icon>
+              La contraseña de aplicación se cifra con AES-256 (Fernet) antes de almacenarse en la base de datos.
+              Solo tipos de archivo seguros son aceptados como adjuntos (PDF, imágenes, Office, texto plano).
+              El contenido HTML de los correos es sanitizado automáticamente.
+            </mat-card-content>
+          </mat-card>
+
+        </form>
+      </mat-card-content>
+
+      <mat-card-actions style="padding: 8px 16px; display:flex; gap:8px; justify-content:flex-end;">
+        <button mat-stroked-button (click)="cancelarFormBuzon()" [disabled]="guardandoBuzon">
+          Cancelar
+        </button>
+        <button mat-flat-button color="primary" (click)="guardarBuzon()" [disabled]="guardandoBuzon">
+          <mat-icon>save</mat-icon>
+          {{ guardandoBuzon ? 'Guardando...' : (buzon ? 'Guardar cambios' : 'Configurar buzón') }}
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
   </div>
 </div>

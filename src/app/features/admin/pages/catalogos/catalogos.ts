@@ -33,13 +33,19 @@ export class CatalogosComponent implements OnInit {
 
   inicializarForms(tipo?: TipoReqOut, plazo?: PlazoOut): void {
     this.formTipo  = this.fb.group({
-      nombre:      [tipo?.nombre  || '', Validators.required],
-      descripcion: [tipo?.descripcion  || ''],
+      nombre:             [tipo?.nombre             || '', Validators.required],
+      descripcion:        [tipo?.descripcion        || ''],
+      plazo_respuesta_id: [tipo?.plazo_respuesta_id ?? null],
     });
     this.formPlazo = this.fb.group({
       nombre:      [plazo?.nombre || '', Validators.required],
       dias_habiles: [plazo?.dias_habiles || '', [Validators.required, Validators.min(1)]],
     });
+  }
+
+  plazoNombre(plazo_respuesta_id?: number | null): string {
+    if (!plazo_respuesta_id) return '';
+    return this.plazos.find(p => p.id === plazo_respuesta_id)?.nombre ?? '';
   }
 
   cargar(): void {

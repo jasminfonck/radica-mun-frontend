@@ -24,6 +24,16 @@
           <mat-error>Seleccione el canal de recepción</mat-error>
         </mat-form-field>
 
+        <mat-form-field appearance="outline" class="campo-ancho" *ngIf="esCanaleEmail">
+          <mat-label>Correo electrónico del remitente *</mat-label>
+          <mat-icon matPrefix>email</mat-icon>
+          <input matInput formControlName="email_remitente" type="email"
+                 placeholder="remitente@email.com">
+          <mat-error *ngIf="form.get('email_remitente')?.hasError('email')">
+            Ingrese un correo electrónico válido
+          </mat-error>
+        </mat-form-field>
+
         <mat-form-field appearance="outline" class="campo-ancho">
           <mat-label>Asunto provisional</mat-label>
           <mat-icon matPrefix>subject</mat-icon>

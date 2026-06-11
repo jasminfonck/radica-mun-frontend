@@ -9,6 +9,7 @@ export interface RemitenteResumen {
   numero_identificacion?: string;
   email?: string;
   telefono?: string;
+  activo: boolean;
 }
 
 export interface RemitenteOut extends RemitenteResumen {
@@ -16,10 +17,11 @@ export interface RemitenteOut extends RemitenteResumen {
   apellidos?: string;
   razon_social?: string;
   nit?: string;
+  digito_verificacion?: string;
   tipo_identificacion?: string;
   direccion?: string;
+  departamento?: string;
   municipio?: string;
-  activo: boolean;
   created_at: string;
 }
 
@@ -29,12 +31,29 @@ export interface RemitenteCreate {
   apellidos?: string;
   razon_social?: string;
   nit?: string;
+  digito_verificacion?: string;
   tipo_identificacion?: string;
   numero_identificacion?: string;
   email?: string;
   telefono?: string;
   direccion?: string;
+  departamento?: string;
   municipio?: string;
+}
+
+/** Campos editables — tipo_persona, tipo_identificacion y numero_identificacion son inmutables */
+export interface RemitenteUpdate {
+  nombres?: string;
+  apellidos?: string;
+  razon_social?: string;
+  nit?: string;
+  digito_verificacion?: string;
+  email?: string;
+  telefono?: string;
+  direccion?: string;
+  departamento?: string;
+  municipio?: string;
+  activo?: boolean;
 }
 
 export interface TipoRequerimientoResumen { id: number; nombre: string; }
@@ -73,8 +92,8 @@ export class RemitenteService {
 
   constructor(private http: HttpClient) {}
 
-  buscar(q?: string, tipo_persona?: string): Observable<RemitenteResumen[]> {
-    let params = new HttpParams();
+  buscar(q?: string, tipo_persona?: string, soloActivos = true): Observable<RemitenteResumen[]> {
+    let params = new HttpParams().set('solo_activos', String(soloActivos));
     if (q)            params = params.set('q', q);
     if (tipo_persona) params = params.set('tipo_persona', tipo_persona);
     return this.http.get<RemitenteResumen[]>(this.base, { params });
@@ -95,7 +114,7 @@ export class RemitenteService {
     return this.http.post<RemitenteOut>(this.base, data);
   }
 
-  actualizar(id: number, data: Partial<RemitenteCreate>): Observable<RemitenteOut> {
+  actualizar(id: number, data: RemitenteUpdate): Observable<RemitenteOut> {
     return this.http.put<RemitenteOut>(`${this.base}/${id}`, data);
   }
 

@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule }        from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
+import { RouterModule }        from '@angular/router';
 
 import { MatCardModule }        from '@angular/material/card';
 import { MatButtonModule }      from '@angular/material/button';
@@ -11,29 +12,32 @@ import { MatSelectModule }      from '@angular/material/select';
 import { MatTableModule }       from '@angular/material/table';
 import { MatTooltipModule }     from '@angular/material/tooltip';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatChipsModule }       from '@angular/material/chips';
+import { MatCheckboxModule }    from '@angular/material/checkbox';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatPaginatorModule }   from '@angular/material/paginator';
+import { MatSnackBarModule }    from '@angular/material/snack-bar';
 import { MatDividerModule }     from '@angular/material/divider';
 
-import { ConsultaRoutingModule }        from './consulta-routing-module';
-import { DashboardConsultaComponent }   from './pages/dashboard/dashboard-consulta';
-import { BusquedaAvanzadaComponent }    from './pages/busqueda/busqueda-avanzada';
-import { ReportesComponent }            from './pages/reportes/reportes';
-import { AuditoriaComponent }           from './pages/auditoria/auditoria';
+import { RemitentesRoutingModule }   from './remitentes-routing.module';
+import { ListaRemitentesComponent }  from './pages/lista/lista-remitentes';
+import { EditarRemitenteComponent }  from './pages/editar/editar-remitente';
 
 @NgModule({
   declarations: [
-    DashboardConsultaComponent,
-    BusquedaAvanzadaComponent,
-    ReportesComponent,
-    AuditoriaComponent,
+    ListaRemitentesComponent,
+    EditarRemitenteComponent,
   ],
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    ConsultaRoutingModule,
+    RouterModule,
+    RemitentesRoutingModule,
     MatCardModule, MatButtonModule, MatIconModule,
     MatFormFieldModule, MatInputModule, MatSelectModule,
     MatTableModule, MatTooltipModule, MatProgressBarModule,
-    MatDividerModule,
+    MatChipsModule, MatCheckboxModule, MatSlideToggleModule,
+    MatPaginatorModule, MatSnackBarModule, MatDividerModule,
   ],
 })
-export class ConsultaModule {}
+export class RemitentesModule {}

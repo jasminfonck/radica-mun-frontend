@@ -29,8 +29,17 @@ export class NuevaRecepcionComponent implements OnInit {
       canal_id:           [null, Validators.required],
       asunto_provisional: [''],
       observaciones:      [''],
+      email_remitente:    ['', Validators.email],
     });
     this.adminService.getCanales().subscribe(c => this.canales = c.filter(x => x.activo));
+  }
+
+  get canalSeleccionado(): CanalOut | undefined {
+    return this.canales.find(c => c.id === this.form.get('canal_id')?.value);
+  }
+
+  get esCanaleEmail(): boolean {
+    return this.canalSeleccionado?.tipo === 'email';
   }
 
   seleccionarArchivos(event: Event): void {
@@ -55,7 +64,10 @@ export class NuevaRecepcionComponent implements OnInit {
     this.guardando = true;
     this.error = '';
 
-    this.recepcionService.crear(this.form.value).subscribe({
+    const payload = { ...this.form.value };
+    if (!payload.email_remitente) delete payload.email_remitente;
+
+    this.recepcionService.crear(payload).subscribe({
       next: async (recepcion) => {
         // Subir adjuntos uno a uno
         for (const archivo of this.archivosSeleccionados) {

@@ -47,9 +47,11 @@ html {
   --estado-recibido-bg:     #e8eaf6; --estado-recibido-text:     #1a237e;
   --estado-revision-bg:     #fff3e0; --estado-revision-text:     #bf360c;
   --estado-pendiente-bg:    #fffde7; --estado-pendiente-text:    #f57f17;
-  --estado-incompleto-bg:   #ffebee; --estado-incompleto-text:   #b71c1c;
-  --estado-incompetente-bg: #f3e5f5; --estado-incompetente-text: #4a148c;
-  --estado-vigente-bg:      #e8f5e9; --estado-vigente-text:      #1b5e20;
+  --estado-incompleto-bg:    #ffebee; --estado-incompleto-text:    #b71c1c;
+  --estado-incompetente-bg:  #f3e5f5; --estado-incompetente-text:  #4a148c;
+  --estado-no-competente-bg: #f3e5f5; --estado-no-competente-text: #4a148c;
+  --estado-competente-bg:    #e8f5e9; --estado-competente-text:    #1b5e20;
+  --estado-vigente-bg:       #e8f5e9; --estado-vigente-text:       #1b5e20;
   --estado-anulado-bg:      #ffebee; --estado-anulado-text:      #b71c1c;
 }
 
@@ -249,8 +251,10 @@ table.mat-mdc-table {
   &.recibido   { background: var(--estado-recibido-bg);    color: var(--estado-recibido-text); }
   &.en_revision{ background: var(--estado-revision-bg);    color: var(--estado-revision-text); }
   &.pendiente  { background: var(--estado-pendiente-bg);   color: var(--estado-pendiente-text); }
-  &.incompleto { background: var(--estado-incompleto-bg);  color: var(--estado-incompleto-text); }
-  &.incompetente{ background: var(--estado-incompetente-bg); color: var(--estado-incompetente-text); }
+  &.incompleto    { background: var(--estado-incompleto-bg);    color: var(--estado-incompleto-text); }
+  &.incompetente  { background: var(--estado-incompetente-bg);  color: var(--estado-incompetente-text); }
+  &.no_competente { background: var(--estado-no-competente-bg); color: var(--estado-no-competente-text); }
+  &.competente    { background: var(--estado-competente-bg);    color: var(--estado-competente-text); }
 }
 
 // ── Detail grid ───────────────────────────────────────────────────────────────

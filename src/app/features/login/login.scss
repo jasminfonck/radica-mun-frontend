@@ -248,6 +248,42 @@ $error-texto:  #b91c1c;
     height: 18px;
     flex-shrink: 0;
   }
+
+  &.error-desplazado {
+    background: #e8f4fd;
+    border-color: #64b5f6;
+    color: #0d47a1;
+    align-items: flex-start;
+
+    mat-icon { color: #1565c0; margin-top: 1px; flex-shrink: 0; }
+
+    div {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+
+      strong { font-size: 13px; }
+      span   { font-size: 12px; opacity: 0.85; }
+    }
+  }
+
+  &.error-inactivo {
+    background: #fff7ed;
+    border-color: #fb923c;
+    color: #9a3412;
+    align-items: flex-start;
+
+    mat-icon { color: #ea580c; margin-top: 1px; }
+
+    div {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+
+      strong { font-size: 13px; }
+      span   { font-size: 12px; opacity: 0.85; }
+    }
+  }
 }
 
 .btn-ingresar {

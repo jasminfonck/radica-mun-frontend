@@ -50,8 +50,8 @@
       <ng-container matColumnDef="fecha">
         <th mat-header-cell *matHeaderCellDef>Fecha y hora</th>
         <td mat-cell *matCellDef="let l" class="celda-fecha">
-          {{ l.created_at | date:'dd/MM/yyyy' }}<br>
-          <span class="celda-hora">{{ l.created_at | date:'HH:mm:ss' }}</span>
+          {{ l.created_at | date:'dd/MM/yyyy':'America/Bogota' }}<br>
+          <span class="celda-hora">{{ l.created_at | date:'HH:mm':'America/Bogota' }}</span>
         </td>
       </ng-container>
 
@@ -70,13 +70,13 @@
       </ng-container>
 
       <ng-container matColumnDef="entidad">
-        <th mat-header-cell *matHeaderCellDef>Entidad</th>
+        <th mat-header-cell *matHeaderCellDef>Módulo</th>
         <td mat-cell *matCellDef="let l">
-          <span *ngIf="l.entidad" class="celda-entidad">
-            {{ l.entidad }}
-            <strong class="entidad-id">#{{ l.entidad_id }}</strong>
+          <span *ngIf="l.modulo" class="celda-entidad">
+            {{ l.modulo }}
+            <strong class="entidad-id">#{{ l.modulo_id }}</strong>
           </span>
-          <span *ngIf="!l.entidad" class="celda-vacia">—</span>
+          <span *ngIf="!l.modulo" class="celda-vacia">—</span>
         </td>
       </ng-container>
 

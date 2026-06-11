@@ -15,6 +15,7 @@ export class DependenciasComponent implements OnInit {
   form!: FormGroup;
   editando: DependenciaOut | null = null;
   mostrarForm = false;
+  errorForm = '';
   readonly nombreCompleto = nombreCompleto;
 
   constructor(
@@ -40,10 +41,18 @@ export class DependenciasComponent implements OnInit {
   inicializarForm(dep?: DependenciaOut): void {
     this.form = this.fb.group({
       nombre:      [dep?.nombre      || '', Validators.required],
-      codigo:      [dep?.codigo      || ''],
+      codigo:      [dep?.codigo      || '', [Validators.required, Validators.pattern(/^[A-Z0-9][A-Z0-9\-]{1,19}$/)]],
       responsable: [dep?.responsable || null, Validators.required],
       email:       [dep?.email       || '', Validators.email],
     });
+  }
+
+  codigoMayusculas(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const pos = input.selectionStart ?? input.value.length;
+    input.value = input.value.toUpperCase();
+    this.form.get('codigo')?.setValue(input.value, { emitEvent: false });
+    input.setSelectionRange(pos, pos);
   }
 
   cargar(): void {
@@ -60,14 +69,21 @@ export class DependenciasComponent implements OnInit {
 
   nuevo(): void { this.editando = null; this.inicializarForm(); this.mostrarForm = true; }
 
-  cancelar(): void { this.mostrarForm = false; this.editando = null; }
+  cancelar(): void { this.mostrarForm = false; this.editando = null; this.errorForm = ''; }
 
   guardar(): void {
     if (this.form.invalid) return;
+    this.errorForm = '';
     const obs = this.editando
       ? this.adminService.actualizarDependencia(this.editando.id, this.form.value)
       : this.adminService.crearDependencia(this.form.value);
-    obs.subscribe(() => { this.cancelar(); this.cargar(); });
+    obs.subscribe({
+      next: () => { this.cancelar(); this.cargar(); },
+      error: (err) => {
+        this.errorForm = err.error?.detail || 'Error al guardar la dependencia';
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   toggleActiva(dep: DependenciaOut): void {

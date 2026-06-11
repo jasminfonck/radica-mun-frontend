@@ -79,7 +79,7 @@
       <ng-container matColumnDef="fecha_radicacion">
         <th mat-header-cell *matHeaderCellDef>Fecha de radicación</th>
         <td mat-cell *matCellDef="let r" style="white-space:nowrap">
-          {{ r.fecha_radicacion | date:'dd/MM/yyyy HH:mm' }}
+          {{ r.fecha_radicacion | date:'dd/MM/yyyy HH:mm':'America/Bogota' }}
         </td>
       </ng-container>
 

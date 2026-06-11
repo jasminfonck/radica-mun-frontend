@@ -18,6 +18,7 @@ export interface RecepcionOut {
   canal: CanalResumen;
   asunto_provisional?: string;
   observaciones?: string;
+  email_remitente?: string;
   estado: string;
   recibido_por?: UsuarioResumen;
   created_at: string;
@@ -28,6 +29,18 @@ export interface RecepcionCreate {
   canal_id: number;
   asunto_provisional?: string;
   observaciones?: string;
+  email_remitente?: string;
+}
+
+export interface BitacoraEvento {
+  id: number;
+  accion: string;
+  entidad?: string;
+  entidad_id?: number;
+  descripcion?: string;
+  ip?: string;
+  created_at: string;
+  usuario?: { id: number; nombre: string };
 }
 
 export interface TipoReqResumen { id: number; nombre: string; }
@@ -53,6 +66,7 @@ export interface FormularioPublicoCreate {
   razon_social?: string;
   tipo_identificacion?: string;
   numero_identificacion?: string;
+  digito_verificacion?: string;
   email?: string;
   telefono?: string;
   asunto: string;
@@ -78,7 +92,8 @@ export const ESTADOS_RECEPCION = [
   { value: 'en_revision',   label: 'En revisión' },
   { value: 'pendiente',     label: 'Pendiente' },
   { value: 'incompleto',    label: 'Incompleto' },
-  { value: 'incompetente',  label: 'Incompetente' },
+  { value: 'no_competente', label: 'No competente' },
+  { value: 'competente',    label: 'Competente' },
 ];
 
 @Injectable({ providedIn: 'root' })
@@ -111,11 +126,18 @@ export class RecepcionService {
   subirAdjunto(recepcionId: number, archivo: File): Observable<AdjuntoOut> {
     const form = new FormData();
     form.append('archivo', archivo);
-    return this.http.post<AdjuntoOut>(`${this.base}/${recepcionId}/adjuntos`, form);
+    return this.http.post<AdjuntoOut>(
+      `${this.base}/${recepcionId}/adjuntos?fase_creacion=true`,
+      form,
+    );
   }
 
-  eliminarAdjunto(recepcionId: number, adjuntoId: number): Observable<void> {
-    return this.http.delete<void>(`${this.base}/${recepcionId}/adjuntos/${adjuntoId}`);
+  descargarAdjunto(recepcionId: number, adjuntoId: number): Observable<Blob> {
+    return this.http.get(`${this.base}/${recepcionId}/adjuntos/${adjuntoId}`, { responseType: 'blob' });
+  }
+
+  getBitacora(recepcionId: number): Observable<BitacoraEvento[]> {
+    return this.http.get<BitacoraEvento[]>(`${this.base}/${recepcionId}/bitacora`);
   }
 
   getInfoPublica(): Observable<InfoPublica> {
@@ -132,6 +154,7 @@ export class RecepcionService {
     if (data.razon_social)          fd.append('razon_social',          data.razon_social);
     if (data.tipo_identificacion)   fd.append('tipo_identificacion',   data.tipo_identificacion);
     if (data.numero_identificacion) fd.append('numero_identificacion', data.numero_identificacion);
+    if (data.digito_verificacion)   fd.append('digito_verificacion',   data.digito_verificacion);
     if (data.email)                 fd.append('email',                 data.email);
     if (data.telefono)              fd.append('telefono',              data.telefono);
     if (data.tipo_requerimiento_id != null)

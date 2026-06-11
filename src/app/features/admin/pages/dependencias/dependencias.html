@@ -24,8 +24,11 @@
           <input matInput formControlName="nombre">
         </mat-form-field>
         <mat-form-field appearance="outline">
-          <mat-label>Código</mat-label>
-          <input matInput formControlName="codigo" placeholder="DEP-01">
+          <mat-label>Código *</mat-label>
+          <input matInput formControlName="codigo" placeholder="DEP-01"
+                 (input)="codigoMayusculas($event)">
+          <mat-error *ngIf="form.get('codigo')?.hasError('required')">El código es obligatorio</mat-error>
+          <mat-error *ngIf="form.get('codigo')?.hasError('pattern')">Solo letras mayúsculas, números y guiones (ej: DEP-01)</mat-error>
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Responsable *</mat-label>
@@ -42,6 +45,10 @@
           <input matInput formControlName="email" type="email" inputmode="email">
           <mat-error *ngIf="form.get('email')?.hasError('email')">Ingrese un correo electrónico válido</mat-error>
         </mat-form-field>
+        <div *ngIf="errorForm" style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:#fff1f0;border:1px solid #fca5a5;border-radius:8px;color:#b91c1c;font-size:13px;margin-bottom:8px;" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ errorForm }}</span>
+        </div>
         <div class="acciones campo-ancho">
           <button mat-button type="button" (click)="cancelar()">Cancelar</button>
           <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid">Guardar</button>

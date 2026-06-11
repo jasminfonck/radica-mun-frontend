@@ -1,10 +1,17 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import {
+  AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef,
+  Component, OnInit, ViewChild,
+} from '@angular/core';
 import { Router } from '@angular/router';
-import { FormBuilder, FormGroup } from '@angular/forms';
-import { forkJoin } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
-import { of } from 'rxjs';
-import { RecepcionService, RecepcionOut, RecepcionFiltros, ESTADOS_RECEPCION } from '../../../../core/services/recepcion.service';
+import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { MatTableDataSource } from '@angular/material/table';
+import { MatSort } from '@angular/material/sort';
+
+import {
+  RecepcionService, RecepcionOut, RecepcionFiltros, ESTADOS_RECEPCION,
+} from '../../../../core/services/recepcion.service';
 import { AdminService, CanalOut } from '../../../../core/services/admin.service';
 
 @Component({
@@ -14,13 +21,16 @@ import { AdminService, CanalOut } from '../../../../core/services/admin.service'
   standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BandejaComponent implements OnInit {
-  recepciones: RecepcionOut[] = [];
+export class BandejaComponent implements OnInit, AfterViewInit {
+  dataSource = new MatTableDataSource<RecepcionOut>([]);
   canales: CanalOut[] = [];
   estados = ESTADOS_RECEPCION;
   columnas = ['id', 'canal', 'asunto', 'estado', 'fecha', 'adjuntos', 'acciones'];
   filtrosForm!: FormGroup;
+  busquedaCtrl = new FormControl('');
   cargando = true;
+
+  @ViewChild(MatSort) sort!: MatSort;
 
   constructor(
     private fb: FormBuilder,
@@ -38,15 +48,40 @@ export class BandejaComponent implements OnInit {
       fecha_hasta: [null],
     });
 
+    // Filtro por asunto (cliente)
+    this.dataSource.filterPredicate = (rec: RecepcionOut, filtro: string) => {
+      const texto = filtro.trim().toLowerCase();
+      return (rec.asunto_provisional ?? '').toLowerCase().includes(texto);
+    };
+
+    this.busquedaCtrl.valueChanges.subscribe(val => {
+      this.dataSource.filter = (val ?? '').trim().toLowerCase();
+    });
+
     forkJoin({
       canales:     this.adminService.getCanales().pipe(catchError(() => of([]))),
       recepciones: this.recepcionService.listar({}).pipe(catchError(() => of([]))),
     }).subscribe(({ canales, recepciones }) => {
-      this.canales     = (canales as CanalOut[]).filter(x => x.activo);
-      this.recepciones = recepciones as RecepcionOut[];
-      this.cargando    = false;
+      this.canales          = (canales as CanalOut[]).filter(x => x.activo);
+      this.dataSource.data  = recepciones as RecepcionOut[];
+      this.cargando         = false;
       this.cdr.markForCheck();
     });
+  }
+
+  ngAfterViewInit(): void {
+    this.dataSource.sort = this.sort;
+
+    // Comparador personalizado para columnas anidadas
+    this.dataSource.sortingDataAccessor = (item: RecepcionOut, col: string) => {
+      switch (col) {
+        case 'canal':  return item.canal?.nombre ?? '';
+        case 'asunto': return item.asunto_provisional ?? '';
+        case 'fecha':  return item.created_at;
+        case 'adjuntos': return item.adjuntos?.length ?? 0;
+        default: return (item as any)[col] ?? '';
+      }
+    };
   }
 
   cargar(): void {
@@ -59,13 +94,18 @@ export class BandejaComponent implements OnInit {
     if (raw.fecha_hasta) filtros.fecha_hasta = raw.fecha_hasta;
 
     this.recepcionService.listar(filtros).subscribe({
-      next:  r  => { this.recepciones = r; this.cargando = false; this.cdr.markForCheck(); },
+      next: r => {
+        this.dataSource.data = r;
+        this.cargando        = false;
+        this.cdr.markForCheck();
+      },
       error: () => { this.cargando = false; this.cdr.markForCheck(); },
     });
   }
 
   limpiarFiltros(): void {
     this.filtrosForm.reset();
+    this.busquedaCtrl.setValue('');
     this.cargar();
   }
 

@@ -17,7 +17,7 @@
       <div class="radicado-numero-grande">{{ radicado.numero_radicado }}</div>
       <div class="radicado-fecha">
         <mat-icon class="icono-fecha">calendar_today</mat-icon>
-        {{ radicado.fecha_radicacion | date:'dd/MM/yyyy' }} a las {{ radicado.fecha_radicacion | date:'HH:mm' }}
+        {{ radicado.fecha_radicacion | date:'dd/MM/yyyy':'America/Bogota' }} a las {{ radicado.fecha_radicacion | date:'HH:mm':'America/Bogota' }}
         &nbsp;—&nbsp;
         <span [class]="'chip-estado ' + radicado.estado">{{ radicado.estado | titlecase }}</span>
       </div>

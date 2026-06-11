@@ -79,7 +79,22 @@
           </mat-form-field>
         </div>
 
-        <div class="error-banner" *ngIf="error">
+        <div class="error-banner error-desplazado" *ngIf="tipoError === 'desplazado'">
+          <mat-icon>devices_other</mat-icon>
+          <div>
+            <strong>Sesión cerrada automáticamente</strong>
+            <span>Se inició sesión en otro dispositivo. Vuelva a ingresar para continuar.</span>
+          </div>
+        </div>
+
+        <div class="error-banner error-inactivo" *ngIf="tipoError === 'inactivo'">
+          <mat-icon>block</mat-icon>
+          <div>
+            <strong>Cuenta inactiva</strong>
+            <span>{{ error }}</span>
+          </div>
+        </div>
+        <div class="error-banner" *ngIf="tipoError === 'credenciales'">
           <mat-icon>error_outline</mat-icon>
           <span>{{ error }}</span>
         </div>
