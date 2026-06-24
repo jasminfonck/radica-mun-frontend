@@ -22,9 +22,9 @@ export class BandejaRadicadosComponent implements OnInit {
   columnas = ['numero_radicado', 'recepcion_id', 'dependencia', 'fecha_radicacion', 'estado', 'acciones'];
 
   readonly ESTADOS = [
-    { value: '',        label: 'Todos'   },
-    { value: 'vigente', label: 'Vigente' },
-    { value: 'anulado', label: 'Anulado' },
+    { value: '',         label: 'Todos'    },
+    { value: 'radicado', label: 'Radicado' },
+    { value: 'anulado',  label: 'Anulado'  },
   ];
 
   constructor(

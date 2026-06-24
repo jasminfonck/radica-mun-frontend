@@ -73,7 +73,7 @@
 
       <ng-container matColumnDef="dependencia">
         <th mat-header-cell *matHeaderCellDef>Dependencia destino</th>
-        <td mat-cell *matCellDef="let r">{{ r.dependencia.nombre }}</td>
+        <td mat-cell *matCellDef="let r">{{ r.dependencia?.nombre ?? '—' }}</td>
       </ng-container>
 
       <ng-container matColumnDef="fecha_radicacion">

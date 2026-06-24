@@ -32,15 +32,15 @@
       <mat-card-content>
         <div class="campo-detalle">
           <span class="campo-etiqueta">Dependencia destino</span>
-          <span>{{ radicado.dependencia.nombre }}</span>
+          <span>{{ radicado.dependencia?.nombre ?? '—' }}</span>
         </div>
-        <div class="campo-detalle" *ngIf="radicado.dependencia.codigo">
+        <div class="campo-detalle" *ngIf="radicado.dependencia?.codigo">
           <span class="campo-etiqueta">Código</span>
-          <span>{{ radicado.dependencia.codigo }}</span>
+          <span>{{ radicado.dependencia?.codigo }}</span>
         </div>
         <div class="campo-detalle">
-          <span class="campo-etiqueta">Radicado por</span>
-          <span>{{ radicado.radicado_por.nombre }}</span>
+          <span class="campo-etiqueta">Completado por</span>
+          <span>{{ radicado.radicado_por?.nombre ?? '—' }}</span>
         </div>
         <div class="campo-detalle" *ngIf="radicado.observaciones">
           <span class="campo-etiqueta">Observaciones</span>
@@ -70,7 +70,7 @@
           </button>
 
           <button mat-stroked-button color="warn"
-                  *ngIf="esAdmin && radicado.estado === 'vigente'"
+                  *ngIf="esAdmin && radicado.estado === 'radicado'"
                   (click)="modoAnular = true">
             <mat-icon>cancel</mat-icon> Anular radicado
           </button>

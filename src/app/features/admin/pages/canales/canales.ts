@@ -16,14 +16,14 @@ export class CanalesComponent implements OnInit {
   error = false;
   guardando: Record<number, boolean> = {};
 
-  // Buzón de correo
   buzon: BuzonCorreoOut | null = null;
   cargandoBuzon = false;
   mostrarFormBuzon = false;
-  mostrarPassword = false;
+  mostrarSecret = false;
   guardandoBuzon = false;
   probandoConexion = false;
   activandoBuzon = false;
+  iniciandoOAuth = false;
   buzonForm!: FormGroup;
 
   iconos: Record<string, string> = {
@@ -53,6 +53,9 @@ export class CanalesComponent implements OnInit {
 
   ngOnInit(): void {
     this._inicializarForm();
+    this.buzonForm.get('tipo_cuenta')!.valueChanges.subscribe(() => this._actualizarValidadorTenant());
+    this.buzonForm.get('proveedor')!.valueChanges.subscribe(() => this._actualizarValidadorTenant());
+
     this.adminService.getCanales().subscribe({
       next: c => {
         this.canales = c;
@@ -73,12 +76,25 @@ export class CanalesComponent implements OnInit {
   private _inicializarForm(): void {
     this.buzonForm = this.fb.group({
       proveedor:             ['gmail', Validators.required],
+      tipo_cuenta:           ['personal', Validators.required],
       correo:                ['', [Validators.required, Validators.email]],
-      password_app:          ['', [Validators.required, Validators.minLength(8)]],
-      intervalo_minutos:     [5, [Validators.required, Validators.min(1), Validators.max(60)]],
-      max_adjuntos:          [5, [Validators.required, Validators.min(1), Validators.max(20)]],
-      max_tamano_adjunto_mb: [10, [Validators.required, Validators.min(1), Validators.max(50)]],
+      oauth_client_id:       ['', Validators.required],
+      oauth_client_secret:   ['', Validators.required],
+      oauth_tenant_id:       [''],
+      intervalo_minutos:     [5,  [Validators.required, Validators.min(1), Validators.max(60)]],
     });
+  }
+
+  private _actualizarValidadorTenant(): void {
+    const proveedor  = this.buzonForm.get('proveedor')!.value;
+    const tipoCuenta = this.buzonForm.get('tipo_cuenta')!.value;
+    const tenant     = this.buzonForm.get('oauth_tenant_id')!;
+    if (proveedor === 'outlook' && tipoCuenta === 'empresarial') {
+      tenant.setValidators([Validators.required]);
+    } else {
+      tenant.clearValidators();
+    }
+    tenant.updateValueAndValidity();
   }
 
   private _cargarBuzon(canalId: number): void {
@@ -100,21 +116,33 @@ export class CanalesComponent implements OnInit {
   private _rellenarForm(b: BuzonCorreoOut): void {
     this.buzonForm.patchValue({
       proveedor:             b.proveedor,
-      correo:                b.correo,
-      intervalo_minutos:     b.intervalo_minutos,
-      max_adjuntos:          b.max_adjuntos,
-      max_tamano_adjunto_mb: b.max_tamano_adjunto_mb,
+      tipo_cuenta:           b.tipo_cuenta,
+      correo:            b.correo,
+      intervalo_minutos: b.intervalo_minutos,
     });
-    // password_app no se pre-rellena por seguridad
-    this.buzonForm.get('password_app')!.clearValidators();
-    this.buzonForm.get('password_app')!.updateValueAndValidity();
+    // Client ID se muestra; secret no por seguridad
+    if (b.oauth_client_id) {
+      this.buzonForm.get('oauth_client_id')!.setValue(b.oauth_client_id);
+    }
+    // Secret opcional en edición
+    this.buzonForm.get('oauth_client_secret')!.clearValidators();
+    this.buzonForm.get('oauth_client_secret')!.updateValueAndValidity();
+    this._actualizarValidadorTenant();
   }
 
   get canalEmail(): CanalOut | undefined {
     return this.canales.find(c => c.tipo === 'email');
   }
 
-  // ── Canales ─────────────────────────────────────────────────────────────
+  get proveedorActual(): string {
+    return this.buzonForm.get('proveedor')?.value ?? 'gmail';
+  }
+
+  get tipoCuentaActual(): string {
+    return this.buzonForm.get('tipo_cuenta')?.value ?? 'personal';
+  }
+
+  // ── Canales ──────────────────────────────────────────────────────────────
 
   toggleCanal(canal: CanalOut): void {
     const nuevoActivo = !canal.activo;
@@ -131,6 +159,9 @@ export class CanalesComponent implements OnInit {
       next: c => {
         const idx = this.canales.findIndex(x => x.id === c.id);
         if (idx >= 0) this.canales[idx] = c;
+        if (c.tipo === 'email' && this.buzon) {
+          this.buzon.activo = c.activo;
+        }
         this.guardando[canal.id] = false;
         this.cdr.markForCheck();
       },
@@ -161,20 +192,23 @@ export class CanalesComponent implements OnInit {
     });
   }
 
-  // ── Buzón de correo ──────────────────────────────────────────────────────
+  // ── Buzón ─────────────────────────────────────────────────────────────────
 
   abrirFormBuzon(): void {
     this.mostrarFormBuzon = true;
     if (!this.buzon) {
-      this.buzonForm.get('password_app')!.setValidators([Validators.required, Validators.minLength(8)]);
-      this.buzonForm.get('password_app')!.updateValueAndValidity();
+      this.buzonForm.get('oauth_client_secret')!.setValidators([Validators.required]);
+      this.buzonForm.get('oauth_client_secret')!.updateValueAndValidity();
     }
   }
 
   cancelarFormBuzon(): void {
     this.mostrarFormBuzon = false;
-    if (this.buzon) this._rellenarForm(this.buzon);
-    else this.buzonForm.reset({ proveedor: 'gmail', intervalo_minutos: 5, max_adjuntos: 5, max_tamano_adjunto_mb: 10 });
+    if (this.buzon) {
+      this._rellenarForm(this.buzon);
+    } else {
+      this.buzonForm.reset({ proveedor: 'gmail', tipo_cuenta: 'personal', intervalo_minutos: 5 });
+    }
   }
 
   guardarBuzon(): void {
@@ -187,18 +221,21 @@ export class CanalesComponent implements OnInit {
 
     if (this.buzon) {
       const update: BuzonCorreoUpdate = {
-        intervalo_minutos:     v.intervalo_minutos,
-        max_adjuntos:          v.max_adjuntos,
-        max_tamano_adjunto_mb: v.max_tamano_adjunto_mb,
+        proveedor:         v.proveedor,
+        tipo_cuenta:       v.tipo_cuenta,
+        correo:            v.correo,
+        intervalo_minutos: v.intervalo_minutos,
       };
-      if (v.password_app) update.password_app = v.password_app;
+      if (v.oauth_client_id)     update.oauth_client_id     = v.oauth_client_id;
+      if (v.oauth_client_secret) update.oauth_client_secret = v.oauth_client_secret;
+      if (v.oauth_tenant_id)     update.oauth_tenant_id     = v.oauth_tenant_id;
 
       this.adminService.actualizarBuzon(this.buzon.id, update).subscribe({
         next: b => {
           this.buzon = b;
           this.guardandoBuzon = false;
           this.mostrarFormBuzon = false;
-          this.toast.exito('Buzón actualizado correctamente.');
+          this.toast.exito('Buzón actualizado. Si cambió credenciales, vuelva a autorizar OAuth2.');
           this.cdr.markForCheck();
         },
         error: err => {
@@ -211,20 +248,22 @@ export class CanalesComponent implements OnInit {
       const canal = this.canalEmail;
       if (!canal) return;
       const create: BuzonCorreoCreate = {
-        canal_id:              canal.id,
-        proveedor:             v.proveedor,
-        correo:                v.correo,
-        password_app:          v.password_app,
-        intervalo_minutos:     v.intervalo_minutos,
-        max_adjuntos:          v.max_adjuntos,
-        max_tamano_adjunto_mb: v.max_tamano_adjunto_mb,
+        canal_id:            canal.id,
+        proveedor:           v.proveedor,
+        tipo_cuenta:         v.tipo_cuenta,
+        correo:              v.correo,
+        oauth_client_id:     v.oauth_client_id,
+        oauth_client_secret: v.oauth_client_secret,
+        intervalo_minutos:   v.intervalo_minutos,
       };
+      if (v.oauth_tenant_id) create.oauth_tenant_id = v.oauth_tenant_id;
+
       this.adminService.crearBuzon(create).subscribe({
         next: b => {
           this.buzon = b;
           this.guardandoBuzon = false;
           this.mostrarFormBuzon = false;
-          this.toast.exito('Buzón configurado. Pruebe la conexión antes de activarlo.');
+          this.toast.exito('Buzón configurado. Haga clic en "Autorizar OAuth2" para completar la conexión.');
           this.cdr.markForCheck();
         },
         error: err => {
@@ -261,20 +300,19 @@ export class CanalesComponent implements OnInit {
     });
   }
 
-  toggleBuzonActivo(): void {
+  iniciarOAuth(): void {
     if (!this.buzon) return;
-    const nuevoActivo = !this.buzon.activo;
-    this.activandoBuzon = true;
-    this.adminService.activarBuzon(this.buzon.id, nuevoActivo).subscribe({
-      next: b => {
-        this.buzon = b;
-        this.activandoBuzon = false;
-        this.toast.exito(nuevoActivo ? 'Polling de correo activado.' : 'Polling de correo desactivado.');
+    this.iniciandoOAuth = true;
+    this.adminService.iniciarOAuthBuzon(this.buzon.id).subscribe({
+      next: r => {
+        this.iniciandoOAuth = false;
+        window.open(r.url, '_blank', 'width=600,height=700,noopener,noreferrer');
+        this.toast.advertencia('Autoriza en la ventana que se abrió. Cuando termine, prueba la conexión.');
         this.cdr.markForCheck();
       },
       error: err => {
-        this.activandoBuzon = false;
-        this.toast.error(err?.error?.detail || 'No se pudo cambiar el estado del buzón.');
+        this.iniciandoOAuth = false;
+        this.toast.error(err?.error?.detail || 'No se pudo iniciar la autorización.');
         this.cdr.markForCheck();
       },
     });

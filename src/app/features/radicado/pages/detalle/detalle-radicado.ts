@@ -18,6 +18,7 @@ export class DetalleRadicadoComponent implements OnInit {
   anulando = false;
   esAdmin = false;
 
+
   formAnular!: FormGroup;
 
   constructor(

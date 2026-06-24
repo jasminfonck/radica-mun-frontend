@@ -13,6 +13,7 @@ import { MatDialogModule }           from '@angular/material/dialog';
 import { MatSelectModule }           from '@angular/material/select';
 import { MatChipsModule }            from '@angular/material/chips';
 import { MatSlideToggleModule }      from '@angular/material/slide-toggle';
+import { MatCheckboxModule }         from '@angular/material/checkbox';
 import { MatTabsModule }             from '@angular/material/tabs';
 import { MatListModule }             from '@angular/material/list';
 import { MatTooltipModule }          from '@angular/material/tooltip';
@@ -53,7 +54,7 @@ import { AuditoriaComponent }        from './pages/auditoria/auditoria';
     MatTableModule, MatDialogModule, MatSelectModule,
     MatChipsModule, MatSlideToggleModule, MatTabsModule,
     MatListModule, MatTooltipModule, MatProgressBarModule,
-    MatSnackBarModule,
+    MatSnackBarModule, MatCheckboxModule,
   ]
 })
 export class AdminModule {}

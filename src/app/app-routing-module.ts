@@ -9,6 +9,7 @@ import { LayoutComponent } from './core/layout/layout';
 const routes: Routes = [
   { path: 'login', loadChildren: () => import('./features/login/login-module').then(m => m.LoginModule) },
   { path: 'formulario', loadChildren: () => import('./features/formulario-publico/formulario-publico-module').then(m => m.FormularioPublicoModule) },
+  { path: 'consultar', loadChildren: () => import('./features/consulta-publica/consulta-publica-module').then(m => m.ConsultaPublicaModule) },
   {
     path: '',
     component: LayoutComponent,

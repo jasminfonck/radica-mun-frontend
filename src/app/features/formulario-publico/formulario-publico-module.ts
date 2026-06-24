@@ -13,8 +13,9 @@ import { MatRadioModule }         from '@angular/material/radio';
 import { MatCheckboxModule }      from '@angular/material/checkbox';
 import { MatProgressBarModule }   from '@angular/material/progress-bar';
 
-import { FormularioPublicoRoutingModule } from './formulario-publico-routing';
-import { FormularioPublicoComponent }     from './formulario-publico';
+import { FormularioPublicoRoutingModule }   from './formulario-publico-routing';
+import { FormularioPublicoComponent }       from './formulario-publico';
+import { AccessibilityWidgetComponent }     from './accessibility-widget/accessibility-widget.component';
 
 @NgModule({
   declarations: [FormularioPublicoComponent],
@@ -22,6 +23,7 @@ import { FormularioPublicoComponent }     from './formulario-publico';
     CommonModule,
     ReactiveFormsModule,
     FormularioPublicoRoutingModule,
+    AccessibilityWidgetComponent,
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,

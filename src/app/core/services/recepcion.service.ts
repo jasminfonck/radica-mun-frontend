@@ -18,6 +18,7 @@ export interface RecepcionOut {
   canal: CanalResumen;
   asunto_provisional?: string;
   observaciones?: string;
+  aviso_adjuntos?: string;
   email_remitente?: string;
   estado: string;
   recibido_por?: UsuarioResumen;
@@ -57,6 +58,9 @@ export interface InfoPublica {
   tipos_requerimiento: TipoReqResumen[];
   politica_privacidad_activa: boolean;
   politica_privacidad_texto?: string;
+  max_adjuntos: number;
+  max_tamano_adjunto_mb: number;
+  tipos_archivo_permitidos: string[];
 }
 
 export interface FormularioPublicoCreate {
@@ -89,7 +93,6 @@ export interface RecepcionFiltros {
 
 export const ESTADOS_RECEPCION = [
   { value: 'recibido',      label: 'Recibido' },
-  { value: 'en_revision',   label: 'En revisión' },
   { value: 'pendiente',     label: 'Pendiente' },
   { value: 'incompleto',    label: 'Incompleto' },
   { value: 'no_competente', label: 'No competente' },
@@ -138,6 +141,10 @@ export class RecepcionService {
 
   getBitacora(recepcionId: number): Observable<BitacoraEvento[]> {
     return this.http.get<BitacoraEvento[]>(`${this.base}/${recepcionId}/bitacora`);
+  }
+
+  notificarAdjuntos(recepcionId: number): Observable<{ enviado: boolean }> {
+    return this.http.post<{ enviado: boolean }>(`${this.base}/${recepcionId}/notificar-adjuntos`, {});
   }
 
   getInfoPublica(): Observable<InfoPublica> {

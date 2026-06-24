@@ -38,6 +38,8 @@ export interface ConfiguracionOut {
   secuencia_actual: number; ruta_almacenamiento?: string;
   color_primario: string; sistema_listo: boolean;
   politica_privacidad_activa: boolean; politica_privacidad_texto?: string;
+  max_adjuntos: number; max_tamano_adjunto_mb: number;
+  tipos_archivo_permitidos: string;
 }
 
 export interface BitacoraOut {
@@ -55,33 +57,46 @@ export interface BuzonCorreoOut {
   id: number;
   canal_id: number;
   proveedor: string;
+  tipo_cuenta: string;
+  auth_type: string;
   correo: string;
   servidor_imap: string;
   puerto: number;
   intervalo_minutos: number;
-  max_adjuntos: number;
-  max_tamano_adjunto_mb: number;
   activo: boolean;
   ultimo_polling?: string;
   estado_conexion: 'ok' | 'error' | 'sin_probar';
   ultimo_error?: string;
+  oauth_autorizado: boolean;
+  oauth_token_expiry?: string;
+  oauth_client_id?: string;
+  oauth_tenant_id?: string;
 }
 
 export interface BuzonCorreoCreate {
   canal_id: number;
   proveedor: string;
+  tipo_cuenta: string;
   correo: string;
-  password_app: string;
+  oauth_client_id: string;
+  oauth_client_secret: string;
+  oauth_tenant_id?: string;
   intervalo_minutos: number;
-  max_adjuntos: number;
-  max_tamano_adjunto_mb: number;
 }
 
 export interface BuzonCorreoUpdate {
-  password_app?: string;
+  proveedor?: string;
+  tipo_cuenta?: string;
+  correo?: string;
+  oauth_client_id?: string;
+  oauth_client_secret?: string;
+  oauth_tenant_id?: string;
   intervalo_minutos?: number;
-  max_adjuntos?: number;
-  max_tamano_adjunto_mb?: number;
+}
+
+export interface OAuthIniciarOut {
+  url: string;
+  mensaje: string;
 }
 
 export interface TestConexionResult {
@@ -143,4 +158,5 @@ export class AdminService {
   actualizarBuzon(id: number, d: BuzonCorreoUpdate): Observable<BuzonCorreoOut>  { return this.http.put<BuzonCorreoOut>(`${this.base}/buzon-correo/${id}`, d); }
   probarBuzon(id: number): Observable<TestConexionResult>                         { return this.http.post<TestConexionResult>(`${this.base}/buzon-correo/${id}/probar`, {}); }
   activarBuzon(id: number, activo: boolean): Observable<BuzonCorreoOut>          { return this.http.post<BuzonCorreoOut>(`${this.base}/buzon-correo/${id}/activar`, null, { params: { activo } }); }
+  iniciarOAuthBuzon(id: number): Observable<OAuthIniciarOut>                     { return this.http.post<OAuthIniciarOut>(`${this.base}/buzon-correo/${id}/oauth/iniciar`, {}); }
 }

@@ -42,10 +42,11 @@
   </div>
 
   <!-- Confirmación exitosa -->
-  <div *ngIf="confirmacion" class="contenedor">
+  <!-- role="status" + tabindex="-1" permiten anuncio a AT y recibir foco programático (SC 4.1.3, 2.4.3) -->
+  <div *ngIf="confirmacion" class="contenedor" role="status" #confirmacionCard tabindex="-1">
     <div class="confirmacion-card">
       <div class="confirmacion-icono">
-        <mat-icon>check_circle</mat-icon>
+        <mat-icon aria-hidden="true">check_circle</mat-icon>
       </div>
       <h2>Se ha recibido su formulario</h2>
       <p>Su comunicación ha sido registrada exitosamente en nuestro sistema.</p>
@@ -86,9 +87,10 @@
     <form [formGroup]="form" (ngSubmit)="enviar()">
 
       <!-- Sección 1: Datos del solicitante -->
-      <mat-card class="seccion-card">
-        <mat-card-title>
-          <mat-icon>person</mat-icon> Datos del solicitante
+      <!-- role="group" + aria-labelledby agrupan los campos para AT (SC 1.3.1) -->
+      <mat-card class="seccion-card" role="group" aria-labelledby="titulo-solicitante">
+        <mat-card-title id="titulo-solicitante">
+          <mat-icon aria-hidden="true">person</mat-icon> Datos del solicitante
         </mat-card-title>
         <mat-card-content>
 
@@ -159,7 +161,8 @@
             </mat-form-field>
 
             <!-- NIT: campo número + campo dígito verificación separados -->
-            <div class="nit-row" *ngIf="form.get('tipo_identificacion')?.value === 'NIT'">
+            <div class="nit-row" *ngIf="form.get('tipo_identificacion')?.value === 'NIT'"
+                 role="group" aria-label="NIT con dígito de verificación">
               <mat-form-field appearance="outline" class="nit-numero">
                 <mat-label>NIT *</mat-label>
                 <input matInput formControlName="numero_identificacion"
@@ -175,7 +178,7 @@
                   7–15 dígitos
                 </mat-error>
               </mat-form-field>
-              <span class="nit-guion">–</span>
+              <span class="nit-guion" aria-hidden="true">–</span>
               <mat-form-field appearance="outline" class="nit-dv">
                 <mat-label>DV *</mat-label>
                 <input matInput formControlName="digito_verificacion"
@@ -216,9 +219,9 @@
       </mat-card>
 
       <!-- Sección 2: Datos de la comunicación -->
-      <mat-card class="seccion-card">
-        <mat-card-title>
-          <mat-icon>description</mat-icon> Datos de la comunicación
+      <mat-card class="seccion-card" role="group" aria-labelledby="titulo-comunicacion">
+        <mat-card-title id="titulo-comunicacion">
+          <mat-icon aria-hidden="true">description</mat-icon> Datos de la comunicación
         </mat-card-title>
         <mat-card-content>
           <div class="form-grid">
@@ -254,12 +257,15 @@
       </mat-card>
 
       <!-- Política de privacidad -->
-      <mat-card class="seccion-card" *ngIf="info?.politica_privacidad_activa">
-        <mat-card-title>
-          <mat-icon>privacy_tip</mat-icon> Política de privacidad
+      <mat-card class="seccion-card" *ngIf="info?.politica_privacidad_activa"
+                role="group" aria-labelledby="titulo-politica">
+        <mat-card-title id="titulo-politica">
+          <mat-icon aria-hidden="true">privacy_tip</mat-icon> Política de privacidad
         </mat-card-title>
         <mat-card-content>
-          <div class="politica-texto" *ngIf="info?.politica_privacidad_texto">
+          <!-- tabindex="0" permite desplazar el div con teclado cuando desborda (SC 2.1.1) -->
+          <div class="politica-texto" *ngIf="info?.politica_privacidad_texto"
+               tabindex="0" role="region" aria-label="Texto de la política de privacidad">
             {{ info!.politica_privacidad_texto }}
           </div>
           <mat-checkbox formControlName="acepta_politica" color="primary"
@@ -277,16 +283,16 @@
       </mat-card>
 
       <!-- Sección 3: Documentos adjuntos -->
-      <mat-card class="seccion-card">
-        <mat-card-title>
-          <mat-icon>attach_file</mat-icon> Documentos adjuntos
-          <span class="adjuntos-contador">({{ archivosAdjuntos.length }}/{{ MAX_ADJUNTOS }})</span>
+      <mat-card class="seccion-card" role="group" aria-labelledby="titulo-adjuntos">
+        <mat-card-title id="titulo-adjuntos">
+          <mat-icon aria-hidden="true">attach_file</mat-icon> Documentos adjuntos
+          <span class="adjuntos-contador">({{ archivosAdjuntos.length }}/{{ maxAdjuntos }})</span>
         </mat-card-title>
         <mat-card-content>
 
           <p class="adjuntos-ayuda" id="adjuntos-ayuda">
-            Puede adjuntar hasta {{ MAX_ADJUNTOS }} archivos (máx. {{ MAX_MB_ADJUNTO }} MB cada uno).
-            Formatos aceptados: PDF, Word, Excel, imágenes, ZIP.
+            Puede adjuntar hasta {{ maxAdjuntos }} archivos (máx. {{ maxMbAdjunto }} MB cada uno).
+            Formatos aceptados: {{ formatosLegibles }}.
           </p>
 
           <ul class="adjuntos-lista" *ngIf="archivosAdjuntos.length > 0"
@@ -308,17 +314,17 @@
                  tabindex="-1"
                  aria-hidden="true"
                  (change)="agregarArchivos($event)"
-                 [disabled]="archivosAdjuntos.length >= MAX_ADJUNTOS"
-                 accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.xls,.xlsx,.txt,.zip">
+                 [disabled]="archivosAdjuntos.length >= maxAdjuntos"
+                 [attr.accept]="acceptAttr">
 
           <!-- Botón semántico nativo — Tab + Enter/Space lo activan -->
           <button type="button" class="btn-adjuntar"
                   (click)="fileInputRef.click()"
-                  [disabled]="archivosAdjuntos.length >= MAX_ADJUNTOS"
+                  [disabled]="archivosAdjuntos.length >= maxAdjuntos"
                   aria-describedby="adjuntos-ayuda"
-                  [attr.aria-label]="archivosAdjuntos.length >= MAX_ADJUNTOS
-                    ? 'Límite de ' + MAX_ADJUNTOS + ' archivos alcanzado'
-                    : 'Adjuntar archivo (' + archivosAdjuntos.length + ' de ' + MAX_ADJUNTOS + ' seleccionados)'">
+                  [attr.aria-label]="archivosAdjuntos.length >= maxAdjuntos
+                    ? 'Límite de ' + maxAdjuntos + ' archivos alcanzado'
+                    : 'Adjuntar archivo (' + archivosAdjuntos.length + ' de ' + maxAdjuntos + ' seleccionados)'">
             <mat-icon aria-hidden="true">attach_file</mat-icon>
             <span>Seleccionar archivo</span>
           </button>
@@ -326,8 +332,9 @@
         </mat-card-content>
       </mat-card>
 
-      <!-- Error de envío -->
-      <div *ngIf="errorEnvio" class="alerta-error" role="alert" aria-live="assertive">
+      <!-- Error de envío: tabindex="-1" permite recibir foco programático (SC 2.4.3) -->
+      <div *ngIf="errorEnvio" class="alerta-error" role="alert" aria-live="assertive"
+           tabindex="-1" #errorEnvioRef>
         <mat-icon>error_outline</mat-icon>
         <span>{{ errorEnvio }}</span>
       </div>
@@ -351,11 +358,13 @@
     </form>
   </div>
 
-  <!-- Footer -->
-  <footer class="footer-publico" *ngIf="!cargando">
+  <!-- Footer: role="contentinfo" es el landmark semántico para pie de página (SC 1.3.6) -->
+  <footer class="footer-publico" role="contentinfo" *ngIf="!cargando">
     <span>{{ info?.entidad_nombre }}</span>
     <span *ngIf="info?.entidad_email"> · {{ info?.entidad_email }}</span>
     <span *ngIf="info?.entidad_telefono"> · {{ info?.entidad_telefono }}</span>
   </footer>
 
 </div>
+<!-- Widget fuera de .pagina-publica para que position:fixed no sea afectado por el filter de alto contraste -->
+<app-accessibility-widget></app-accessibility-widget>

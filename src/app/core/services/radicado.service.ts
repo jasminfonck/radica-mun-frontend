@@ -9,9 +9,9 @@ export interface RadicadoOut {
   id: number;
   numero_radicado: string;
   recepcion_id: number;
-  dependencia: DependenciaResumen;
-  radicado_por: UsuarioResumen;
-  estado: string;
+  dependencia?: DependenciaResumen | null;  // null si estado='pendiente'
+  radicado_por?: UsuarioResumen | null;     // null si estado='pendiente'
+  estado: string;                           // pendiente | radicado | anulado
   observaciones?: string;
   ruta_constancia?: string;
   fecha_radicacion: string;
@@ -22,7 +22,7 @@ export interface RadicadoResumen {
   id: number;
   numero_radicado: string;
   recepcion_id: number;
-  dependencia: DependenciaResumen;
+  dependencia?: DependenciaResumen | null;
   estado: string;
   fecha_radicacion: string;
 }
@@ -31,6 +31,17 @@ export interface RadicadoCreate {
   recepcion_id:   number;
   dependencia_id: number;
   observaciones?: string;
+}
+
+export interface RadicadoPublicoOut {
+  numero_radicado: string;
+  fecha_radicacion: string;
+  estado: string;
+  dependencia_nombre: string;
+  asunto?: string;
+  tipo_requerimiento?: string;
+  remitente_nombre?: string;
+  tiene_constancia: boolean;
 }
 
 export interface FiltrosRadicado {
@@ -81,5 +92,13 @@ export class RadicadoService {
 
   descargarConstancia(id: number): Observable<Blob> {
     return this.http.get(`${this.base}/${id}/constancia/descargar`, { responseType: 'blob' });
+  }
+
+  consultarPublico(numero: string): Observable<RadicadoPublicoOut> {
+    return this.http.get<RadicadoPublicoOut>(`${this.base}/publico/${encodeURIComponent(numero)}`);
+  }
+
+  descargarConstanciaPublica(numero: string): Observable<Blob> {
+    return this.http.get(`${this.base}/publico/${encodeURIComponent(numero)}/constancia`, { responseType: 'blob' });
   }
 }

@@ -28,7 +28,7 @@ export class ReportesComponent implements OnInit {
 
   readonly ESTADOS = [
     { value: '',        label: 'Todos los estados' },
-    { value: 'vigente', label: 'Vigente'            },
+    { value: 'radicado', label: 'Radicado'           },
     { value: 'anulado', label: 'Anulado'            },
   ];
 

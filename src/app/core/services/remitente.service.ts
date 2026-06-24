@@ -71,6 +71,7 @@ export interface MetadatosOut {
   observaciones?: string;
   numero_referencia?: string;
   fecha_documento?: string;
+  campos_bloqueados?: string[];
   created_at: string;
 }
 

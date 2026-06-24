@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import {
   RecepcionService,
@@ -14,6 +14,10 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FormularioPublicoComponent implements OnInit {
+  // Referencias para gestión de foco tras cambios dinámicos (SC 2.4.3)
+  @ViewChild('confirmacionCard') private confirmacionCard?: ElementRef<HTMLElement>;
+  @ViewChild('errorEnvioRef')   private errorEnvioRef?: ElementRef<HTMLElement>;
+
   info: InfoPublica | null = null;
   form!: FormGroup;
   cargando = true;
@@ -23,8 +27,55 @@ export class FormularioPublicoComponent implements OnInit {
   errorEnvio = '';
 
   archivosAdjuntos: File[] = [];
-  readonly MAX_ADJUNTOS   = 5;
-  readonly MAX_MB_ADJUNTO = 10;
+  maxAdjuntos   = 5;
+  maxMbAdjunto  = 10;
+  tiposPermitidos: string[] = [];
+
+  private static readonly MIME_LABEL: Record<string, string> = {
+    'application/pdf': 'PDF',
+    'image/jpeg': 'JPEG',
+    'image/png': 'PNG',
+    'image/gif': 'GIF',
+    'application/msword': 'Word',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word',
+    'application/vnd.ms-excel': 'Excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel',
+    'text/plain': 'TXT',
+    'application/rtf': 'RTF',
+    'application/zip': 'ZIP',
+  };
+
+  private static readonly MIME_EXT: Record<string, string[]> = {
+    'application/pdf': ['.pdf'],
+    'image/jpeg': ['.jpg', '.jpeg'],
+    'image/png': ['.png'],
+    'image/gif': ['.gif'],
+    'application/msword': ['.doc'],
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+    'application/vnd.ms-excel': ['.xls'],
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+    'text/plain': ['.txt'],
+    'application/rtf': ['.rtf'],
+    'application/zip': ['.zip'],
+  };
+
+  get formatosLegibles(): string {
+    const seen = new Set<string>();
+    const labels: string[] = [];
+    for (const mime of this.tiposPermitidos) {
+      const label = FormularioPublicoComponent.MIME_LABEL[mime] ?? mime;
+      if (!seen.has(label)) { seen.add(label); labels.push(label); }
+    }
+    return labels.length ? labels.join(', ') : 'todos los formatos';
+  }
+
+  get acceptAttr(): string {
+    const exts: string[] = [];
+    for (const mime of this.tiposPermitidos) {
+      (FormularioPublicoComponent.MIME_EXT[mime] ?? []).forEach(e => exts.push(e));
+    }
+    return exts.length ? exts.join(',') : '*';
+  }
 
   readonly tiposIdentificacionNatural = [
     { value: 'CC', label: 'Cédula de ciudadanía' },
@@ -136,6 +187,9 @@ export class FormularioPublicoComponent implements OnInit {
     this.recepcionService.getInfoPublica().subscribe({
       next: info => {
         this.info = info;
+        this.maxAdjuntos  = info.max_adjuntos   ?? 5;
+        this.maxMbAdjunto = info.max_tamano_adjunto_mb ?? 10;
+        this.tiposPermitidos = info.tipos_archivo_permitidos ?? [];
         this.cargando = false;
         if (info.politica_privacidad_activa) {
           this.form.get('acepta_politica')!.setValidators(Validators.requiredTrue);
@@ -161,9 +215,9 @@ export class FormularioPublicoComponent implements OnInit {
     if (!input.files) return;
     const nuevos = Array.from(input.files);
     for (const archivo of nuevos) {
-      if (this.archivosAdjuntos.length >= this.MAX_ADJUNTOS) break;
-      if (archivo.size > this.MAX_MB_ADJUNTO * 1024 * 1024) {
-        this.errorEnvio = `El archivo "${archivo.name}" supera el límite de ${this.MAX_MB_ADJUNTO} MB.`;
+      if (this.archivosAdjuntos.length >= this.maxAdjuntos) break;
+      if (archivo.size > this.maxMbAdjunto * 1024 * 1024) {
+        this.errorEnvio = `El archivo "${archivo.name}" supera el límite de ${this.maxMbAdjunto} MB.`;
         this.cdr.markForCheck();
         continue;
       }
@@ -197,12 +251,16 @@ export class FormularioPublicoComponent implements OnInit {
         this.archivosAdjuntos = [];
         this.enviando = false;
         this.cdr.markForCheck();
+        // Mueve el foco a la confirmación para que lectores de pantalla la anuncien (SC 2.4.3)
+        setTimeout(() => this.confirmacionCard?.nativeElement.focus());
       },
       error: err => {
         this.errorEnvio = err.error?.detail
           || 'Ocurrió un error al enviar su solicitud. Intente más tarde.';
         this.enviando = false;
         this.cdr.markForCheck();
+        // Mueve el foco al error para que sea anunciado inmediatamente (SC 2.4.3)
+        setTimeout(() => this.errorEnvioRef?.nativeElement.focus());
       },
     });
   }

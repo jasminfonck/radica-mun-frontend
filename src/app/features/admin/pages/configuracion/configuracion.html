@@ -85,6 +85,49 @@
           </div>
         </div>
 
+        <!-- ── Parametrización de adjuntos ───────────────── -->
+        <div class="campo-ancho politica-section">
+          <p class="color-section-titulo">
+            <mat-icon style="vertical-align:middle; margin-right:6px">attach_file</mat-icon>
+            Parametrización de archivos adjuntos
+          </p>
+          <p style="font-size:13px; color:var(--texto-suave); margin-bottom:16px">
+            Aplica al formulario público, al buzón oficial y a la creación de cualquier recepción.
+          </p>
+
+          <div class="form-grid" style="margin-bottom:20px">
+            <mat-form-field appearance="outline">
+              <mat-label>Máximo de adjuntos por envío</mat-label>
+              <input matInput type="number" formControlName="max_adjuntos" min="1" max="20">
+              <mat-hint>Entre 1 y 20 archivos</mat-hint>
+              <mat-error>Valor entre 1 y 20</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Tamaño máximo por archivo (MB)</mat-label>
+              <input matInput type="number" formControlName="max_tamano_adjunto_mb" min="1" max="100">
+              <mat-hint>Entre 1 y 100 MB</mat-hint>
+              <mat-error>Valor entre 1 y 100</mat-error>
+            </mat-form-field>
+          </div>
+
+          <p style="font-size:13px; font-weight:600; margin-bottom:10px">Tipos de archivo permitidos</p>
+          <div class="tipos-archivo-grid">
+            <mat-checkbox
+              *ngFor="let t of TIPOS_ARCHIVO"
+              [checked]="tipoActivo(t)"
+              (change)="toggleTipo(t)"
+              color="primary">
+              <span style="font-size:13px">{{ t.label }}</span>
+              <span style="font-size:11px; color:var(--texto-suave); margin-left:4px">{{ t.ext }}</span>
+            </mat-checkbox>
+          </div>
+          <p *ngIf="tiposSeleccionados.size === 0"
+             style="font-size:12px; color:#c62828; margin-top:8px">
+            Seleccione al menos un tipo de archivo.
+          </p>
+        </div>
+
         <!-- ── Política de privacidad ──────────────────── -->
         <div class="campo-ancho politica-section">
           <p class="color-section-titulo">

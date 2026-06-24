@@ -22,7 +22,7 @@ export class BusquedaAvanzadaComponent implements OnInit {
 
   readonly ESTADOS = [
     { value: '',         label: 'Todos' },
-    { value: 'vigente',  label: 'Vigente' },
+    { value: 'radicado', label: 'Radicado' },
     { value: 'anulado',  label: 'Anulado' },
   ];
 

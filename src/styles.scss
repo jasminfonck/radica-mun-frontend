@@ -51,7 +51,7 @@ html {
   --estado-incompetente-bg:  #f3e5f5; --estado-incompetente-text:  #4a148c;
   --estado-no-competente-bg: #f3e5f5; --estado-no-competente-text: #4a148c;
   --estado-competente-bg:    #e8f5e9; --estado-competente-text:    #1b5e20;
-  --estado-vigente-bg:       #e8f5e9; --estado-vigente-text:       #1b5e20;
+  --estado-radicado-bg:      #e8f5e9; --estado-radicado-text:      #1b5e20;
   --estado-anulado-bg:      #ffebee; --estado-anulado-text:      #b71c1c;
 }
 
@@ -188,6 +188,12 @@ mat-card {
   .campo-ancho { grid-column: 1 / -1; }
 }
 
+.tipos-archivo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px 16px;
+}
+
 .acciones {
   display: flex;
   align-items: center;
@@ -247,7 +253,7 @@ table.mat-mdc-table {
   white-space: nowrap;
 
   &.activo,
-  &.vigente    { background: var(--estado-vigente-bg);     color: var(--estado-vigente-text); }
+  &.radicado   { background: var(--estado-radicado-bg);    color: var(--estado-radicado-text); }
   &.recibido   { background: var(--estado-recibido-bg);    color: var(--estado-recibido-text); }
   &.en_revision{ background: var(--estado-revision-bg);    color: var(--estado-revision-text); }
   &.pendiente  { background: var(--estado-pendiente-bg);   color: var(--estado-pendiente-text); }
@@ -617,7 +623,7 @@ table.mat-mdc-table {
   align-items: center;
   gap: 10px;
   padding: 12px 16px;
-  background: var(--estado-vigente-bg);
+  background: var(--estado-radicado-bg);
   border-radius: var(--radio-sm);
   color: #1b5e20;
 
@@ -804,14 +810,23 @@ table.mat-mdc-table {
 // Progress bar
 .mat-mdc-progress-bar { --mdc-linear-progress-active-indicator-color: var(--azul); }
 
-// Form field — focus color only (no border-width change to avoid left-line artifact)
-.mat-mdc-form-field.mat-focused .mdc-notched-outline__leading,
-.mat-mdc-form-field.mat-focused .mdc-notched-outline__notch,
-.mat-mdc-form-field.mat-focused .mdc-notched-outline__trailing {
-  border-color: var(--azul) !important;
+// Form field (appearance="outline") — color del contorno al enfocar.
+//
+// NO pintar .mdc-notched-outline__leading/__notch/__trailing a mano: ese borde
+// lo forman 3 cajas separadas y Material mantiene transparentes las costuras
+// internas para que se vea como un único borde redondeado continuo. Forzar
+// border-color sobre los 3 segmentos pinta esas costuras y produce una línea
+// vertical recta interna ("doble borde"/límite de div) que ignora el radius.
+//
+// La forma correcta es alimentar el token público de Material, que aplica el
+// color respetando la geometría del notched-outline.
+.mat-mdc-form-field {
+  --mdc-outlined-text-field-focus-outline-color: var(--azul);
+  --mdc-outlined-text-field-focus-outline-width: 2px;
 }
 
-// Remove browser focus ring on inner elements
+// Suprimir el outline nativo del navegador en los elementos internos de los
+// campos (Material ya muestra su propio foco mediante el notched-outline azul).
 .mat-mdc-form-field .mdc-text-field,
 .mat-mdc-input-element,
 .mat-mdc-select .mat-mdc-select-trigger {
@@ -914,6 +929,27 @@ table.mat-mdc-table {
   0%   { stroke-dasharray: 4, 100;  stroke-dashoffset: 0; }
   50%  { stroke-dasharray: 50, 100; stroke-dashoffset: -20; }
   100% { stroke-dasharray: 4, 100;  stroke-dashoffset: -65; }
+}
+
+// ── Accesibilidad — modos activados por AccessibilityWidgetComponent ─────────
+
+// Alto contraste: inversión de colores que preserva la percepción de hue.
+// Se aplica solo al formulario público para no afectar el panel de administración.
+body.a11y-alto-contraste .pagina-publica {
+  filter: invert(1) hue-rotate(180deg);
+
+  // Re-invertir elementos que no deben verse afectados (logos, imágenes)
+  img,
+  [class*="mat-icon"] { filter: invert(1) hue-rotate(180deg); }
+}
+
+// Fuente legible: cambia a tipografía sans-serif de alta legibilidad (Verdana).
+// Se excluyen .mat-icon y .material-icons para que los íconos ligatura de Material
+// no se rendericen como texto (font-family: Verdana no reconoce las ligaduras de MD).
+body.a11y-fuente-legible .pagina-publica,
+body.a11y-fuente-legible .pagina-publica *:not(.mat-icon):not(.material-icons):not(.material-symbols-outlined):not(.material-symbols-rounded) {
+  font-family: 'Verdana', 'Geneva', 'Arial', sans-serif !important;
+  letter-spacing: .02em;
 }
 
 // Legacy kept for backward compat

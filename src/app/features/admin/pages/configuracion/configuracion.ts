@@ -10,6 +10,12 @@ export interface GrupoColor {
   colores: { hex: string; nombre: string }[];
 }
 
+export interface TipoArchivo {
+  mimes: string[];
+  label: string;
+  ext: string;
+}
+
 @Component({
   selector: 'app-configuracion',
   templateUrl: './configuracion.html',
@@ -22,6 +28,18 @@ export class ConfiguracionComponent implements OnInit {
   ejemploRadicado   = '';
   paletaAbierta     = false;
   descargandoBackup = false;
+
+  tiposSeleccionados = new Set<string>();
+
+  readonly TIPOS_ARCHIVO: TipoArchivo[] = [
+    { mimes: ['application/pdf'],                                                                                                                       label: 'PDF',          ext: '.pdf'         },
+    { mimes: ['image/jpeg'],                                                                                                                            label: 'JPEG',         ext: '.jpg'         },
+    { mimes: ['image/png'],                                                                                                                             label: 'PNG',          ext: '.png'         },
+    { mimes: ['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],                                         label: 'Word',         ext: '.doc / .docx' },
+    { mimes: ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],                                         label: 'Excel',        ext: '.xls / .xlsx' },
+    { mimes: ['text/plain'],                                                                                                                            label: 'Texto (.txt)', ext: '.txt'         },
+    { mimes: ['application/rtf'],                                                                                                                       label: 'RTF',          ext: '.rtf'         },
+  ];
 
   readonly PALETA: GrupoColor[] = [
     {
@@ -94,11 +112,16 @@ export class ConfiguracionComponent implements OnInit {
       color_primario:             ['', Validators.pattern(/^#[0-9A-Fa-f]{6}$/)],
       politica_privacidad_activa: [false],
       politica_privacidad_texto:  [''],
+      max_adjuntos:               [5,  [Validators.required, Validators.min(1), Validators.max(20)]],
+      max_tamano_adjunto_mb:      [10, [Validators.required, Validators.min(1), Validators.max(100)]],
     });
 
     this.adminService.getConfiguracion().subscribe({
       next: c => {
         this.form.patchValue(c);
+        this.tiposSeleccionados = new Set(
+          (c.tipos_archivo_permitidos || '').split(',').map(t => t.trim()).filter(Boolean)
+        );
         this.actualizarEjemplo();
         this.cdr.markForCheck();
       },
@@ -127,10 +150,26 @@ export class ConfiguracionComponent implements OnInit {
     return this.form.get('color_primario')?.value?.toLowerCase() === hex.toLowerCase();
   }
 
+  tipoActivo(tipo: TipoArchivo): boolean {
+    return tipo.mimes.some(m => this.tiposSeleccionados.has(m));
+  }
+
+  toggleTipo(tipo: TipoArchivo): void {
+    if (this.tipoActivo(tipo)) {
+      tipo.mimes.forEach(m => this.tiposSeleccionados.delete(m));
+    } else {
+      tipo.mimes.forEach(m => this.tiposSeleccionados.add(m));
+    }
+  }
+
   guardar(): void {
     if (this.form.invalid) return;
     this.guardando = true;
-    this.adminService.actualizarConfiguracion(this.form.value).subscribe({
+    const payload = {
+      ...this.form.value,
+      tipos_archivo_permitidos: Array.from(this.tiposSeleccionados).join(','),
+    };
+    this.adminService.actualizarConfiguracion(payload).subscribe({
       next: () => {
         this.guardando = false;
         this.cdr.markForCheck();

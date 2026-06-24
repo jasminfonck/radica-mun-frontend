@@ -1,0 +1,99 @@
+<div class="a11y-widget">
+
+  <!-- Panel de opciones (role="region" + aria-label para landmark sin trampa de foco) -->
+  <div class="a11y-panel"
+       [class.a11y-panel--visible]="abierto"
+       id="a11y-panel"
+       role="region"
+       aria-label="Opciones de accesibilidad"
+       aria-live="polite">
+
+    <div class="a11y-panel__header">
+      <h2 class="a11y-panel__titulo">
+        <mat-icon aria-hidden="true">accessibility_new</mat-icon>
+        Accesibilidad
+      </h2>
+      <button class="a11y-panel__cerrar"
+              (click)="cerrar()"
+              aria-label="Cerrar panel de accesibilidad">
+        <mat-icon aria-hidden="true">close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Tamaño de texto -->
+    <div class="a11y-grupo" role="group" aria-labelledby="a11y-label-texto">
+      <p class="a11y-grupo__titulo" id="a11y-label-texto">Tamaño del texto</p>
+      <div class="a11y-escalas">
+        <button *ngFor="let e of escalas"
+                class="a11y-escala-btn"
+                [class.a11y-escala-btn--activo]="config.escalaTexto === e.valor"
+                [attr.aria-pressed]="config.escalaTexto === e.valor"
+                [attr.aria-label]="e.titulo"
+                (click)="setEscala(e.valor)">
+          {{ e.etiqueta }}
+        </button>
+      </div>
+    </div>
+
+    <hr class="a11y-separador" aria-hidden="true">
+
+    <!-- Opciones de visualización -->
+    <div class="a11y-grupo" role="group" aria-labelledby="a11y-label-visual">
+      <p class="a11y-grupo__titulo" id="a11y-label-visual">Opciones visuales</p>
+
+      <button class="a11y-toggle"
+              [class.a11y-toggle--activo]="config.altoContraste"
+              [attr.aria-pressed]="config.altoContraste"
+              (click)="toggle('altoContraste')">
+        <mat-icon aria-hidden="true">contrast</mat-icon>
+        <span class="a11y-toggle__texto">Alto contraste</span>
+        <span class="a11y-toggle__indicador" aria-hidden="true">
+          {{ config.altoContraste ? 'ON' : 'OFF' }}
+        </span>
+      </button>
+
+      <button class="a11y-toggle"
+              [class.a11y-toggle--activo]="config.interlineadoAmplio"
+              [attr.aria-pressed]="config.interlineadoAmplio"
+              (click)="toggle('interlineadoAmplio')">
+        <mat-icon aria-hidden="true">format_line_spacing</mat-icon>
+        <span class="a11y-toggle__texto">Interlineado amplio</span>
+        <span class="a11y-toggle__indicador" aria-hidden="true">
+          {{ config.interlineadoAmplio ? 'ON' : 'OFF' }}
+        </span>
+      </button>
+
+      <button class="a11y-toggle"
+              [class.a11y-toggle--activo]="config.fuenteLegible"
+              [attr.aria-pressed]="config.fuenteLegible"
+              (click)="toggle('fuenteLegible')">
+        <mat-icon aria-hidden="true">font_download</mat-icon>
+        <span class="a11y-toggle__texto">Fuente legible</span>
+        <span class="a11y-toggle__indicador" aria-hidden="true">
+          {{ config.fuenteLegible ? 'ON' : 'OFF' }}
+        </span>
+      </button>
+    </div>
+
+    <hr class="a11y-separador" aria-hidden="true">
+
+    <!-- Restablecer -->
+    <button class="a11y-reset" (click)="resetear()"
+            aria-label="Restablecer todas las opciones de accesibilidad">
+      <mat-icon aria-hidden="true">restart_alt</mat-icon>
+      Restablecer todo
+    </button>
+
+  </div>
+
+  <!-- Botón disparador -->
+  <button class="a11y-trigger"
+          (click)="togglePanel()"
+          [attr.aria-expanded]="abierto"
+          aria-controls="a11y-panel"
+          aria-label="Opciones de accesibilidad"
+          title="Accesibilidad">
+    <mat-icon aria-hidden="true">accessibility_new</mat-icon>
+  </button>
+
+</div>

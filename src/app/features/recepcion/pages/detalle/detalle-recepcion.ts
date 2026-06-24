@@ -48,6 +48,18 @@ export class DetalleRecepcionComponent implements OnInit {
   bitacora: BitacoraEvento[] = [];
   cargandoBitacora = false;
 
+  // ── Campos bloqueados (metadatos auto-llenados desde formulario/email) ─────
+  camposBloquedosSet: Set<string> = new Set();
+
+  get remitenteBloquedo(): boolean {
+    return this.camposBloquedosSet.has('remitente_id');
+  }
+
+  // ── Aviso adjuntos ────────────────────────────────────────────────────────
+  enviandoAviso = false;
+  avisoEnviado  = false;
+  errorAviso    = '';
+
   // ── Radicado ───────────────────────────────────────────────────────────────
   radicado?: RadicadoOut | null;
   dependencias: DependenciaOut[] = [];
@@ -95,6 +107,7 @@ export class DetalleRecepcionComponent implements OnInit {
       if (!recepcion) { this.router.navigate(['/recepcion']); return; }
       this.recepcion          = recepcion;
       this.metadatos          = metadatos;
+      this.camposBloquedosSet = new Set(metadatos?.campos_bloqueados ?? []);
       this.tiposRequerimiento = tipos as TipoReqOut[];
       this.plazosRespuesta    = plazos as PlazoRespuestaResumen[];
       this.dependencias       = deps;
@@ -344,33 +357,42 @@ export class DetalleRecepcionComponent implements OnInit {
   }
 
   private readonly _etiquetas: Record<string, string> = {
-    crear_recepcion:    'Recepción creada',
-    cambio_estado_recepcion: 'Cambio de estado',
-    subir_adjunto:      'Adjunto subido',
-    eliminar_adjunto:   'Adjunto eliminado',
-    registrar_metadatos: 'Metadatos registrados',
-    editar_metadatos:   'Metadatos actualizados',
-    generar_radicado:   'Radicado generado',
+    crear_recepcion:          'Recepción creada',
+    cambio_estado_recepcion:  'Cambio de estado',
+    subir_adjunto:            'Adjunto subido',
+    eliminar_adjunto:         'Adjunto eliminado',
+    registrar_metadatos:      'Metadatos registrados',
+    editar_metadatos:         'Metadatos actualizados',
+    asignar_numero_radicado:  'Número de seguimiento asignado',
+    completar_radicado:       'Radicado completado',
+    generar_radicado:         'Radicado completado',
+    notificar_adjuntos:       'Aviso de adjuntos enviado',
   };
 
   private readonly _iconos: Record<string, string> = {
-    crear_recepcion:    'inbox',
-    cambio_estado_recepcion: 'swap_horiz',
-    subir_adjunto:      'attach_file',
-    eliminar_adjunto:   'delete',
-    registrar_metadatos: 'description',
-    editar_metadatos:   'edit',
-    generar_radicado:   'assignment_turned_in',
+    crear_recepcion:          'inbox',
+    cambio_estado_recepcion:  'swap_horiz',
+    subir_adjunto:            'attach_file',
+    eliminar_adjunto:         'delete',
+    registrar_metadatos:      'description',
+    editar_metadatos:         'edit',
+    asignar_numero_radicado:  'tag',
+    completar_radicado:       'assignment_turned_in',
+    generar_radicado:         'assignment_turned_in',
+    notificar_adjuntos:       'mail',
   };
 
   private readonly _clases: Record<string, string> = {
-    crear_recepcion:    'acc-verde',
-    cambio_estado_recepcion: 'acc-azul',
-    subir_adjunto:      'acc-naranja',
-    eliminar_adjunto:   'acc-rojo',
-    registrar_metadatos: 'acc-teal',
-    editar_metadatos:   'acc-teal',
-    generar_radicado:   'acc-morado',
+    crear_recepcion:          'acc-verde',
+    cambio_estado_recepcion:  'acc-azul',
+    subir_adjunto:            'acc-naranja',
+    eliminar_adjunto:         'acc-rojo',
+    registrar_metadatos:      'acc-teal',
+    editar_metadatos:         'acc-teal',
+    asignar_numero_radicado:  'acc-gris',
+    completar_radicado:       'acc-morado',
+    generar_radicado:         'acc-morado',
+    notificar_adjuntos:       'acc-naranja',
   };
 
   etiquetaAccion(accion: string): string {
@@ -393,6 +415,10 @@ export class DetalleRecepcionComponent implements OnInit {
     this.busquedaCtrl.setValue(r.nombre_completo, { emitEvent: false });
     this.modoFormRemitente = 'ninguno';
     this.formMetadatos.enable();
+    // Pre-llenar asunto desde el asunto provisional si aún no hay metadatos
+    if (!this.metadatos && this.recepcion?.asunto_provisional) {
+      this.formMetadatos.patchValue({ asunto: this.recepcion.asunto_provisional });
+    }
     this.remitenteService.obtener(r.id).subscribe(full => {
       this.remitenteCompleto = full;
       this.cdr.markForCheck();
@@ -400,6 +426,7 @@ export class DetalleRecepcionComponent implements OnInit {
   }
 
   limpiarRemitente(): void {
+    if (this.remitenteBloquedo) return;
     this.remitenteSeleccionado = undefined;
     this.remitenteCompleto = undefined;
     this.busquedaCtrl.setValue('', { emitEvent: false });
@@ -417,6 +444,10 @@ export class DetalleRecepcionComponent implements OnInit {
     this.formRemitente.reset({ tipo_persona: 'natural', tipo_identificacion: 'CC', numero_anexos: 0 });
     if (this.recepcion?.email_remitente) {
       this.formRemitente.patchValue({ email: this.recepcion.email_remitente });
+    }
+    // Pre-llenar asunto desde el asunto provisional (canal email o ventanilla)
+    if (!this.metadatos && this.recepcion?.asunto_provisional) {
+      this.formMetadatos.patchValue({ asunto: this.recepcion.asunto_provisional });
     }
   }
 
@@ -521,9 +552,33 @@ export class DetalleRecepcionComponent implements OnInit {
         this.radicado = r;
         this.radicando = false;
         this.exitoRadicado = true;
+        this.recepcion!.estado = 'radicado';
         this.cdr.markForCheck();
       },
       error: () => { this.radicando = false; this.cdr.markForCheck(); }
+    });
+  }
+
+  notificarAdjuntos(): void {
+    if (!this.recepcion || this.enviandoAviso) return;
+    this.enviandoAviso = true;
+    this.errorAviso = '';
+    this.recepcionService.notificarAdjuntos(this.recepcion.id).subscribe({
+      next: res => {
+        this.enviandoAviso = false;
+        if (res.enviado) {
+          this.avisoEnviado = true;
+          this.recepcion!.aviso_adjuntos = undefined;
+        } else {
+          this.errorAviso = 'El servidor no tiene SMTP configurado. El aviso no pudo enviarse.';
+        }
+        this.cdr.markForCheck();
+      },
+      error: err => {
+        this.enviandoAviso = false;
+        this.errorAviso = err?.error?.detail || 'No se pudo enviar el aviso. Intente de nuevo.';
+        this.cdr.markForCheck();
+      },
     });
   }
 
@@ -541,6 +596,8 @@ export class DetalleRecepcionComponent implements OnInit {
 
   editarMetadatos(): void {
     if (!this.metadatos) return;
+    const locked = new Set(this.metadatos.campos_bloqueados ?? []);
+    this.camposBloquedosSet = locked;
     const rem = this.metadatos.remitente as any;
     this.remitenteSeleccionado = rem;
     this.remitenteCompleto = undefined;
@@ -562,6 +619,12 @@ export class DetalleRecepcionComponent implements OnInit {
       observaciones:         this.metadatos.observaciones ?? '',
       numero_referencia:     this.metadatos.numero_referencia ?? '',
       fecha_documento:       this.metadatos.fecha_documento ? this.metadatos.fecha_documento.slice(0, 10) : '',
+    });
+    // Re-bloquear campos que el sistema llenó automáticamente
+    ['asunto', 'tipo_soporte', 'tipo_requerimiento_id'].forEach(campo => {
+      if (locked.has(campo)) {
+        this.formMetadatos.get(campo)?.disable({ emitEvent: false });
+      }
     });
     this.metadatos = null;
   }

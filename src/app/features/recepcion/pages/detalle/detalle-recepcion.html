@@ -41,6 +41,59 @@
           </mat-card-content>
         </mat-card>
 
+        <!-- Panel de aviso de adjuntos rechazados por el poller -->
+        <mat-card *ngIf="recepcion.aviso_adjuntos || avisoEnviado"
+                  class="aviso-adjuntos-card">
+          <mat-card-title>
+            <mat-icon style="color:#e65100;vertical-align:middle;margin-right:6px">warning</mat-icon>
+            Adjuntos rechazados por el sistema
+          </mat-card-title>
+          <mat-card-content>
+
+            <ng-container *ngIf="recepcion.aviso_adjuntos && !avisoEnviado">
+              <p style="font-size:13px;color:#555;margin:0 0 10px">
+                Los siguientes archivos no fueron guardados al procesar el correo:
+              </p>
+              <ul style="margin:0 0 14px;padding-left:20px">
+                <li *ngFor="let linea of recepcion.aviso_adjuntos.split('\n')"
+                    style="font-size:13px;color:#555;margin-bottom:4px">
+                  {{ linea }}
+                </li>
+              </ul>
+              <p style="font-size:13px;color:#777;margin:0 0 14px">
+                Puede notificar al remitente <strong>{{ recepcion.email_remitente }}</strong>
+                para que reenvíe los archivos cumpliendo las restricciones vigentes
+                (tipo, cantidad y tamaño).
+              </p>
+
+              <div *ngIf="errorAviso"
+                   style="color:#c62828;font-size:13px;margin-bottom:10px">
+                <mat-icon style="font-size:15px;vertical-align:middle">error_outline</mat-icon>
+                {{ errorAviso }}
+              </div>
+
+              <button mat-flat-button color="warn"
+                      [disabled]="enviandoAviso || !recepcion.email_remitente"
+                      [matTooltip]="!recepcion.email_remitente ? 'No hay correo del remitente registrado' : ''"
+                      (click)="notificarAdjuntos()">
+                <mat-icon>mail</mat-icon>
+                {{ enviandoAviso ? 'Enviando…' : 'Notificar remitente' }}
+              </button>
+            </ng-container>
+
+            <ng-container *ngIf="avisoEnviado">
+              <div style="display:flex;align-items:center;gap:8px;color:#2e7d32">
+                <mat-icon>check_circle</mat-icon>
+                <span style="font-size:14px">
+                  Aviso enviado a <strong>{{ recepcion.email_remitente }}</strong>.
+                  El remitente recibirá las instrucciones para reenviar los archivos.
+                </span>
+              </div>
+            </ng-container>
+
+          </mat-card-content>
+        </mat-card>
+
         <mat-card>
           <mat-card-title>Estado</mat-card-title>
           <mat-card-content>
@@ -50,14 +103,14 @@
               </span>
             </div>
 
-            <ng-container *ngIf="radicado">
+            <ng-container *ngIf="radicado?.estado === 'radicado'">
               <p class="estado-label" style="color:#757575;font-style:italic;margin-top:8px">
                 <mat-icon style="font-size:15px;vertical-align:middle">lock</mat-icon>
                 El estado no puede modificarse — recepción ya radicada.
               </p>
             </ng-container>
 
-            <ng-container *ngIf="!radicado && !estadoPendiente">
+            <ng-container *ngIf="radicado?.estado !== 'radicado' && !estadoPendiente">
               <p class="estado-label">Cambiar estado:</p>
               <div class="estados-botones">
                 <button *ngFor="let e of estados"
@@ -253,8 +306,10 @@
                   <mat-icon>check_circle</mat-icon>
                   <strong>{{ remitenteSeleccionado.nombre_completo }}</strong>
                   <span>{{ remitenteSeleccionado.numero_identificacion }}</span>
-                  <button mat-icon-button (click)="limpiarRemitente()" matTooltip="Cambiar remitente">
-                    <mat-icon>close</mat-icon>
+                  <button mat-icon-button (click)="limpiarRemitente()"
+                          [disabled]="remitenteBloquedo"
+                          [matTooltip]="remitenteBloquedo ? 'Remitente registrado desde el formulario — no puede modificarse' : 'Cambiar remitente'">
+                    <mat-icon>{{ remitenteBloquedo ? 'lock' : 'close' }}</mat-icon>
                   </button>
                 </div>
 
@@ -551,24 +606,24 @@
       <ng-template mat-tab-label>
         <span class="tab-label-con-estado">
           <mat-icon class="tab-estado-icon"
-            [class.tab-estado-ok]="!!radicado"
-            [class.tab-estado-warning]="!radicado && !!metadatos"
-            [class.tab-estado-pendiente]="!radicado && !metadatos">
-            {{ radicado ? 'check_circle' : (metadatos ? 'pending' : 'radio_button_unchecked') }}
+            [class.tab-estado-ok]="radicado?.estado === 'radicado'"
+            [class.tab-estado-warning]="radicado?.estado === 'pendiente'"
+            [class.tab-estado-pendiente]="!radicado">
+            {{ radicado?.estado === 'radicado' ? 'check_circle' : (radicado ? 'pending' : 'radio_button_unchecked') }}
           </mat-icon>
           Radicado
         </span>
       </ng-template>
       <div class="tab-contenido">
 
-        <!-- Radicado existente -->
-        <ng-container *ngIf="radicado">
+        <!-- ── Radicado completado (oficial) ──── -->
+        <ng-container *ngIf="radicado?.estado === 'radicado'">
           <mat-card class="form-card radicado-card">
             <mat-card-content>
-              <div class="radicado-numero-grande">{{ radicado.numero_radicado }}</div>
+              <div class="radicado-numero-grande">{{ radicado!.numero_radicado }}</div>
               <div class="radicado-fecha">
-                {{ radicado.fecha_radicacion | date:'dd/MM/yyyy HH:mm':'America/Bogota' }} —
-                <span [class]="'chip-estado ' + radicado.estado">{{ radicado.estado | titlecase }}</span>
+                {{ radicado!.fecha_radicacion | date:'dd/MM/yyyy HH:mm':'America/Bogota' }} —
+                <span [class]="'chip-estado ' + radicado!.estado">{{ radicado!.estado | titlecase }}</span>
               </div>
             </mat-card-content>
           </mat-card>
@@ -579,34 +634,48 @@
               <div class="detalle-grid">
                 <div class="campo-detalle">
                   <span class="campo-etiqueta">Dependencia destino</span>
-                  <span>{{ radicado.dependencia.nombre }}</span>
+                  <span>{{ radicado!.dependencia?.nombre }}</span>
                 </div>
                 <div class="campo-detalle">
-                  <span class="campo-etiqueta">Radicado por</span>
-                  <span>{{ radicado.radicado_por.nombre }}</span>
+                  <span class="campo-etiqueta">Completado por</span>
+                  <span>{{ radicado!.radicado_por?.nombre }}</span>
                 </div>
-                <div class="campo-detalle campo-ancho-grid" *ngIf="radicado.observaciones">
+                <div class="campo-detalle campo-ancho-grid" *ngIf="radicado!.observaciones">
                   <span class="campo-etiqueta">Observaciones</span>
-                  <span>{{ radicado.observaciones }}</span>
+                  <span>{{ radicado!.observaciones }}</span>
                 </div>
               </div>
             </mat-card-content>
           </mat-card>
 
-          <div class="acciones" *ngIf="radicado.ruta_constancia">
+          <div class="acciones" *ngIf="radicado!.ruta_constancia">
             <button mat-flat-button color="primary" (click)="descargarConstancia()">
               <mat-icon>picture_as_pdf</mat-icon> Descargar constancia
             </button>
           </div>
         </ng-container>
 
-        <!-- Formulario de radicación -->
-        <ng-container *ngIf="!radicado">
+        <!-- ── Radicado pendiente (número asignado, sin completar) ──── -->
+        <ng-container *ngIf="radicado?.estado === 'pendiente' || !radicado">
+
+          <!-- Número de seguimiento — visible desde el inicio -->
+          <mat-card class="form-card" *ngIf="radicado"
+                    style="background:#fff8e1;border:1px solid #ffe082">
+            <mat-card-content>
+              <div class="radicado-numero-grande" style="color:#e65100">
+                {{ radicado.numero_radicado }}
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:4px;font-size:13px;color:#8d6e00">
+                <mat-icon style="font-size:16px;width:16px;height:16px">pending</mat-icon>
+                Número asignado — pendiente de completar por el operador
+              </div>
+            </mat-card-content>
+          </mat-card>
 
           <!-- Bloqueo: no competente -->
           <div *ngIf="esIncompetente" class="aviso-sin-metadatos aviso-incompetente">
             <mat-icon>block</mat-icon>
-            <span>Esta recepción fue marcada como <strong>no competente</strong>. No es posible radicarla.</span>
+            <span>Esta recepción fue marcada como <strong>no competente</strong>. No es posible completar el radicado.</span>
           </div>
 
           <!-- Bloqueo: aún no marcada como competente -->
@@ -614,10 +683,10 @@
             <mat-icon>lock_clock</mat-icon>
             <div>
               <strong>Requiere revisión previa</strong>
-              <p>Para radicar este documento debe primero marcarlo como <strong>Competente</strong>
+              <p>Para completar el radicado debe primero marcar la recepción como <strong>Competente</strong>
                 en la pestaña <em>Información</em>, verificando que es de competencia de esta entidad.</p>
               <p style="margin-top:4px;font-size:12px;color:#757575">
-                Estado actual: <span [class]="'chip-estado ' + (recepcion?.estado || '')">{{ recepcion?.estado | titlecase }}</span>
+                Estado actual: <span [class]="'chip-estado ' + recepcion.estado">{{ recepcion.estado | titlecase }}</span>
               </p>
             </div>
           </div>
@@ -630,10 +699,10 @@
           </div>
 
           <mat-card class="form-card" *ngIf="metadatos">
-            <mat-card-title>Radicar documento</mat-card-title>
+            <mat-card-title>Completar radicado</mat-card-title>
             <mat-card-content>
               <p class="estado-label">
-                Al radicar se asignará un número único y se generará la constancia en PDF.
+                Asigne la dependencia de destino para hacer oficial el radicado y generar la constancia en PDF.
               </p>
               <form [formGroup]="formRadicado">
                 <div class="form-grid">
@@ -654,13 +723,13 @@
 
               <div class="acciones">
                 <span class="exito" *ngIf="exitoRadicado">
-                  <mat-icon>check_circle</mat-icon> Documento radicado exitosamente
+                  <mat-icon>check_circle</mat-icon> Radicado completado exitosamente
                 </span>
                 <button mat-flat-button color="primary"
                         [disabled]="formRadicado.invalid || radicando"
                         (click)="radicar()">
                   <mat-icon>assignment_turned_in</mat-icon>
-                  {{ radicando ? 'Radicando…' : 'Radicar documento' }}
+                  {{ radicando ? 'Procesando…' : 'Completar radicado' }}
                 </button>
               </div>
             </mat-card-content>
