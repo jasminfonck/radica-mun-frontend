@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
-import { AdminService, BitacoraOut } from '../../../../core/services/admin.service';
+import { AdminService, BitacoraOut, LogMensajeEmailOut } from '../../../../core/services/admin.service';
 import { ConsultaService, LogAuditoriaOut } from '../../../../core/services/consulta.service';
 
 @Component({
@@ -20,6 +20,12 @@ export class AuditoriaComponent implements OnInit {
   logsOperativos: LogAuditoriaOut[] = [];
   cargandoOperativa = false;
   filtrosOperativa: FormGroup;
+
+  // ── Tab 3: Log de correos ─────────────────────────────────────────────────
+  logEmails: LogMensajeEmailOut[] = [];
+  cargandoEmails = false;
+  filtrosEmails: FormGroup;
+  columnaEmails = ['created_at', 'tipo', 'destinatario', 'asunto', 'estado'];
 
   cargando = true;
   columnasAdmin     = ['created_at', 'usuario_nombre', 'accion', 'modulo', 'detalle'];
@@ -87,6 +93,12 @@ export class AuditoriaComponent implements OnInit {
       fecha_desde: [''],
       fecha_hasta: [''],
     });
+
+    this.filtrosEmails = this.fb.group({
+      recepcion_id: [''],
+      fecha_desde:  [''],
+      fecha_hasta:  [''],
+    });
   }
 
   ngOnInit(): void {
@@ -101,6 +113,7 @@ export class AuditoriaComponent implements OnInit {
       error: () => { this.cargando = false; this.cdr.markForCheck(); },
     });
     this.cargarOperativa();
+    this.cargarEmails();
   }
 
   // ── Admin filters ─────────────────────────────────────────────────────────
@@ -167,6 +180,23 @@ export class AuditoriaComponent implements OnInit {
   limpiarOperativa(): void {
     this.filtrosOperativa.reset({ accion: '', modulo: '', fecha_desde: '', fecha_hasta: '' });
     this.cargarOperativa();
+  }
+
+  // ── Emails ────────────────────────────────────────────────────────────────
+
+  cargarEmails(): void {
+    this.cargandoEmails = true;
+    const { recepcion_id } = this.filtrosEmails.value;
+    const rid = recepcion_id ? Number(recepcion_id) : undefined;
+    this.adminService.getLogEmail(200, rid).subscribe({
+      next: l  => { this.logEmails = l; this.cargandoEmails = false; this.cdr.markForCheck(); },
+      error: () => { this.cargandoEmails = false; this.cdr.markForCheck(); },
+    });
+  }
+
+  limpiarEmails(): void {
+    this.filtrosEmails.reset({ recepcion_id: '', fecha_desde: '', fecha_hasta: '' });
+    this.cargarEmails();
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────

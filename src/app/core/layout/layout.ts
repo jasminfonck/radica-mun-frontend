@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
 import { forkJoin } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
 import { UsuarioToken } from '../auth/auth.models';
 import { AdminService } from '../services/admin.service';
 import { ThemeService } from '../services/theme.service';
+import { CambiarContrasenaDialogComponent } from './cambiar-contrasena-dialog';
 
 interface MenuItem {
   label: string;
@@ -44,6 +46,7 @@ export class LayoutComponent implements OnInit {
     private themeService: ThemeService,
     private snack: MatSnackBar,
     private cdr: ChangeDetectorRef,
+    private dialog: MatDialog,
   ) {
     this.usuario = this.auth.getUsuario();
   }
@@ -87,5 +90,14 @@ export class LayoutComponent implements OnInit {
 
   cerrarSesion(): void {
     this.auth.logout();
+  }
+
+  abrirCambiarContrasena(): void {
+    const ref = this.dialog.open(CambiarContrasenaDialogComponent, { width: '400px' });
+    ref.afterClosed().subscribe((ok) => {
+      if (ok) {
+        this.snack.open('Contraseña actualizada correctamente.', '', { duration: 4000 });
+      }
+    });
   }
 }

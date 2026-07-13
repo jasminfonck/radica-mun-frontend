@@ -31,11 +31,8 @@ export class AdminDashboardComponent implements OnInit {
   ];
 
   accesosRapidos = [
-    { label: 'Usuarios',      icono: 'people',         ruta: '/admin/usuarios' },
-    { label: 'Dependencias',  icono: 'account_tree',   ruta: '/admin/dependencias' },
-    { label: 'Catálogos',     icono: 'list_alt',       ruta: '/admin/catalogos' },
-    { label: 'Configuración', icono: 'settings',       ruta: '/admin/configuracion' },
-    { label: 'Auditoría',     icono: 'manage_history', ruta: '/admin/auditoria' },
+    { label: 'Usuarios',  icono: 'people',         ruta: '/admin/usuarios' },
+    { label: 'Auditoría', icono: 'manage_history', ruta: '/admin/auditoria' },
   ];
 
   constructor(

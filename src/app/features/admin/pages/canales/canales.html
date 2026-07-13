@@ -50,14 +50,36 @@
           <div class="acuse-texto">
             <strong>Acuse de recibo automático</strong>
             <span>{{ canal.acuse_configurado
-              ? 'Configurado — el sistema enviará confirmación al ciudadano en máx. 24 h hábiles'
-              : 'Pendiente — confirme que el formulario generará acuse automático' }}</span>
+              ? 'Activo — el ciudadano recibirá confirmación al enviar el formulario'
+              : 'Inactivo — active para enviar confirmación automática al ciudadano' }}</span>
           </div>
           <mat-slide-toggle
             [checked]="canal.acuse_configurado" [disabled]="guardando[canal.id]"
             (change)="toggleAcuse(canal)" color="accent"
             [matTooltip]="canal.acuse_configurado ? 'Desactivar acuse' : 'Activar acuse'">
           </mat-slide-toggle>
+        </div>
+
+        <!-- Badge informativo del remitente SMTP -->
+        <div *ngIf="canal.acuse_configurado"
+             style="margin-top:10px; padding:10px 14px; border-radius:6px; font-size:12px;
+                    display:flex; align-items:center; gap:8px; flex-wrap:wrap;"
+             [style.background]="acuseSmtpActivo ? '#e8f5e9' : '#fff3e0'"
+             [style.border]="acuseSmtpActivo ? '1px solid #a5d6a7' : '1px solid #ffcc02'">
+          <mat-icon style="font-size:16px;width:16px;height:16px"
+                    [style.color]="acuseSmtpActivo ? '#2e7d32' : '#e65100'">
+            {{ acuseSmtpActivo ? 'outgoing_mail' : 'warning' }}
+          </mat-icon>
+          <span [style.color]="acuseSmtpActivo ? '#2e7d32' : '#e65100'">
+            <strong>Correo remitente:</strong> {{ acuseFromEmail }}
+          </span>
+          <span *ngIf="!acuseSmtpActivo" style="color:#e65100">
+            — Configure el SMTP más abajo en esta página
+          </span>
+          <span *ngIf="acuseSmtpActivo && !configuracion?.smtp_password_configurado"
+                style="color:#e65100">
+            — Sin contraseña SMTP
+          </span>
         </div>
       </mat-card-footer>
     </mat-card>
@@ -131,9 +153,6 @@
           </mat-icon>
           <span style="font-size:13px;">
             {{ buzon.oauth_autorizado ? 'OAuth2 autorizado' : 'Pendiente de autorización — haga clic en el botón para autorizar' }}
-            <span *ngIf="buzon.oauth_autorizado && buzon.oauth_token_expiry" style="color:var(--texto-suave)">
-              · token expira {{ buzon.oauth_token_expiry | date:'dd/MM/yyyy HH:mm' }} (se renueva automáticamente)
-            </span>
           </span>
           <button mat-flat-button
             [color]="buzon.oauth_autorizado ? '' : 'warn'"
@@ -311,4 +330,188 @@
     </mat-card>
 
   </div>
+
+  <!-- ── Configuración SMTP saliente ─────────────────────────────────────── -->
+  <mat-card style="margin-top:32px" id="smtp">
+    <mat-card-header>
+      <mat-icon mat-card-avatar style="font-size:32px;width:32px;height:32px;color:var(--color-primario)">outgoing_mail</mat-icon>
+      <mat-card-title>Correo saliente (SMTP)</mat-card-title>
+      <mat-card-subtitle>
+        Servidor desde el que el sistema enviará acuses de recibo, avisos y notificaciones
+      </mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content style="margin-top:16px">
+
+      <!-- Estado actual -->
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px; flex-wrap:wrap">
+        <span style="display:inline-flex; align-items:center; gap:6px; padding:5px 12px;
+                     border-radius:12px; font-size:13px; font-weight:600;"
+              [style.background]="smtpActivo ? '#e8f5e9' : '#fff8e1'"
+              [style.color]="smtpActivo ? '#2e7d32' : '#e65100'">
+          <mat-icon style="font-size:16px;width:16px;height:16px">
+            {{ smtpActivo ? 'check_circle' : 'warning' }}
+          </mat-icon>
+          {{ smtpActivo ? (usandoGraph ? 'Graph API verificado y activo' : 'SMTP verificado y activo') : 'Envío no verificado' }}
+        </span>
+        <span *ngIf="smtpPasswordConfigurado && !usandoGraph" style="font-size:12px; color:var(--texto-suave)">
+          · Contraseña guardada (cifrada)
+        </span>
+        <span *ngIf="usandoGraph" style="font-size:12px; color:#1565c0">
+          · Usa Microsoft Graph API — no requiere contraseña SMTP
+        </span>
+      </div>
+
+      <form [formGroup]="smtpForm" style="display:flex; flex-direction:column; gap:16px">
+
+        <!-- Panel informativo cuando el buzón oficial usa Graph API -->
+        <div *ngIf="usandoGraph"
+             style="padding:14px 18px; border-radius:6px; background:#e8eaf6;
+                    border-left:4px solid #3949ab; font-size:13px; color:#1a237e;
+                    display:flex; align-items:flex-start; gap:10px;">
+          <mat-icon style="font-size:20px;width:20px;height:20px;margin-top:2px">cloud_done</mat-icon>
+          <div>
+            <strong>Microsoft Graph API activo</strong><br>
+            Los correos salientes se envían directamente desde
+            <strong>{{ buzon?.correo }}</strong> usando el token OAuth2 del buzón oficial.
+            No es necesario configurar servidor SMTP ni contraseña.
+          </div>
+        </div>
+
+        <!-- Campos SMTP — ocultos cuando se usa Graph API -->
+        <ng-container *ngIf="!usandoGraph">
+
+          <!-- Proveedor -->
+          <mat-form-field appearance="outline">
+            <mat-label>Proveedor de correo saliente</mat-label>
+            <mat-select [value]="proveedorSmtp" (selectionChange)="seleccionarProveedorSmtp($event.value)">
+              <mat-option *ngFor="let p of SMTP_PROVEEDORES" [value]="p.value">{{ p.label }}</mat-option>
+            </mat-select>
+            <mat-hint>Gmail y Outlook completan host y puerto automáticamente</mat-hint>
+          </mat-form-field>
+
+          <!-- Host / Puerto — solo visibles para "otro" -->
+          <div style="display:flex; gap:16px; flex-wrap:wrap" *ngIf="proveedorSmtp === 'otro'">
+            <mat-form-field appearance="outline" style="flex:2; min-width:200px">
+              <mat-label>Servidor SMTP (host)</mat-label>
+              <input matInput formControlName="smtp_host" placeholder="mail.municipio.gov.co">
+              <mat-error>Obligatorio</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline" style="flex:1; min-width:100px; max-width:140px">
+              <mat-label>Puerto</mat-label>
+              <input matInput type="number" formControlName="smtp_port">
+              <mat-hint>587 (STARTTLS)</mat-hint>
+            </mat-form-field>
+          </div>
+          <div *ngIf="proveedorSmtp !== 'otro'"
+               style="padding:10px 14px; border-radius:6px; background:#e3f2fd;
+                      font-size:13px; color:#1565c0; display:flex; align-items:center; gap:8px;">
+            <mat-icon style="font-size:16px;width:16px;height:16px">info</mat-icon>
+            Host: <strong>{{ smtpForm.get('smtp_host')?.value }}</strong> · Puerto: <strong>{{ smtpForm.get('smtp_port')?.value }}</strong> (STARTTLS)
+          </div>
+
+          <!-- Usuario SMTP -->
+          <mat-form-field appearance="outline">
+            <mat-label>Usuario SMTP (correo de autenticación)</mat-label>
+            <input matInput formControlName="smtp_user" type="email" placeholder="notificaciones@municipio.gov.co">
+            <mat-error>Correo válido obligatorio</mat-error>
+          </mat-form-field>
+
+          <!-- Contraseña SMTP -->
+          <mat-form-field appearance="outline">
+            <mat-label>{{ smtpPasswordConfigurado ? 'Contraseña SMTP (dejar vacío para mantener)' : 'Contraseña SMTP' }}</mat-label>
+            <input matInput formControlName="smtp_password"
+                   [type]="mostrarSmtpPass ? 'text' : 'password'"
+                   [placeholder]="smtpPasswordConfigurado ? 'Sin cambios' : 'Contraseña de aplicación'">
+            <button mat-icon-button matSuffix type="button" (click)="mostrarSmtpPass = !mostrarSmtpPass">
+              <mat-icon>{{ mostrarSmtpPass ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            <mat-hint>Se cifra con AES-256 antes de guardarse</mat-hint>
+          </mat-form-field>
+
+        </ng-container>
+
+        <!-- Fuente del correo FROM -->
+        <div>
+          <p style="font-size:13px; font-weight:600; margin:0 0 10px">
+            ¿Desde qué dirección se enviarán los correos?
+          </p>
+          <mat-radio-group formControlName="smtp_from_fuente"
+                           style="display:flex; flex-direction:column; gap:10px">
+            <mat-radio-button value="buzon_oficial" [disabled]="!buzon">
+              <span style="font-size:14px">Buzón oficial de recepción</span>
+              <span *ngIf="buzon" style="font-size:12px; color:var(--texto-suave); margin-left:6px">
+                ({{ buzon.correo }})
+              </span>
+              <span *ngIf="!buzon" style="font-size:12px; color:#9e9e9e; margin-left:6px">
+                — sin buzón configurado
+              </span>
+            </mat-radio-button>
+
+            <mat-radio-button value="email_entidad" [disabled]="!entidad?.email_institucional">
+              <span style="font-size:14px">Correo institucional de la entidad</span>
+              <span *ngIf="entidad?.email_institucional"
+                    style="font-size:12px; color:var(--texto-suave); margin-left:6px">
+                ({{ entidad!.email_institucional }})
+              </span>
+              <span *ngIf="!entidad?.email_institucional"
+                    style="font-size:12px; color:#9e9e9e; margin-left:6px">
+                — sin correo institucional registrado
+              </span>
+            </mat-radio-button>
+
+            <mat-radio-button value="personalizado">
+              <span style="font-size:14px">Dirección personalizada</span>
+            </mat-radio-button>
+          </mat-radio-group>
+
+          <!-- FROM personalizado -->
+          <mat-form-field *ngIf="fuenteActual === 'personalizado'"
+                          appearance="outline" style="margin-top:12px; width:100%">
+            <mat-label>Dirección FROM personalizada</mat-label>
+            <input matInput formControlName="smtp_from_personalizado"
+                   placeholder="Municipio de X &lt;notificaciones@municipio.gov.co&gt;">
+            <mat-hint>Puede incluir nombre: Municipio &lt;correo@dominio.com&gt;</mat-hint>
+          </mat-form-field>
+        </div>
+
+        <!-- Guardar SMTP -->
+        <div style="display:flex; justify-content:flex-end">
+          <button mat-flat-button color="primary" type="button"
+                  (click)="guardarSmtp()" [disabled]="guardandoSmtp">
+            <mat-icon>save</mat-icon>
+            {{ guardandoSmtp ? 'Guardando...' : 'Guardar configuración SMTP' }}
+          </button>
+        </div>
+
+      </form>
+
+      <!-- Test de envío -->
+      <div style="margin-top:24px; padding-top:20px; border-top:1px solid #eee">
+        <p style="font-size:13px; font-weight:600; margin:0 0 12px">
+          <mat-icon style="vertical-align:middle; margin-right:4px; font-size:18px">send</mat-icon>
+          Probar envío
+        </p>
+        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap">
+          <mat-form-field appearance="outline" style="flex:1; min-width:200px; margin-bottom:0">
+            <mat-label>Correo de destino para la prueba</mat-label>
+            <input matInput type="email" [(ngModel)]="emailPrueba" placeholder="admin@municipio.gov.co">
+          </mat-form-field>
+          <button mat-stroked-button (click)="probarSmtp()"
+                  [disabled]="probandoSmtp || (!smtpPasswordConfigurado && !usandoGraph)">
+            <mat-icon>{{ probandoSmtp ? 'hourglass_empty' : 'wifi_tethering' }}</mat-icon>
+            {{ probandoSmtp ? 'Enviando...' : 'Enviar prueba' }}
+          </button>
+        </div>
+        <p *ngIf="!smtpPasswordConfigurado && !usandoGraph" style="font-size:12px; color:#e65100; margin:8px 0 0">
+          Guarde la configuración SMTP con contraseña antes de probar.
+        </p>
+        <p *ngIf="usandoGraph && !buzon?.oauth_autorizado" style="font-size:12px; color:#e65100; margin:8px 0 0">
+          Autorice el buzón OAuth2 antes de probar el envío.
+        </p>
+      </div>
+
+    </mat-card-content>
+  </mat-card>
+
 </div>

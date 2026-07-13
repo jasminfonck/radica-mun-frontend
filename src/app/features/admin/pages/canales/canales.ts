@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import {
   AdminService, CanalOut, BuzonCorreoOut, BuzonCorreoCreate, BuzonCorreoUpdate,
+  ConfiguracionOut, EntidadOut, TestSmtpOut,
 } from '../../../../core/services/admin.service';
 import { ToastService } from '../../../../core/services/toast.service';
 
@@ -18,6 +19,8 @@ export class CanalesComponent implements OnInit {
 
   buzon: BuzonCorreoOut | null = null;
   cargandoBuzon = false;
+  configuracion: ConfiguracionOut | null = null;
+  entidad: EntidadOut | null = null;
   mostrarFormBuzon = false;
   mostrarSecret = false;
   guardandoBuzon = false;
@@ -25,6 +28,22 @@ export class CanalesComponent implements OnInit {
   activandoBuzon = false;
   iniciandoOAuth = false;
   buzonForm!: FormGroup;
+
+  // SMTP saliente
+  smtpForm!: FormGroup;
+  guardandoSmtp         = false;
+  probandoSmtp          = false;
+  mostrarSmtpPass       = false;
+  emailPrueba           = '';
+  smtpActivo            = false;
+  smtpPasswordConfigurado = false;
+  proveedorSmtp         = 'otro';
+
+  readonly SMTP_PROVEEDORES = [
+    { value: 'gmail',   label: 'Gmail (smtp.gmail.com)',                      host: 'smtp.gmail.com',      port: 587 },
+    { value: 'outlook', label: 'Outlook / Microsoft 365 (smtp.office365.com)', host: 'smtp.office365.com', port: 587 },
+    { value: 'otro',    label: 'Otro servidor (configurar manualmente)',       host: '',                    port: 587 },
+  ];
 
   iconos: Record<string, string> = {
     presencial: 'storefront',
@@ -71,6 +90,30 @@ export class CanalesComponent implements OnInit {
         this.toast.error(err?.error?.detail || 'No se pudieron cargar los canales.');
       },
     });
+    this.adminService.getConfiguracion().subscribe({
+      next: c => {
+        this.configuracion = c;
+        this.smtpForm.patchValue({
+          smtp_host:               c.smtp_host || '',
+          smtp_port:               c.smtp_port || 587,
+          smtp_user:               c.smtp_user || '',
+          smtp_from_fuente:        c.smtp_from_fuente || 'personalizado',
+          smtp_from_personalizado: c.smtp_from_personalizado || '',
+        });
+        this.smtpActivo             = c.smtp_activo;
+        this.smtpPasswordConfigurado = c.smtp_password_configurado;
+        if (c.smtp_password_configurado) {
+          this.smtpForm.get('smtp_password')!.clearValidators();
+          this.smtpForm.get('smtp_password')!.updateValueAndValidity();
+        }
+        const host = c.smtp_host || '';
+        if (host.includes('gmail')) this.proveedorSmtp = 'gmail';
+        else if (host.includes('office365') || host.includes('outlook')) this.proveedorSmtp = 'outlook';
+        else if (host) this.proveedorSmtp = 'otro';
+        this.cdr.markForCheck();
+      },
+    });
+    this.adminService.getEntidad().subscribe({ next: e => { this.entidad = e; this.cdr.markForCheck(); } });
   }
 
   private _inicializarForm(): void {
@@ -83,6 +126,32 @@ export class CanalesComponent implements OnInit {
       oauth_tenant_id:       [''],
       intervalo_minutos:     [5,  [Validators.required, Validators.min(1), Validators.max(60)]],
     });
+
+    this.smtpForm = this.fb.group({
+      smtp_host:               [''],
+      smtp_port:               [587, [Validators.required, Validators.min(1), Validators.max(65535)]],
+      smtp_user:               ['', Validators.email],
+      smtp_password:           [''],
+      smtp_from_fuente:        ['personalizado', Validators.required],
+      smtp_from_personalizado: [''],
+    });
+
+    this.smtpForm.get('smtp_from_fuente')!.valueChanges.subscribe(() => this._actualizarValidadoresSmtp());
+  }
+
+  private _actualizarValidadoresSmtp(): void {
+    const smtpRequired = !this.usandoGraph;
+    const host = this.smtpForm.get('smtp_host')!;
+    const user = this.smtpForm.get('smtp_user')!;
+    if (smtpRequired) {
+      host.setValidators([Validators.required]);
+      user.setValidators([Validators.required, Validators.email]);
+    } else {
+      host.clearValidators();
+      user.setValidators([Validators.email]);
+    }
+    host.updateValueAndValidity();
+    user.updateValueAndValidity();
   }
 
   private _actualizarValidadorTenant(): void {
@@ -134,6 +203,24 @@ export class CanalesComponent implements OnInit {
     return this.canales.find(c => c.tipo === 'email');
   }
 
+  get usandoGraph(): boolean {
+    return this.fuenteActual === 'buzon_oficial' && this.buzon?.metodo_conexion === 'graph';
+  }
+
+  get acuseFromEmail(): string {
+    const fuente = this.configuracion?.smtp_from_fuente;
+    if (fuente === 'buzon_oficial') return this.buzon?.correo || '(buzón no configurado)';
+    if (fuente === 'email_entidad') return this.entidad?.email_institucional || '(entidad sin correo)';
+    if (this.configuracion?.smtp_host) {
+      return this.configuracion.smtp_from_personalizado || this.configuracion.smtp_user || '(personalizado)';
+    }
+    return 'Correo saliente no configurado';
+  }
+
+  get acuseSmtpActivo(): boolean {
+    return !!this.configuracion?.smtp_activo;
+  }
+
   get proveedorActual(): string {
     return this.buzonForm.get('proveedor')?.value ?? 'gmail';
   }
@@ -146,12 +233,9 @@ export class CanalesComponent implements OnInit {
 
   toggleCanal(canal: CanalOut): void {
     const nuevoActivo = !canal.activo;
-    if (canal.tipo === 'digital' && nuevoActivo && !canal.acuse_configurado) {
-      this.toast.advertencia('Debe confirmar el mecanismo de acuse de recibo automático antes de activar el formulario web.');
-      return;
-    }
     if (canal.tipo === 'email' && nuevoActivo && (!this.buzon || this.buzon.estado_conexion !== 'ok')) {
       this.toast.advertencia('Configure y pruebe el buzón de correo antes de activar este canal.');
+      this.cdr.markForCheck();
       return;
     }
     this.guardando[canal.id] = true;
@@ -313,6 +397,68 @@ export class CanalesComponent implements OnInit {
       error: err => {
         this.iniciandoOAuth = false;
         this.toast.error(err?.error?.detail || 'No se pudo iniciar la autorización.');
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  // ── SMTP saliente ─────────────────────────────────────────────────────────
+
+  get fuenteActual(): string { return this.smtpForm.get('smtp_from_fuente')?.value || 'personalizado'; }
+
+  seleccionarProveedorSmtp(valor: string): void {
+    this.proveedorSmtp = valor;
+    const p = this.SMTP_PROVEEDORES.find(x => x.value === valor);
+    if (p?.host) this.smtpForm.patchValue({ smtp_host: p.host, smtp_port: p.port });
+  }
+
+  guardarSmtp(): void {
+    if (this.smtpForm.invalid) { this.smtpForm.markAllAsTouched(); return; }
+    this.guardandoSmtp = true;
+    const v = this.smtpForm.value;
+    const payload: any = {
+      smtp_from_fuente:        v.smtp_from_fuente,
+      smtp_from_personalizado: v.smtp_from_personalizado || null,
+    };
+    if (!this.usandoGraph) {
+      payload['smtp_host'] = v.smtp_host;
+      payload['smtp_port'] = v.smtp_port;
+      payload['smtp_user'] = v.smtp_user;
+    }
+    if (v.smtp_password) payload['smtp_password'] = v.smtp_password;
+    this.adminService.actualizarConfiguracion(payload).subscribe({
+      next: c => {
+        this.guardandoSmtp = false;
+        this.configuracion = c;
+        this.smtpActivo             = c.smtp_activo;
+        this.smtpPasswordConfigurado = c.smtp_password_configurado;
+        this.smtpForm.get('smtp_password')!.setValue('');
+        this.smtpForm.get('smtp_password')!.clearValidators();
+        this.smtpForm.get('smtp_password')!.updateValueAndValidity();
+        this.toast.exito('Configuración SMTP guardada. Pruebe el envío para verificar.');
+        this.cdr.markForCheck();
+      },
+      error: err => {
+        this.guardandoSmtp = false;
+        this.toast.error(err?.error?.detail || 'Error al guardar la configuración SMTP.');
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  probarSmtp(): void {
+    if (!this.emailPrueba) { this.toast.advertencia('Ingrese un correo de destino para la prueba.'); return; }
+    this.probandoSmtp = true;
+    this.adminService.testSmtp(this.emailPrueba).subscribe({
+      next: (r: TestSmtpOut) => {
+        this.probandoSmtp = false;
+        this.smtpActivo = r.ok;
+        if (r.ok) this.toast.exito(r.mensaje); else this.toast.error(r.mensaje);
+        this.cdr.markForCheck();
+      },
+      error: err => {
+        this.probandoSmtp = false;
+        this.toast.error(err?.error?.detail || 'Error al probar el SMTP.');
         this.cdr.markForCheck();
       },
     });

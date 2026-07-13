@@ -53,6 +53,9 @@
                   [matTooltip]="u.activo ? 'Inactivar' : 'Activar'">
             <mat-icon>{{ u.activo ? 'block' : 'check_circle' }}</mat-icon>
           </button>
+          <button mat-icon-button (click)="abrirRestablecerContrasena(u)" matTooltip="Restablecer contraseña">
+            <mat-icon>key</mat-icon>
+          </button>
         </td>
       </ng-container>
 

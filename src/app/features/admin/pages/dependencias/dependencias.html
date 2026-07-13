@@ -1,51 +1,90 @@
 <div class="pagina">
+
+  <!-- Encabezado -->
   <div class="pagina-header">
     <div class="header-con-back">
       <button mat-icon-button routerLink="/admin" matTooltip="Volver al panel">
         <mat-icon>arrow_back</mat-icon>
       </button>
       <div>
-        <h1>Dependencias</h1>
-        <p>Áreas o dependencias que recibirán documentos radicados</p>
+        <h1>Cuadro de Clasificación Documental</h1>
+        <p>Secciones, subsecciones, series y subseries documentales de la entidad</p>
       </div>
     </div>
-    <button mat-flat-button color="primary" (click)="nuevo()">
-      <mat-icon>add</mat-icon> Nueva dependencia
-    </button>
+    <div class="header-acciones">
+      <button mat-stroked-button (click)="descargarPlantilla()" matTooltip="Descargar plantilla Excel">
+        <mat-icon>download</mat-icon> Plantilla
+      </button>
+      <button mat-stroked-button color="primary" (click)="abrirImport()">
+        <mat-icon>upload_file</mat-icon> Importar CCD
+      </button>
+      <button mat-flat-button color="primary" (click)="abrirForm('seccion')">
+        <mat-icon>add</mat-icon> Nueva sección
+      </button>
+    </div>
   </div>
 
   <!-- Formulario inline -->
-  <mat-card *ngIf="mostrarForm" class="form-card">
-    <mat-card-title>{{ editando ? 'Editar dependencia' : 'Nueva dependencia' }}</mat-card-title>
+  <mat-card *ngIf="formTipo" class="form-card">
+    <mat-card-title>{{ tituloForm }}</mat-card-title>
     <mat-card-content>
       <form [formGroup]="form" (ngSubmit)="guardar()" class="form-grid">
-        <mat-form-field appearance="outline">
-          <mat-label>Nombre de la dependencia *</mat-label>
-          <input matInput formControlName="nombre">
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Código *</mat-label>
-          <input matInput formControlName="codigo" placeholder="DEP-01"
-                 (input)="codigoMayusculas($event)">
-          <mat-error *ngIf="form.get('codigo')?.hasError('required')">El código es obligatorio</mat-error>
-          <mat-error *ngIf="form.get('codigo')?.hasError('pattern')">Solo letras mayúsculas, números y guiones (ej: DEP-01)</mat-error>
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Responsable *</mat-label>
-          <mat-select formControlName="responsable">
-            <mat-option [value]="null" disabled>— Seleccione un responsable —</mat-option>
-            <mat-option *ngFor="let u of usuarios" [value]="nombreCompleto(u)">
-              {{ nombreCompleto(u) }}
-            </mat-option>
-          </mat-select>
-          <mat-error>El responsable es obligatorio</mat-error>
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Correo de la dependencia</mat-label>
-          <input matInput formControlName="email" type="email" inputmode="email">
-          <mat-error *ngIf="form.get('email')?.hasError('email')">Ingrese un correo electrónico válido</mat-error>
-        </mat-form-field>
-        <div *ngIf="errorForm" style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:#fff1f0;border:1px solid #fca5a5;border-radius:8px;color:#b91c1c;font-size:13px;margin-bottom:8px;" role="alert">
+
+        <!-- Campos para sección / subsección -->
+        <ng-container *ngIf="formTipo === 'seccion' || formTipo === 'subseccion'">
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre *</mat-label>
+            <input matInput formControlName="nombre">
+            <mat-error *ngIf="form.get('nombre')?.hasError('required')">Obligatorio</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Código *</mat-label>
+            <input matInput formControlName="codigo" placeholder="100"
+                   (input)="codigoMayusculas($event)">
+            <mat-error *ngIf="form.get('codigo')?.hasError('required')">Obligatorio</mat-error>
+            <mat-error *ngIf="form.get('codigo')?.hasError('pattern')">
+              Letras mayúsculas, números, guiones o puntos (ej: 100, DEP-01)
+            </mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Responsable</mat-label>
+            <mat-select formControlName="responsable">
+              <mat-option [value]="null">— Sin responsable —</mat-option>
+              <mat-option *ngFor="let u of usuarios" [value]="nombreCompleto(u)">
+                {{ nombreCompleto(u) }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Correo de la dependencia</mat-label>
+            <input matInput formControlName="email" type="email" inputmode="email">
+            <mat-error *ngIf="form.get('email')?.hasError('email')">Correo inválido</mat-error>
+          </mat-form-field>
+        </ng-container>
+
+        <!-- Campos para serie / subserie -->
+        <ng-container *ngIf="formTipo === 'serie' || formTipo === 'subserie'">
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre *</mat-label>
+            <input matInput formControlName="nombre">
+            <mat-error *ngIf="form.get('nombre')?.hasError('required')">Obligatorio</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Código</mat-label>
+            <input matInput formControlName="codigo" placeholder="100.1"
+                   (input)="codigoMayusculas($event)">
+            <mat-error *ngIf="form.get('codigo')?.hasError('pattern')">
+              Letras mayúsculas, números, guiones o puntos (ej: 100.1)
+            </mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="campo-ancho">
+            <mat-label>Descripción</mat-label>
+            <textarea matInput formControlName="descripcion" rows="2"></textarea>
+          </mat-form-field>
+        </ng-container>
+
+        <!-- Error y botones -->
+        <div *ngIf="errorForm" class="alerta-error campo-ancho">
           <mat-icon>error_outline</mat-icon>
           <span>{{ errorForm }}</span>
         </div>
@@ -57,38 +96,137 @@
     </mat-card-content>
   </mat-card>
 
-  <!-- Tabla -->
-  <mat-card>
-    <table mat-table [dataSource]="dependencias" class="tabla-completa">
-      <ng-container matColumnDef="nombre">
-        <th mat-header-cell *matHeaderCellDef>Nombre</th>
-        <td mat-cell *matCellDef="let d">{{ d.nombre }}</td>
-      </ng-container>
-      <ng-container matColumnDef="codigo">
-        <th mat-header-cell *matHeaderCellDef>Código</th>
-        <td mat-cell *matCellDef="let d">{{ d.codigo || '—' }}</td>
-      </ng-container>
-      <ng-container matColumnDef="responsable">
-        <th mat-header-cell *matHeaderCellDef>Responsable</th>
-        <td mat-cell *matCellDef="let d">{{ d.responsable || '—' }}</td>
-      </ng-container>
-      <ng-container matColumnDef="estado">
-        <th mat-header-cell *matHeaderCellDef>Estado</th>
-        <td mat-cell *matCellDef="let d">
-          <span class="chip-estado" [class.activo]="d.activa">{{ d.activa ? 'Activa' : 'Inactiva' }}</span>
-        </td>
-      </ng-container>
-      <ng-container matColumnDef="acciones">
-        <th mat-header-cell *matHeaderCellDef></th>
-        <td mat-cell *matCellDef="let d">
-          <button mat-icon-button (click)="editar(d)" matTooltip="Editar"><mat-icon>edit</mat-icon></button>
-          <button mat-icon-button (click)="toggleActiva(d)" [matTooltip]="d.activa ? 'Inactivar' : 'Activar'">
-            <mat-icon>{{ d.activa ? 'block' : 'check_circle' }}</mat-icon>
-          </button>
-        </td>
-      </ng-container>
-      <tr mat-header-row *matHeaderRowDef="columnas"></tr>
-      <tr mat-row *matRowDef="let row; columns: columnas;"></tr>
-    </table>
+  <!-- Estado vacío -->
+  <mat-card *ngIf="!cargando && arbol.length === 0 && !formTipo" class="estado-vacio">
+    <mat-icon>account_tree</mat-icon>
+    <h3>Sin secciones configuradas</h3>
+    <p>Cree la primera sección manualmente o importe el CCD desde un archivo Excel.</p>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
+      <button mat-stroked-button color="primary" (click)="abrirImport()">
+        <mat-icon>upload_file</mat-icon> Importar CCD
+      </button>
+      <button mat-flat-button color="primary" (click)="abrirForm('seccion')">
+        <mat-icon>add</mat-icon> Nueva sección
+      </button>
+    </div>
   </mat-card>
+
+  <!-- Árbol CCD -->
+  <mat-accordion *ngIf="arbol.length > 0" multi class="ccd-arbol">
+    <mat-expansion-panel *ngFor="let sec of arbol" class="panel-seccion">
+
+      <!-- Cabecera de sección -->
+      <mat-expansion-panel-header>
+        <mat-panel-title class="nodo-titulo">
+          <span class="nodo-codigo" *ngIf="sec.codigo">{{ sec.codigo }}</span>
+          <span class="nodo-nombre">{{ sec.nombre }}</span>
+          <span class="chip-estado" [class.activo]="sec.activa">
+            {{ sec.activa ? 'Activa' : 'Inactiva' }}
+          </span>
+        </mat-panel-title>
+        <mat-panel-description class="nodo-acciones" (click)="$event.stopPropagation()">
+          <button mat-icon-button matTooltip="Editar sección"
+                  (click)="abrirForm('seccion', {}, sec)">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button [matTooltip]="sec.activa ? 'Inactivar' : 'Activar'"
+                  (click)="toggleDependencia(sec)">
+            <mat-icon>{{ sec.activa ? 'block' : 'check_circle' }}</mat-icon>
+          </button>
+          <button mat-icon-button matTooltip="Nueva subsección"
+                  (click)="abrirForm('subseccion', { padreId: sec.id, padreLabel: sec.nombre })">
+            <mat-icon>create_new_folder</mat-icon>
+          </button>
+          <button mat-icon-button matTooltip="Nueva serie"
+                  (click)="abrirForm('serie', { dependenciaId: sec.id, padreLabel: sec.nombre })">
+            <mat-icon>playlist_add</mat-icon>
+          </button>
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+
+      <!-- Subsecciones -->
+      <div *ngFor="let sub of sec.hijos" class="bloque-subseccion">
+        <div class="nodo-fila subseccion-fila">
+          <mat-icon class="nodo-icono">folder_open</mat-icon>
+          <span class="nodo-codigo" *ngIf="sub.codigo">{{ sub.codigo }}</span>
+          <span class="nodo-nombre">{{ sub.nombre }}</span>
+          <span class="chip-estado" [class.activo]="sub.activa">
+            {{ sub.activa ? 'Activa' : 'Inactiva' }}
+          </span>
+          <span class="nodo-spacer"></span>
+          <button mat-icon-button matTooltip="Editar subsección"
+                  (click)="abrirForm('subseccion', { padreId: sec.id, padreLabel: sec.nombre }, sub)">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button [matTooltip]="sub.activa ? 'Inactivar' : 'Activar'"
+                  (click)="toggleDependencia(sub)">
+            <mat-icon>{{ sub.activa ? 'block' : 'check_circle' }}</mat-icon>
+          </button>
+          <button mat-icon-button matTooltip="Nueva serie"
+                  (click)="abrirForm('serie', { dependenciaId: sub.id, padreLabel: sub.nombre })">
+            <mat-icon>playlist_add</mat-icon>
+          </button>
+        </div>
+
+        <!-- Series de la subsección -->
+        <div *ngFor="let serie of sub.series" class="bloque-serie">
+          <ng-container *ngTemplateOutlet="tmplSerie; context: { $implicit: serie }"></ng-container>
+        </div>
+      </div>
+
+      <!-- Series directas de la sección -->
+      <div *ngFor="let serie of sec.series" class="bloque-serie">
+        <ng-container *ngTemplateOutlet="tmplSerie; context: { $implicit: serie }"></ng-container>
+      </div>
+
+    </mat-expansion-panel>
+  </mat-accordion>
+
 </div>
+
+<!-- Template reutilizable para series -->
+<ng-template #tmplSerie let-serie>
+  <div class="nodo-fila serie-fila">
+    <mat-icon class="nodo-icono">description</mat-icon>
+    <span class="nodo-codigo" *ngIf="serie.codigo">{{ serie.codigo }}</span>
+    <span class="nodo-nombre">{{ serie.nombre }}</span>
+    <span class="chip-estado" [class.activo]="serie.activa">
+      {{ serie.activa ? 'Activa' : 'Inactiva' }}
+    </span>
+    <span *ngIf="serie.descripcion" class="nodo-descripcion" matTooltip="{{ serie.descripcion }}">
+      <mat-icon style="font-size:14px;vertical-align:middle">info_outline</mat-icon>
+    </span>
+    <span class="nodo-spacer"></span>
+    <button mat-icon-button matTooltip="Editar serie"
+            (click)="abrirForm('serie', { dependenciaId: serie.dependencia_id, padreLabel: '' }, serie)">
+      <mat-icon>edit</mat-icon>
+    </button>
+    <button mat-icon-button [matTooltip]="serie.activa ? 'Inactivar' : 'Activar'"
+            (click)="toggleSerie(serie)">
+      <mat-icon>{{ serie.activa ? 'block' : 'check_circle' }}</mat-icon>
+    </button>
+    <button mat-icon-button matTooltip="Nueva subserie"
+            (click)="abrirForm('subserie', { serieId: serie.id, padreLabel: serie.nombre })">
+      <mat-icon>add</mat-icon>
+    </button>
+  </div>
+
+  <!-- Subseries -->
+  <div *ngFor="let ss of serie.subseries" class="nodo-fila subserie-fila">
+    <mat-icon class="nodo-icono">subdirectory_arrow_right</mat-icon>
+    <span class="nodo-codigo" *ngIf="ss.codigo">{{ ss.codigo }}</span>
+    <span class="nodo-nombre">{{ ss.nombre }}</span>
+    <span class="chip-estado" [class.activo]="ss.activa">
+      {{ ss.activa ? 'Activa' : 'Inactiva' }}
+    </span>
+    <span class="nodo-spacer"></span>
+    <button mat-icon-button matTooltip="Editar subserie"
+            (click)="abrirForm('subserie', { serieId: ss.serie_id, padreLabel: '' }, ss)">
+      <mat-icon>edit</mat-icon>
+    </button>
+    <button mat-icon-button [matTooltip]="ss.activa ? 'Inactivar' : 'Activar'"
+            (click)="toggleSubserie(ss)">
+      <mat-icon>{{ ss.activa ? 'block' : 'check_circle' }}</mat-icon>
+    </button>
+  </div>
+</ng-template>

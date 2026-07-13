@@ -35,7 +35,7 @@ export class CatalogosComponent implements OnInit {
     this.formTipo  = this.fb.group({
       nombre:             [tipo?.nombre             || '', Validators.required],
       descripcion:        [tipo?.descripcion        || ''],
-      plazo_respuesta_id: [tipo?.plazo_respuesta_id ?? null],
+      plazo_respuesta_id: [tipo?.plazo_respuesta_id ?? null, Validators.required],
     });
     this.formPlazo = this.fb.group({
       nombre:      [plazo?.nombre || '', Validators.required],

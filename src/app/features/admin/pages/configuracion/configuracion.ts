@@ -105,6 +105,7 @@ export class ConfiguracionComponent implements OnInit {
     private themeService: ThemeService,
   ) {}
 
+
   ngOnInit(): void {
     this.form = this.fb.group({
       prefijo_radicado:           ['', [Validators.required, Validators.maxLength(10)]],
@@ -206,4 +207,5 @@ export class ConfiguracionComponent implements OnInit {
       },
     });
   }
+
 }

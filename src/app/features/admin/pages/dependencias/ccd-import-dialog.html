@@ -1,0 +1,134 @@
+<h2 mat-dialog-title>
+  <mat-icon style="vertical-align:middle;margin-right:8px">upload_file</mat-icon>
+  Importar Cuadro de Clasificación Documental
+</h2>
+
+<mat-dialog-content style="min-width:700px;max-height:70vh;overflow-y:auto">
+
+  <!-- Paso 1: Subir archivo -->
+  <ng-container *ngIf="paso === 1">
+    <p style="color:#555;margin-bottom:16px">
+      Suba el archivo Excel con el CCD de la entidad. Descargue la plantilla si aún no tiene el archivo.
+    </p>
+
+    <div class="drop-zona"
+         [class.sobre]="sobreZona"
+         (dragover)="onDragOver($event)"
+         (dragleave)="onDragLeave()"
+         (drop)="onDrop($event)">
+      <mat-icon style="font-size:48px;height:48px;width:48px;color:#9e9e9e">cloud_upload</mat-icon>
+      <p style="margin:8px 0 4px;font-weight:500">Arrastre el archivo aquí</p>
+      <p style="color:#888;font-size:13px;margin:0">o haga clic para seleccionar</p>
+      <input type="file" accept=".xlsx" style="display:none" #fileInput (change)="onFileSelected($event)">
+      <button mat-stroked-button style="margin-top:12px" (click)="fileInput.click()">
+        <mat-icon>folder_open</mat-icon> Examinar…
+      </button>
+    </div>
+
+    <div *ngIf="errorMsg" class="alerta-error" style="margin-top:12px">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ errorMsg }}</span>
+    </div>
+
+    <mat-progress-bar *ngIf="cargando" mode="indeterminate" style="margin-top:8px"></mat-progress-bar>
+  </ng-container>
+
+  <!-- Paso 2: Preview de validación -->
+  <ng-container *ngIf="paso === 2 && preview">
+    <div class="preview-resumen">
+      <div class="chip-resumen ok">
+        <mat-icon>check_circle</mat-icon> {{ preview.ok }} filas correctas
+      </div>
+      <div class="chip-resumen advert" *ngIf="preview.advertencias > 0">
+        <mat-icon>warning</mat-icon> {{ preview.advertencias }} con advertencia
+      </div>
+      <div class="chip-resumen error" *ngIf="preview.errores > 0">
+        <mat-icon>error</mat-icon> {{ preview.errores }} con error
+      </div>
+    </div>
+
+    <div *ngIf="!preview.puede_importar" class="alerta-error" style="margin-bottom:12px">
+      <mat-icon>error_outline</mat-icon>
+      <span>Corrija los errores antes de importar. Las filas con errores no se importarán.</span>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="tabla-preview">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Sección</th>
+            <th>Subsección</th>
+            <th>Serie</th>
+            <th>Subserie</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let f of preview.filas; trackBy: trackFila"
+              [class.fila-ok]="f.estado === 'ok'"
+              [class.fila-advert]="f.estado === 'advertencia'"
+              [class.fila-error]="f.estado === 'error'">
+            <td>{{ f.fila }}</td>
+            <td>
+              <span *ngIf="f.codigo_seccion" class="badge-codigo">{{ f.codigo_seccion }}</span>
+              {{ f.nombre_seccion }}
+            </td>
+            <td>
+              <span *ngIf="f.codigo_subseccion" class="badge-codigo">{{ f.codigo_subseccion }}</span>
+              {{ f.nombre_subseccion }}
+            </td>
+            <td>
+              <span *ngIf="f.codigo_serie" class="badge-codigo">{{ f.codigo_serie }}</span>
+              {{ f.nombre_serie }}
+            </td>
+            <td>
+              <span *ngIf="f.codigo_subserie" class="badge-codigo">{{ f.codigo_subserie }}</span>
+              {{ f.nombre_subserie }}
+            </td>
+            <td>
+              <span class="estado-icono" [class.ok]="f.estado === 'ok'"
+                    [class.advert]="f.estado === 'advertencia'"
+                    [class.error]="f.estado === 'error'"
+                    [matTooltip]="f.mensaje || ''">
+                <mat-icon *ngIf="f.estado === 'ok'">check_circle</mat-icon>
+                <mat-icon *ngIf="f.estado === 'advertencia'">warning</mat-icon>
+                <mat-icon *ngIf="f.estado === 'error'">error</mat-icon>
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <mat-progress-bar *ngIf="cargando" mode="indeterminate" style="margin-top:8px"></mat-progress-bar>
+  </ng-container>
+
+  <!-- Paso 3: Resultado -->
+  <ng-container *ngIf="paso === 3 && resultado">
+    <div style="text-align:center;padding:24px 0">
+      <mat-icon style="font-size:64px;height:64px;width:64px;color:#2e7d32">check_circle</mat-icon>
+      <h3 style="margin:12px 0 6px;color:#2e7d32">Importación completada</h3>
+      <p style="color:#555">{{ resumenResultado() }}</p>
+    </div>
+  </ng-container>
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <ng-container *ngIf="paso === 1">
+    <button mat-button (click)="cerrar()">Cancelar</button>
+  </ng-container>
+  <ng-container *ngIf="paso === 2">
+    <button mat-button (click)="paso = 1" [disabled]="cargando">Volver</button>
+    <button mat-flat-button color="primary"
+            [disabled]="!preview?.puede_importar || cargando"
+            (click)="confirmar()">
+      <mat-icon>cloud_done</mat-icon>
+      Confirmar importación ({{ totalImportar }} filas)
+    </button>
+  </ng-container>
+  <ng-container *ngIf="paso === 3">
+    <button mat-flat-button color="primary" (click)="cerrar()">Cerrar</button>
+  </ng-container>
+</mat-dialog-actions>

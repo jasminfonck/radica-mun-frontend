@@ -175,6 +175,23 @@
     </mat-card-content>
   </mat-card>
 
+  <!-- ── SMTP movido a Canales ──────────────────────────── -->
+  <mat-card style="margin-top:24px; border-left:4px solid var(--color-primario)">
+    <mat-card-content style="display:flex; align-items:center; gap:16px; padding:16px; flex-wrap:wrap">
+      <mat-icon style="color:var(--color-primario)">outgoing_mail</mat-icon>
+      <div style="flex:1">
+        <strong>Correo saliente (SMTP)</strong>
+        <p style="margin:4px 0 0; font-size:13px; color:var(--texto-suave)">
+          La configuración SMTP se encuentra en Canales de recepción.
+        </p>
+      </div>
+      <a mat-stroked-button routerLink="/admin/canales">
+        <mat-icon>open_in_new</mat-icon> Ir a Canales
+      </a>
+    </mat-card-content>
+  </mat-card>
+
+
   <!-- ── Respaldo de configuración ───────────────────────── -->
   <mat-card style="margin-top:24px">
     <mat-card-content>

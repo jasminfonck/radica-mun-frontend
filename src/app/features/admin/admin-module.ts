@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 // Angular Material
 import { MatCardModule }             from '@angular/material/card';
@@ -18,7 +18,9 @@ import { MatTabsModule }             from '@angular/material/tabs';
 import { MatListModule }             from '@angular/material/list';
 import { MatTooltipModule }          from '@angular/material/tooltip';
 import { MatProgressBarModule }      from '@angular/material/progress-bar';
+import { MatExpansionModule }         from '@angular/material/expansion';
 import { MatSnackBarModule }         from '@angular/material/snack-bar';
+import { MatRadioModule }            from '@angular/material/radio';
 
 import { AdminRoutingModule }        from './admin-routing-module';
 
@@ -27,7 +29,9 @@ import { AdminDashboardComponent }   from './pages/dashboard/admin-dashboard';
 import { EntidadComponent }          from './pages/entidad/entidad';
 import { UsuariosComponent }         from './pages/usuarios/usuarios';
 import { UsuarioDialogComponent }    from './pages/usuarios/usuario-dialog';
+import { RestablecerContrasenaDialogComponent } from './pages/usuarios/restablecer-contrasena-dialog';
 import { DependenciasComponent }     from './pages/dependencias/dependencias';
+import { CcdImportDialogComponent }  from './pages/dependencias/ccd-import-dialog';
 import { CanalesComponent }          from './pages/canales/canales';
 import { CatalogosComponent }        from './pages/catalogos/catalogos';
 import { ConfiguracionComponent }    from './pages/configuracion/configuracion';
@@ -39,7 +43,9 @@ import { AuditoriaComponent }        from './pages/auditoria/auditoria';
     EntidadComponent,
     UsuariosComponent,
     UsuarioDialogComponent,
+    RestablecerContrasenaDialogComponent,
     DependenciasComponent,
+    CcdImportDialogComponent,
     CanalesComponent,
     CatalogosComponent,
     ConfiguracionComponent,
@@ -47,6 +53,7 @@ import { AuditoriaComponent }        from './pages/auditoria/auditoria';
   ],
   imports: [
     CommonModule,
+    FormsModule,
     ReactiveFormsModule,
     AdminRoutingModule,
     MatCardModule, MatButtonModule, MatIconModule,
@@ -54,7 +61,8 @@ import { AuditoriaComponent }        from './pages/auditoria/auditoria';
     MatTableModule, MatDialogModule, MatSelectModule,
     MatChipsModule, MatSlideToggleModule, MatTabsModule,
     MatListModule, MatTooltipModule, MatProgressBarModule,
-    MatSnackBarModule, MatCheckboxModule,
+    MatSnackBarModule, MatCheckboxModule, MatExpansionModule,
+    MatRadioModule,
   ]
 })
 export class AdminModule {}

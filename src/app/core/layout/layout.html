@@ -70,6 +70,11 @@
           <small>{{ usuario?.email }}</small>
         </div>
         <mat-divider></mat-divider>
+        <button mat-menu-item (click)="abrirCambiarContrasena()">
+          <mat-icon>lock_reset</mat-icon>
+          <span>Cambiar contraseña</span>
+        </button>
+        <mat-divider></mat-divider>
         <button mat-menu-item (click)="cerrarSesion()">
           <mat-icon>logout</mat-icon>
           <span>Cerrar sesión</span>

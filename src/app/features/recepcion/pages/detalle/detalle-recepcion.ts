@@ -4,7 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
-import { RecepcionService, RecepcionOut, AdjuntoOut, BitacoraEvento, ESTADOS_RECEPCION } from '../../../../core/services/recepcion.service';
+import { RecepcionService, RecepcionOut, AdjuntoOut, BitacoraEvento, ESTADOS_RECEPCION, LogMensajeEmailOut } from '../../../../core/services/recepcion.service';
 import {
   RemitenteService, RemitenteResumen, RemitenteOut, MetadatosOut,
   PlazoRespuestaResumen,
@@ -47,6 +47,10 @@ export class DetalleRecepcionComponent implements OnInit {
   // ── Bitácora ───────────────────────────────────────────────────────────────
   bitacora: BitacoraEvento[] = [];
   cargandoBitacora = false;
+
+  // ── Log de correos ─────────────────────────────────────────────────────────
+  logEmails: LogMensajeEmailOut[] = [];
+  cargandoLogEmails = false;
 
   // ── Campos bloqueados (metadatos auto-llenados desde formulario/email) ─────
   camposBloquedosSet: Set<string> = new Set();
@@ -342,6 +346,11 @@ export class DetalleRecepcionComponent implements OnInit {
     });
   }
 
+  onTabChange(index: number): void {
+    if (index === 4) this.cargarBitacora();
+    if (index === 5) this.cargarLogEmails();
+  }
+
   // ── Bitácora ───────────────────────────────────────────────────────────────
   cargarBitacora(): void {
     if (!this.recepcion || this.bitacora.length > 0) return;
@@ -353,6 +362,20 @@ export class DetalleRecepcionComponent implements OnInit {
         this.cdr.markForCheck();
       },
       error: () => { this.cargandoBitacora = false; this.cdr.markForCheck(); }
+    });
+  }
+
+  // ── Log de correos ─────────────────────────────────────────────────────────
+  cargarLogEmails(): void {
+    if (!this.recepcion || this.logEmails.length > 0) return;
+    this.cargandoLogEmails = true;
+    this.recepcionService.getLogEmail(this.recepcion.id).subscribe({
+      next: logs => {
+        this.logEmails = logs;
+        this.cargandoLogEmails = false;
+        this.cdr.markForCheck();
+      },
+      error: () => { this.cargandoLogEmails = false; this.cdr.markForCheck(); }
     });
   }
 
@@ -526,7 +549,7 @@ export class DetalleRecepcionComponent implements OnInit {
   }
 
   get completitudMetadatos(): { completo: boolean; faltantes: string[] } {
-    const v = this.formMetadatos.value;
+    const v = this.formMetadatos.getRawValue();
     const faltantes: string[] = [];
     if (!v.asunto?.trim())           faltantes.push('Asunto');
     if (!v.tipo_soporte)             faltantes.push('Tipo de soporte');

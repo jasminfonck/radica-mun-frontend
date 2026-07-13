@@ -42,6 +42,13 @@ import { AdminService, UsuarioOut, Rol } from '../../../../core/services/admin.s
         </mat-form-field>
       </form>
     </mat-dialog-content>
+    <div *ngIf="errorGuardado"
+         style="margin:0 24px 8px; padding:10px 14px; border-radius:6px;
+                background:#ffebee; border-left:3px solid #c62828;
+                font-size:13px; color:#b71c1c; display:flex; align-items:center; gap:8px;">
+      <mat-icon style="font-size:16px;width:16px;height:16px">error</mat-icon>
+      {{ errorGuardado }}
+    </div>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>Cancelar</button>
       <button mat-flat-button color="primary" (click)="guardar()" [disabled]="form.invalid || guardando">
@@ -59,6 +66,7 @@ import { AdminService, UsuarioOut, Rol } from '../../../../core/services/admin.s
 export class UsuarioDialogComponent implements OnInit {
   form!: FormGroup;
   guardando = false;
+  errorGuardado = '';
 
   constructor(
     private fb: FormBuilder,
@@ -80,12 +88,16 @@ export class UsuarioDialogComponent implements OnInit {
   guardar(): void {
     if (this.form.invalid) return;
     this.guardando = true;
+    this.errorGuardado = '';
     const obs = this.data.usuario
       ? this.adminService.actualizarUsuario(this.data.usuario.id, this.form.value)
       : this.adminService.crearUsuario(this.form.value);
     obs.subscribe({
       next: () => this.dialogRef.close(true),
-      error: () => { this.guardando = false; }
+      error: (err: any) => {
+        this.guardando = false;
+        this.errorGuardado = err?.error?.detail || 'Error al guardar el usuario.';
+      }
     });
   }
 }

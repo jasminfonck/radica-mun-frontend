@@ -6,6 +6,8 @@ export interface Rol           { id: number; nombre: string; descripcion?: strin
 export interface UsuarioOut    { id: number; nombre: string; apellido?: string; email: string; activo: boolean; rol: Rol; created_at: string; }
 export interface UsuarioCreate { nombre: string; apellido?: string; email: string; password: string; rol_id: number; }
 export interface UsuarioUpdate { nombre?: string; apellido?: string; email?: string; rol_id?: number; activo?: boolean; }
+export interface CambiarContrasenaPropia { contrasena_actual: string; nueva_contrasena: string; confirmar_contrasena: string; }
+export interface RestablecerContrasena { nueva_contrasena: string; }
 export function nombreCompleto(u: { nombre: string; apellido?: string | null }): string {
   return u.apellido ? `${u.nombre} ${u.apellido}` : u.nombre;
 }
@@ -16,7 +18,42 @@ export interface EntidadOut {
   email_institucional?: string; configurada: boolean;
 }
 
-export interface DependenciaOut { id: number; nombre: string; codigo?: string; responsable?: string; email?: string; activa: boolean; }
+export interface DependenciaOut {
+  id: number; nombre: string; codigo?: string; responsable?: string;
+  email?: string; activa: boolean; padre_id?: number; nivel: string;
+}
+
+// CCD
+export interface SubserieCCDOut {
+  id: number; nombre: string; codigo?: string; descripcion?: string; activa: boolean; serie_id: number;
+}
+export interface SerieNodo {
+  id: number; nombre: string; codigo?: string; descripcion?: string; activa: boolean;
+  dependencia_id: number; subseries: SubserieCCDOut[];
+}
+export interface DependenciaNodo {
+  id: number; nombre: string; codigo?: string; responsable?: string; email?: string;
+  activa: boolean; nivel: 'seccion' | 'subseccion'; padre_id?: number;
+  hijos: DependenciaNodo[]; series: SerieNodo[];
+}
+export interface FilaCCDOut {
+  fila: number;
+  codigo_seccion?: string; nombre_seccion?: string;
+  codigo_subseccion?: string; nombre_subseccion?: string;
+  codigo_serie?: string; nombre_serie?: string; descripcion_serie?: string;
+  codigo_subserie?: string; nombre_subserie?: string; descripcion_subserie?: string;
+  estado: 'ok' | 'advertencia' | 'error';
+  mensaje?: string;
+}
+export interface ImportarValidarOut {
+  filas: FilaCCDOut[]; total: number; errores: number; advertencias: number; ok: number; puede_importar: boolean;
+}
+export interface ImportarConfirmarOut {
+  secciones_creadas: number; secciones_actualizadas: number;
+  subsecciones_creadas: number; subsecciones_actualizadas: number;
+  series_creadas: number; series_actualizadas: number;
+  subseries_creadas: number; subseries_actualizadas: number;
+}
 
 export interface CanalOut {
   id: number; nombre: string; tipo: string; activo: boolean;
@@ -40,6 +77,28 @@ export interface ConfiguracionOut {
   politica_privacidad_activa: boolean; politica_privacidad_texto?: string;
   max_adjuntos: number; max_tamano_adjunto_mb: number;
   tipos_archivo_permitidos: string;
+  // SMTP saliente
+  smtp_host?: string;
+  smtp_port?: number;
+  smtp_user?: string;
+  smtp_password_configurado: boolean;
+  smtp_from_fuente?: 'buzon_oficial' | 'email_entidad' | 'personalizado';
+  smtp_from_personalizado?: string;
+  smtp_activo: boolean;
+}
+
+export interface TestSmtpOut { ok: boolean; mensaje: string; }
+
+export interface LogMensajeEmailOut {
+  id: number;
+  tipo: string;
+  destinatario: string;
+  remitente_from?: string;
+  asunto: string;
+  estado: 'enviado' | 'error';
+  error_detalle?: string;
+  recepcion_id?: number;
+  created_at: string;
 }
 
 export interface BitacoraOut {
@@ -71,6 +130,7 @@ export interface BuzonCorreoOut {
   oauth_token_expiry?: string;
   oauth_client_id?: string;
   oauth_tenant_id?: string;
+  metodo_conexion: 'imap' | 'graph';
 }
 
 export interface BuzonCorreoCreate {
@@ -117,6 +177,8 @@ export class AdminService {
   getUsuarios(): Observable<UsuarioOut[]>                                        { return this.http.get<UsuarioOut[]>(`${this.base}/usuarios`); }
   crearUsuario(d: UsuarioCreate): Observable<UsuarioOut>                         { return this.http.post<UsuarioOut>(`${this.base}/usuarios`, d); }
   actualizarUsuario(id: number, d: UsuarioUpdate): Observable<UsuarioOut>        { return this.http.put<UsuarioOut>(`${this.base}/usuarios/${id}`, d); }
+  cambiarContrasenaPropia(d: CambiarContrasenaPropia): Observable<{ mensaje: string }> { return this.http.post<{ mensaje: string }>(`${this.base}/usuarios/me/cambiar-contrasena`, d); }
+  restablecerContrasena(id: number, d: RestablecerContrasena): Observable<{ mensaje: string }> { return this.http.post<{ mensaje: string }>(`${this.base}/usuarios/${id}/restablecer-contrasena`, d); }
 
   // Entidad
   getEntidad(): Observable<EntidadOut>                                            { return this.http.get<EntidadOut>(`${this.base}/entidad`); }
@@ -143,14 +205,38 @@ export class AdminService {
 
   // Configuración
   getConfiguracion(): Observable<ConfiguracionOut>                                { return this.http.get<ConfiguracionOut>(`${this.base}/configuracion`); }
-  actualizarConfiguracion(d: Partial<ConfiguracionOut>): Observable<ConfiguracionOut> { return this.http.put<ConfiguracionOut>(`${this.base}/configuracion`, d); }
+  actualizarConfiguracion(d: Partial<ConfiguracionOut & { smtp_password?: string }>): Observable<ConfiguracionOut> { return this.http.put<ConfiguracionOut>(`${this.base}/configuracion`, d); }
+  testSmtp(emailDestino: string): Observable<TestSmtpOut>                        { return this.http.post<TestSmtpOut>(`${this.base}/configuracion/test-smtp`, { email_destino: emailDestino }); }
   getEstadoSistema(): Observable<{ sistema_listo: boolean }>                      { return this.http.get<{ sistema_listo: boolean }>(`${this.base}/sistema/estado`); }
+
+  // Log de emails
+  getLogEmail(limite = 200, recepcionId?: number): Observable<LogMensajeEmailOut[]> {
+    const params: any = { limite };
+    if (recepcionId != null) params['recepcion_id'] = recepcionId;
+    return this.http.get<LogMensajeEmailOut[]>(`${this.base}/log-email`, { params });
+  }
 
   // Auditoría
   getAuditoria(limite = 200): Observable<BitacoraOut[]>                          { return this.http.get<BitacoraOut[]>(`${this.base}/auditoria`, { params: { limite } }); }
 
   // Respaldo
   getRespaldo(): Observable<RespaldoOut>                                          { return this.http.get<RespaldoOut>(`${this.base}/respaldo`); }
+
+  // CCD
+  getCCDArbol(): Observable<DependenciaNodo[]>                                   { return this.http.get<DependenciaNodo[]>(`${this.base}/ccd/arbol`); }
+  crearSerie(d: { nombre: string; codigo?: string; descripcion?: string; dependencia_id: number }): Observable<SerieNodo> { return this.http.post<SerieNodo>(`${this.base}/ccd/series`, d); }
+  actualizarSerie(id: number, d: Partial<SerieNodo>): Observable<SerieNodo>     { return this.http.put<SerieNodo>(`${this.base}/ccd/series/${id}`, d); }
+  toggleSerie(id: number, activa: boolean): Observable<SerieNodo>               { return this.http.patch<SerieNodo>(`${this.base}/ccd/series/${id}/estado`, null, { params: { activa } }); }
+  crearSubserie(d: { nombre: string; codigo?: string; descripcion?: string; serie_id: number }): Observable<SubserieCCDOut> { return this.http.post<SubserieCCDOut>(`${this.base}/ccd/subseries`, d); }
+  actualizarSubserie(id: number, d: Partial<SubserieCCDOut>): Observable<SubserieCCDOut> { return this.http.put<SubserieCCDOut>(`${this.base}/ccd/subseries/${id}`, d); }
+  toggleSubserie(id: number, activa: boolean): Observable<SubserieCCDOut>       { return this.http.patch<SubserieCCDOut>(`${this.base}/ccd/subseries/${id}/estado`, null, { params: { activa } }); }
+  validarImportacionCCD(file: File): Observable<ImportarValidarOut> {
+    const fd = new FormData();
+    fd.append('file', file);
+    return this.http.post<ImportarValidarOut>(`${this.base}/ccd/importar/validar`, fd);
+  }
+  confirmarImportacionCCD(filas: FilaCCDOut[]): Observable<ImportarConfirmarOut> { return this.http.post<ImportarConfirmarOut>(`${this.base}/ccd/importar/confirmar`, { filas }); }
+  descargarPlantillaCCD(): Observable<Blob>                                      { return this.http.get(`${this.base}/ccd/plantilla`, { responseType: 'blob' }); }
 
   // Buzón de correo oficial
   getBuzon(): Observable<BuzonCorreoOut | null>                                   { return this.http.get<BuzonCorreoOut | null>(`${this.base}/buzon-correo`); }

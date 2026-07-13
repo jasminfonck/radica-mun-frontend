@@ -51,7 +51,22 @@
       <h2>Se ha recibido su formulario</h2>
       <p>Su comunicación ha sido registrada exitosamente en nuestro sistema.</p>
 
-      <div class="aviso-radicado">
+      <div *ngIf="confirmacion!.numero_radicado" class="aviso-radicado"
+           style="background:#e8f5e9;border-color:#a5d6a7;color:#1b5e20">
+        <mat-icon>tag</mat-icon>
+        <div>
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">
+            Número de seguimiento asignado
+          </div>
+          <div style="font-size:22px;font-weight:700;letter-spacing:1px">
+            {{ confirmacion!.numero_radicado }}
+          </div>
+          <div style="font-size:12px;margin-top:2px;opacity:.8">
+            Guárdelo para consultar el estado de su solicitud.
+          </div>
+        </div>
+      </div>
+      <div *ngIf="!confirmacion!.numero_radicado" class="aviso-radicado">
         <mat-icon>schedule</mat-icon>
         <span>En un plazo máximo de <strong>24 horas hábiles</strong> recibirá el número de radicado oficial.</span>
       </div>

@@ -82,6 +82,19 @@ export interface FormularioPublicoCreate {
 export interface FormularioPublicoOut {
   recibido: boolean;
   acuse_enviado: boolean;
+  numero_radicado?: string;
+}
+
+export interface LogMensajeEmailOut {
+  id: number;
+  tipo: string;
+  destinatario: string;
+  remitente_from?: string;
+  asunto: string;
+  estado: 'enviado' | 'error';
+  error_detalle?: string;
+  recepcion_id?: number;
+  created_at: string;
 }
 
 export interface RecepcionFiltros {
@@ -145,6 +158,10 @@ export class RecepcionService {
 
   notificarAdjuntos(recepcionId: number): Observable<{ enviado: boolean }> {
     return this.http.post<{ enviado: boolean }>(`${this.base}/${recepcionId}/notificar-adjuntos`, {});
+  }
+
+  getLogEmail(recepcionId: number): Observable<LogMensajeEmailOut[]> {
+    return this.http.get<LogMensajeEmailOut[]>(`${this.base}/${recepcionId}/log-email`);
   }
 
   getInfoPublica(): Observable<InfoPublica> {

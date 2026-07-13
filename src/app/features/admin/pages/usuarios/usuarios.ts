@@ -3,6 +3,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { AdminService, UsuarioOut, Rol } from '../../../../core/services/admin.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { UsuarioDialogComponent } from './usuario-dialog';
+import { RestablecerContrasenaDialogComponent } from './restablecer-contrasena-dialog';
 import { forkJoin } from 'rxjs';
 
 @Component({
@@ -50,6 +51,15 @@ export class UsuariosComponent implements OnInit {
       error: err => {
         this.toast.error(err?.error?.detail || 'No se pudo actualizar el usuario.');
       },
+    });
+  }
+
+  abrirRestablecerContrasena(usuario: UsuarioOut): void {
+    this.dialog.open(RestablecerContrasenaDialogComponent, {
+      width: '420px',
+      data: { usuario }
+    }).afterClosed().subscribe(restablecida => {
+      if (restablecida) this.toast.exito('Contraseña restablecida correctamente.');
     });
   }
 }

@@ -9,7 +9,7 @@
     </button>
   </div>
 
-  <mat-tab-group animationDuration="200ms" (selectedTabChange)="$event.index === 4 && cargarBitacora()">
+  <mat-tab-group animationDuration="200ms" (selectedTabChange)="onTabChange($event.index)">
 
     <!-- ── Pestaña: Información ────────────────────────────────────────── -->
     <mat-tab label="Información">
@@ -811,6 +811,57 @@
                 </div>
               </div>
             </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- ── Pestaña: Correos ──────────────────────────────────────────────── -->
+    <mat-tab label="Correos ({{ logEmails.length }})">
+      <div class="tab-contenido">
+        <mat-card>
+          <mat-card-title>
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <span>Correos enviados a esta recepción</span>
+              <button mat-icon-button
+                      (click)="logEmails = []; cargarLogEmails()"
+                      matTooltip="Actualizar">
+                <mat-icon>refresh</mat-icon>
+              </button>
+            </div>
+          </mat-card-title>
+          <mat-card-content>
+            <mat-progress-bar *ngIf="cargandoLogEmails" mode="indeterminate"></mat-progress-bar>
+
+            <div *ngIf="!cargandoLogEmails && logEmails.length === 0"
+                 style="padding:24px;text-align:center;color:#9e9e9e">
+              <mat-icon style="font-size:36px;height:36px;width:36px">mail_outline</mat-icon>
+              <p>No hay correos enviados para esta recepción.</p>
+              <button mat-stroked-button (click)="cargarLogEmails()">
+                <mat-icon>refresh</mat-icon> Cargar correos
+              </button>
+            </div>
+
+            <mat-list *ngIf="logEmails.length > 0">
+              <mat-list-item *ngFor="let email of logEmails" style="height:auto;padding:12px 0">
+                <mat-icon matListItemIcon
+                  [style.color]="email.estado === 'enviado' ? '#2e7d32' : '#c62828'">
+                  {{ email.estado === 'enviado' ? 'mark_email_read' : 'error_outline' }}
+                </mat-icon>
+                <span matListItemTitle>{{ email.asunto }}</span>
+                <span matListItemLine style="font-size:12px;color:#757575">
+                  Para: {{ email.destinatario }} ·
+                  {{ email.created_at | date:'dd/MM/yyyy HH:mm':'America/Bogota' }} ·
+                  <strong [style.color]="email.estado === 'enviado' ? '#388e3c' : '#c62828'">
+                    {{ email.estado | titlecase }}
+                  </strong>
+                </span>
+                <span matListItemLine *ngIf="email.error_detalle"
+                      style="font-size:12px;color:#c62828">
+                  {{ email.error_detalle }}
+                </span>
+              </mat-list-item>
+            </mat-list>
           </mat-card-content>
         </mat-card>
       </div>
