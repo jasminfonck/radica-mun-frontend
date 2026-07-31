@@ -21,6 +21,7 @@ import { MatProgressBarModule }      from '@angular/material/progress-bar';
 import { MatExpansionModule }         from '@angular/material/expansion';
 import { MatSnackBarModule }         from '@angular/material/snack-bar';
 import { MatRadioModule }            from '@angular/material/radio';
+import { MatPaginatorModule }        from '@angular/material/paginator';
 
 import { AdminRoutingModule }        from './admin-routing-module';
 
@@ -35,6 +36,7 @@ import { CcdImportDialogComponent }  from './pages/dependencias/ccd-import-dialo
 import { CanalesComponent }          from './pages/canales/canales';
 import { CatalogosComponent }        from './pages/catalogos/catalogos';
 import { ConfiguracionComponent }    from './pages/configuracion/configuracion';
+import { RutaPickerDialogComponent } from './pages/configuracion/ruta-picker-dialog';
 import { AuditoriaComponent }        from './pages/auditoria/auditoria';
 
 @NgModule({
@@ -49,6 +51,7 @@ import { AuditoriaComponent }        from './pages/auditoria/auditoria';
     CanalesComponent,
     CatalogosComponent,
     ConfiguracionComponent,
+    RutaPickerDialogComponent,
     AuditoriaComponent,
   ],
   imports: [
@@ -62,7 +65,7 @@ import { AuditoriaComponent }        from './pages/auditoria/auditoria';
     MatChipsModule, MatSlideToggleModule, MatTabsModule,
     MatListModule, MatTooltipModule, MatProgressBarModule,
     MatSnackBarModule, MatCheckboxModule, MatExpansionModule,
-    MatRadioModule,
+    MatRadioModule, MatPaginatorModule,
   ]
 })
 export class AdminModule {}

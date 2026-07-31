@@ -68,7 +68,7 @@ export class EditarRemitenteComponent implements OnInit {
       nit:                 [r.nit         ?? ''],
       digito_verificacion: [r.digito_verificacion ?? ''],
       email:               [r.email      ?? '', Validators.email],
-      telefono:            [r.telefono   ?? ''],
+      telefono:            [r.telefono   ?? '', Validators.pattern(/^[0-9+\s()\-]{7,20}$/)],
       direccion:           [r.direccion  ?? ''],
       departamento:        [r.departamento ?? ''],
       municipio:           [r.municipio  ?? ''],
@@ -118,5 +118,9 @@ export class EditarRemitenteComponent implements OnInit {
 
   soloNumeros(event: KeyboardEvent): boolean {
     return /^[0-9]$/.test(event.key);
+  }
+
+  soloNumerosTel(event: KeyboardEvent): boolean {
+    return /^[0-9+\s()\-]$/.test(event.key);
   }
 }

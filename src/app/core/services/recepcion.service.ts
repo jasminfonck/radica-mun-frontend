@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { PaginadoOut } from '../../shared/models/paginacion.model';
 
 export interface AdjuntoOut {
   id: number;
@@ -24,6 +25,13 @@ export interface RecepcionOut {
   recibido_por?: UsuarioResumen;
   created_at: string;
   adjuntos: AdjuntoOut[];
+  // Número reservado desde la creación — solo pasa a existir como radicado
+  // oficial cuando se completa el trámite (pestaña "Radicado").
+  numero_radicado?: string | null;
+  // Clasificación anti-spam / deduplicación (formulario web y correo)
+  spam_score?: number;
+  spam_flag?: boolean;
+  duplicado_de?: number | null;
 }
 
 export interface RecepcionCreate {
@@ -55,6 +63,7 @@ export interface InfoPublica {
   color_primario: string;
   canal_id?: number;
   canal_activo: boolean;
+  sistema_listo: boolean;
   tipos_requerimiento: TipoReqResumen[];
   politica_privacidad_activa: boolean;
   politica_privacidad_texto?: string;
@@ -102,14 +111,33 @@ export interface RecepcionFiltros {
   estado?: string;
   fecha_desde?: string;
   fecha_hasta?: string;
+  texto?: string;
+  page?: number;
+  page_size?: number;
 }
 
-export const ESTADOS_RECEPCION = [
+// Botones de "Cambiar estado" en el detalle de una recepción — solo las
+// transiciones manuales que un operador puede disparar por clic. No incluye
+// `posible_duplicado`/`revision_spam` (los asigna el clasificador automático,
+// no un botón) ni `radicado` (se completa desde la pestaña "Radicado", no
+// desde acá).
+export const ESTADOS_RECEPCION_TRANSICION = [
   { value: 'recibido',      label: 'Recibido' },
   { value: 'pendiente',     label: 'Pendiente' },
   { value: 'incompleto',    label: 'Incompleto' },
   { value: 'no_competente', label: 'No competente' },
   { value: 'competente',    label: 'Competente' },
+];
+
+// Filtro de la bandeja de recepciones — incluye también los dos estados que
+// asigna automáticamente el clasificador anti-spam/duplicados, para que el
+// operador pueda encontrarlos y revisarlos (son posibles falsos positivos,
+// su revisión es obligatoria). No incluye `radicado`: esos ya tienen su
+// propia bandeja dedicada (`/radicado`).
+export const ESTADOS_RECEPCION_FILTRO = [
+  ...ESTADOS_RECEPCION_TRANSICION,
+  { value: 'posible_duplicado', label: 'Posible duplicado' },
+  { value: 'revision_spam',     label: 'En revisión (spam)' },
 ];
 
 @Injectable({ providedIn: 'root' })
@@ -118,13 +146,16 @@ export class RecepcionService {
 
   constructor(private http: HttpClient) {}
 
-  listar(filtros: RecepcionFiltros = {}): Observable<RecepcionOut[]> {
+  listar(filtros: RecepcionFiltros = {}): Observable<PaginadoOut<RecepcionOut>> {
     let params = new HttpParams();
     if (filtros.canal_id)    params = params.set('canal_id',    filtros.canal_id);
     if (filtros.estado)      params = params.set('estado',      filtros.estado);
     if (filtros.fecha_desde) params = params.set('fecha_desde', filtros.fecha_desde);
     if (filtros.fecha_hasta) params = params.set('fecha_hasta', filtros.fecha_hasta);
-    return this.http.get<RecepcionOut[]>(this.base, { params });
+    if (filtros.texto)       params = params.set('texto',       filtros.texto);
+    params = params.set('page', filtros.page ?? 1);
+    params = params.set('page_size', filtros.page_size ?? 20);
+    return this.http.get<PaginadoOut<RecepcionOut>>(this.base, { params });
   }
 
   obtener(id: number): Observable<RecepcionOut> {

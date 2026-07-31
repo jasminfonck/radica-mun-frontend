@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
+import { PageEvent } from '@angular/material/paginator';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { RemitenteService, RemitenteResumen } from '../../../../core/services/remitente.service';
@@ -16,6 +17,10 @@ export class ListaRemitentesComponent implements OnInit {
   filtros!: FormGroup;
   remitentes: RemitenteResumen[] = [];
   cargando = false;
+
+  total = 0;
+  pageIndex = 0;
+  pageSize = 20;
 
   get columnas(): string[] {
     return this.soloActivos
@@ -46,18 +51,31 @@ export class ListaRemitentesComponent implements OnInit {
     this.buscar();
   }
 
-  buscar(): void {
+  private _buscarPagina(): void {
     this.cargando = true;
     const { q, tipo_persona } = this.filtros.value;
-    this.remitenteService.buscar(q || undefined, tipo_persona || undefined, this.soloActivos)
+    this.remitenteService
+      .buscar(q || undefined, tipo_persona || undefined, this.soloActivos, this.pageIndex + 1, this.pageSize)
       .subscribe({
-        next: datos => {
-          this.remitentes = datos;
-          this.cargando = false;
+        next: r => {
+          this.remitentes = r.items;
+          this.total       = r.total;
+          this.cargando    = false;
           this.cdr.markForCheck();
         },
         error: () => { this.cargando = false; this.cdr.markForCheck(); },
       });
+  }
+
+  buscar(): void {
+    this.pageIndex = 0;
+    this._buscarPagina();
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.pageIndex = event.pageIndex;
+    this.pageSize  = event.pageSize;
+    this._buscarPagina();
   }
 
   toggleActivos(): void {

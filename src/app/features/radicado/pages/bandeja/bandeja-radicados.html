@@ -11,38 +11,53 @@
   <mat-card class="form-card" style="margin-bottom:20px" [formGroup]="filtros">
     <mat-card-title>Filtrar radicados</mat-card-title>
     <mat-card-content>
-      <div class="form-grid">
-        <mat-form-field appearance="outline">
-          <mat-label>Dependencia</mat-label>
-          <mat-icon matPrefix>account_tree</mat-icon>
-          <mat-select formControlName="dependencia_id">
-            <mat-option [value]="null">Todas las dependencias</mat-option>
-            <mat-option *ngFor="let d of dependencias" [value]="d.id">{{ d.nombre }}</mat-option>
-          </mat-select>
-        </mat-form-field>
+      <mat-form-field appearance="outline" style="width:100%">
+        <mat-label>Buscar por número de radicado</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput formControlName="numero" placeholder="Ej. RAD-2026-000043" (keyup.enter)="cargar()">
+      </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Estado</mat-label>
-          <mat-icon matPrefix>filter_list</mat-icon>
-          <mat-select formControlName="estado">
-            <mat-option *ngFor="let e of ESTADOS" [value]="e.value">{{ e.label }}</mat-option>
-          </mat-select>
-        </mat-form-field>
+      <mat-form-field appearance="outline" style="width:100%">
+        <mat-label>Estado</mat-label>
+        <mat-icon matPrefix>filter_list</mat-icon>
+        <mat-select formControlName="estado">
+          <mat-option *ngFor="let e of ESTADOS" [value]="e.value">{{ e.label }}</mat-option>
+        </mat-select>
+      </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Desde</mat-label>
-          <mat-icon matPrefix>date_range</mat-icon>
-          <input matInput type="date" formControlName="fecha_desde">
-        </mat-form-field>
+      <mat-expansion-panel class="filtros-avanzados" [expanded]="false">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon style="font-size:18px; width:18px; height:18px; margin-right:6px">tune</mat-icon>
+            Más filtros
+          </mat-panel-title>
+        </mat-expansion-panel-header>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Hasta</mat-label>
-          <mat-icon matPrefix>date_range</mat-icon>
-          <input matInput type="date" formControlName="fecha_hasta">
-        </mat-form-field>
-      </div>
+        <div class="form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Dependencia</mat-label>
+            <mat-icon matPrefix>account_tree</mat-icon>
+            <mat-select formControlName="dependencia_id">
+              <mat-option [value]="null">Todas las dependencias</mat-option>
+              <mat-option *ngFor="let d of dependencias" [value]="d.id">{{ d.nombre }}</mat-option>
+            </mat-select>
+          </mat-form-field>
 
-      <div class="acciones">
+          <mat-form-field appearance="outline">
+            <mat-label>Desde</mat-label>
+            <mat-icon matPrefix>date_range</mat-icon>
+            <input matInput type="date" formControlName="fecha_desde">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Hasta</mat-label>
+            <mat-icon matPrefix>date_range</mat-icon>
+            <input matInput type="date" formControlName="fecha_hasta">
+          </mat-form-field>
+        </div>
+      </mat-expansion-panel>
+
+      <div class="acciones" style="margin-top:12px">
         <button mat-stroked-button (click)="limpiar()">Limpiar</button>
         <button mat-flat-button color="primary" (click)="cargar()">
           <mat-icon>search</mat-icon> Buscar
@@ -52,9 +67,8 @@
   </mat-card>
 
   <!-- Tabla -->
-  <mat-progress-bar *ngIf="cargando" mode="indeterminate"></mat-progress-bar>
-
-  <mat-card *ngIf="!cargando">
+  <mat-card>
+    <mat-progress-bar *ngIf="cargando" mode="indeterminate"></mat-progress-bar>
     <table mat-table [dataSource]="radicados" class="tabla-completa">
 
       <ng-container matColumnDef="numero_radicado">
@@ -116,6 +130,9 @@
         </td>
       </tr>
     </table>
+
+    <mat-paginator [length]="total" [pageSize]="pageSize" [pageIndex]="pageIndex"
+                   [hidePageSize]="true" (page)="onPageChange($event)"></mat-paginator>
   </mat-card>
 
 </div>

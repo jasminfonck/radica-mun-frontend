@@ -38,7 +38,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
       this.tipoError = 'desplazado';
     }
 
-    this.adminService.getEntidad().subscribe({
+    this.adminService.getEntidadPublica().subscribe({
       next: entidad => {
         if (entidad.nombre) this.nombreEntidad = entidad.nombre;
       },

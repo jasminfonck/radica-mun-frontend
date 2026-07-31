@@ -37,12 +37,12 @@
         </div>
         <mat-slide-toggle
           [checked]="canal.activo" [disabled]="guardando[canal.id]"
-          (change)="toggleCanal(canal)" color="primary"
+          (change)="toggleCanal(canal, $event)" color="primary"
           [matTooltip]="canal.activo ? 'Desactivar canal' : 'Activar canal'">
         </mat-slide-toggle>
       </mat-card-content>
 
-      <mat-card-footer *ngIf="canal.tipo === 'digital'" class="canal-acuse">
+      <mat-card-footer *ngIf="canal.tipo === 'formulario'" class="canal-acuse">
         <div class="acuse-row">
           <mat-icon [class.acuse-ok]="canal.acuse_configurado" [class.acuse-pendiente]="!canal.acuse_configurado">
             {{ canal.acuse_configurado ? 'mark_email_read' : 'mark_email_unread' }}
@@ -55,7 +55,7 @@
           </div>
           <mat-slide-toggle
             [checked]="canal.acuse_configurado" [disabled]="guardando[canal.id]"
-            (change)="toggleAcuse(canal)" color="accent"
+            (change)="toggleAcuse(canal, $event)" color="accent"
             [matTooltip]="canal.acuse_configurado ? 'Desactivar acuse' : 'Activar acuse'">
           </mat-slide-toggle>
         </div>
@@ -286,7 +286,7 @@
             <button mat-icon-button matSuffix type="button" (click)="mostrarSecret = !mostrarSecret">
               <mat-icon>{{ mostrarSecret ? 'visibility_off' : 'visibility' }}</mat-icon>
             </button>
-            <mat-hint *ngIf="!buzon">Se cifra con AES-256 antes de guardarse</mat-hint>
+            <mat-hint *ngIf="!buzon">Se cifra con Fernet (AES-128-CBC + HMAC-SHA256) antes de guardarse</mat-hint>
             <mat-error *ngIf="buzonForm.get('oauth_client_secret')?.hasError('required')">El Client Secret es obligatorio</mat-error>
           </mat-form-field>
 
@@ -313,7 +313,7 @@
           <mat-card style="background:#fff8e1; border-left:4px solid #f9a825; margin:0;">
             <mat-card-content style="padding:12px; font-size:12px; color:#5d4037;">
               <mat-icon style="font-size:16px; vertical-align:middle;">security</mat-icon>
-              El Client Secret se cifra con AES-256 antes de guardarse. Ningún funcionario puede verlo en texto claro.
+              El Client Secret se cifra con Fernet (AES-128-CBC + HMAC-SHA256) antes de guardarse. Ningún funcionario puede verlo en texto claro.
               Solo se aceptan adjuntos de tipos seguros (PDF, imágenes, Office, texto plano).
             </mat-card-content>
           </mat-card>
@@ -426,7 +426,7 @@
             <button mat-icon-button matSuffix type="button" (click)="mostrarSmtpPass = !mostrarSmtpPass">
               <mat-icon>{{ mostrarSmtpPass ? 'visibility_off' : 'visibility' }}</mat-icon>
             </button>
-            <mat-hint>Se cifra con AES-256 antes de guardarse</mat-hint>
+            <mat-hint>Se cifra con Fernet (AES-128-CBC + HMAC-SHA256) antes de guardarse</mat-hint>
           </mat-form-field>
 
         </ng-container>

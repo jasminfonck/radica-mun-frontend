@@ -5,139 +5,285 @@
         <mat-icon>arrow_back</mat-icon>
       </button>
       <div>
-        <h1>Configuración del radicado</h1>
-        <p>Defina el formato del número de radicado, almacenamiento y política de privacidad</p>
+        <h1>Configuración del sistema</h1>
+        <p>Numeración de radicados, almacenamiento, identidad visual, adjuntos y privacidad</p>
       </div>
     </div>
   </div>
 
-  <mat-card>
-    <mat-card-content>
-      <form [formGroup]="form" (ngSubmit)="guardar()" class="form-grid">
+  <form [formGroup]="form" (ngSubmit)="guardar()">
 
-        <!-- Prefijo -->
-        <mat-form-field appearance="outline">
-          <mat-label>Prefijo del radicado *</mat-label>
-          <input matInput formControlName="prefijo_radicado"
-                 placeholder="RAD" style="text-transform:uppercase">
-          <mat-hint>Máximo 10 caracteres</mat-hint>
-          <mat-error>Obligatorio, máximo 10 caracteres</mat-error>
-        </mat-form-field>
+    <!-- ── Numeración de radicados ─────────────────────────────────────── -->
+    <mat-card class="form-card">
+      <mat-card-title><mat-icon>tag</mat-icon> Numeración de radicados</mat-card-title>
+      <mat-card-content>
+        <div class="form-grid numeracion-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Prefijo del radicado *</mat-label>
+            <input matInput formControlName="prefijo_radicado"
+                   placeholder="RAD" style="text-transform:uppercase">
+            <mat-hint>Máximo 10 caracteres</mat-hint>
+            <mat-error>Obligatorio, máximo 10 caracteres</mat-error>
+          </mat-form-field>
 
-        <!-- Ejemplo de número -->
-        <div class="ejemplo-radicado">
-          <span class="ejemplo-label">Ejemplo de número:</span>
-          <strong class="ejemplo-numero">{{ ejemploRadicado }}</strong>
+          <div class="ejemplo-radicado">
+            <span class="ejemplo-label">Ejemplo de número</span>
+            <strong class="ejemplo-numero">{{ ejemploRadicado }}</strong>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- ── Almacenamiento ───────────────────────────────────────────────── -->
+    <mat-card class="form-card">
+      <mat-card-title><mat-icon>folder</mat-icon> Almacenamiento de adjuntos y constancias</mat-card-title>
+      <mat-card-content>
+
+        <div class="almacenamiento-opciones">
+          <button type="button" class="almacenamiento-opcion"
+                  [class.activa]="form.get('almacenamiento_tipo')?.value === 'local'"
+                  [attr.aria-pressed]="form.get('almacenamiento_tipo')?.value === 'local'"
+                  (click)="seleccionarAlmacenamiento('local')">
+            <mat-icon>dns</mat-icon>
+            <div>
+              <strong>Carpeta local del servidor</strong>
+              <span>Los archivos quedan guardados directamente en el disco del servidor</span>
+            </div>
+          </button>
+          <button type="button" class="almacenamiento-opcion"
+                  [class.activa]="form.get('almacenamiento_tipo')?.value === 'smb'"
+                  [attr.aria-pressed]="form.get('almacenamiento_tipo')?.value === 'smb'"
+                  (click)="seleccionarAlmacenamiento('smb')">
+            <mat-icon>lan</mat-icon>
+            <div>
+              <strong>Carpeta compartida en red (SMB/CIFS)</strong>
+              <span>Ej. un NAS accesible por la red interna de la entidad</span>
+            </div>
+          </button>
         </div>
 
-        <!-- Ruta almacenamiento -->
-        <mat-form-field appearance="outline" class="campo-ancho">
-          <mat-label>Ruta de almacenamiento de archivos</mat-label>
-          <input matInput formControlName="ruta_almacenamiento" placeholder="../storage">
-          <mat-hint>Carpeta donde se guardarán los documentos adjuntos y constancias</mat-hint>
-        </mat-form-field>
+        <!-- Resumen colapsado — visible cuando ya hay una ruta/servidor guardado -->
+        <div class="detalle-resumen" *ngIf="!mostrarDetalleAlmacenamiento">
+          <mat-icon>{{ form.get('almacenamiento_tipo')?.value === 'smb' ? 'lan' : 'dns' }}</mat-icon>
+          <div class="detalle-resumen-texto">
+            <ng-container *ngIf="form.get('almacenamiento_tipo')?.value === 'local'; else resumenSmb">
+              <strong>Carpeta local</strong>
+              <span>{{ form.get('ruta_almacenamiento')?.value || 'Sin ruta configurada' }}</span>
+            </ng-container>
+            <ng-template #resumenSmb>
+              <strong>Carpeta compartida (SMB)</strong>
+              <span>
+                \\{{ form.get('smb_servidor')?.value || '—' }}\{{ form.get('smb_carpeta_compartida')?.value }}<ng-container *ngIf="form.get('smb_subcarpeta')?.value">\{{ form.get('smb_subcarpeta')?.value }}</ng-container>
+              </span>
+            </ng-template>
+          </div>
+          <button *ngIf="form.get('almacenamiento_tipo')?.value === 'smb'"
+                  mat-stroked-button type="button" (click)="probarSmbConexion()"
+                  [disabled]="probandoSmb || tipoGuardado !== 'smb' || !smbPasswordConfigurado">
+            <mat-icon>{{ probandoSmb ? 'hourglass_empty' : 'wifi_tethering' }}</mat-icon>
+            {{ probandoSmb ? 'Probando...' : 'Probar conexión' }}
+          </button>
+          <button mat-button type="button" (click)="mostrarDetalleAlmacenamiento = true">
+            <mat-icon>edit</mat-icon> Editar
+          </button>
+        </div>
 
-        <!-- ── Color institucional ──────────────────────────────────────── -->
-        <div class="campo-ancho color-section">
-          <p class="color-section-titulo">Color institucional</p>
+        <ng-container *ngIf="mostrarDetalleAlmacenamiento">
+          <!-- Ruta almacenamiento (local) -->
+          <mat-form-field *ngIf="form.get('almacenamiento_tipo')?.value === 'local'"
+                          appearance="outline" class="campo-ancho">
+            <mat-label>Ruta de almacenamiento de archivos</mat-label>
+            <input matInput formControlName="ruta_almacenamiento" placeholder="../storage">
+            <button mat-icon-button matSuffix type="button" (click)="examinarRuta()"
+                    matTooltip="Examinar carpetas del servidor">
+              <mat-icon>folder_open</mat-icon>
+            </button>
+            <mat-hint>Carpeta donde se guardarán los documentos adjuntos y constancias</mat-hint>
+          </mat-form-field>
 
-          <div class="color-seleccionado-bar">
-            <div class="color-muestra-grande" [style.background]="colorActual()"></div>
-            <div class="color-seleccionado-info">
-              <span class="color-seleccionado-nombre">Color seleccionado</span>
-              <code class="color-hex-badge">{{ colorActual() }}</code>
+          <!-- Carpeta compartida SMB/CIFS -->
+          <div *ngIf="form.get('almacenamiento_tipo')?.value === 'smb'" class="smb-panel">
+            <div class="form-grid">
+              <mat-form-field appearance="outline">
+                <mat-label>Servidor</mat-label>
+                <input matInput formControlName="smb_servidor" placeholder="192.168.1.10 o nas.municipio.local">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Puerto</mat-label>
+                <input matInput type="number" formControlName="smb_puerto" placeholder="445">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Carpeta compartida (share)</mat-label>
+                <input matInput formControlName="smb_carpeta_compartida" placeholder="documentos">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Subcarpeta (opcional)</mat-label>
+                <input matInput formControlName="smb_subcarpeta" placeholder="radica-mun">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Usuario</mat-label>
+                <input matInput formControlName="smb_usuario" autocomplete="off">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Dominio (opcional)</mat-label>
+                <input matInput formControlName="smb_dominio" placeholder="MUNICIPIO">
+                <mat-hint>Solo si el NAS pertenece a un dominio Windows</mat-hint>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="campo-ancho">
+                <mat-label>{{ smbPasswordConfigurado ? 'Contraseña (guardada — dejar en blanco para no cambiarla)' : 'Contraseña' }}</mat-label>
+                <input matInput type="password" formControlName="smb_password" autocomplete="new-password">
+              </mat-form-field>
             </div>
-            <button type="button" mat-stroked-button (click)="paletaAbierta = !paletaAbierta">
-              <mat-icon>{{ paletaAbierta ? 'expand_less' : 'palette' }}</mat-icon>
-              {{ paletaAbierta ? 'Cerrar paleta' : 'Elegir color' }}
+
+            <div class="smb-prueba">
+              <button mat-stroked-button type="button" (click)="probarSmbConexion()"
+                      [disabled]="probandoSmb || tipoGuardado !== 'smb' || !smbPasswordConfigurado">
+                <mat-icon>{{ probandoSmb ? 'hourglass_empty' : 'wifi_tethering' }}</mat-icon>
+                {{ probandoSmb ? 'Probando...' : 'Probar conexión' }}
+              </button>
+              <span *ngIf="tipoGuardado !== 'smb'" class="smb-hint">
+                Guarde la configuración con "Carpeta compartida en red" seleccionado antes de probar — "Probar conexión" prueba lo último guardado, no lo que ve en pantalla sin guardar.
+              </span>
+              <span *ngIf="tipoGuardado === 'smb' && !smbPasswordConfigurado" class="smb-hint">
+                Guarde la configuración con contraseña antes de probar.
+              </span>
+            </div>
+          </div>
+
+          <div class="detalle-acciones">
+            <button *ngIf="form.get('ruta_almacenamiento')?.value || form.get('smb_servidor')?.value"
+                    mat-button type="button" (click)="mostrarDetalleAlmacenamiento = false">
+              <mat-icon>expand_less</mat-icon> Colapsar
+            </button>
+            <span class="detalle-acciones-spacer"></span>
+            <span class="detalle-acciones-hint">Guarda toda la configuración de esta pantalla</span>
+            <button mat-flat-button color="primary" type="submit"
+                    [disabled]="guardando || form.invalid">
+              <mat-icon>save</mat-icon>
+              {{ guardando ? 'Guardando...' : 'Guardar almacenamiento' }}
             </button>
           </div>
+        </ng-container>
+      </mat-card-content>
+    </mat-card>
 
-          <div class="paleta-panel" *ngIf="paletaAbierta">
-            <div *ngFor="let grupo of PALETA" class="paleta-grupo">
-              <p class="paleta-grupo-titulo">{{ grupo.nombre }}</p>
-              <div class="paleta-fila">
-                <button *ngFor="let color of grupo.colores"
-                        type="button" class="swatch"
-                        [class.swatch--activo]="esColorSeleccionado(color.hex)"
-                        [style.background]="color.hex"
-                        [matTooltip]="color.nombre + ' — ' + color.hex"
-                        matTooltipPosition="above"
-                        (click)="seleccionarColor(color.hex)">
-                  <mat-icon *ngIf="esColorSeleccionado(color.hex)" class="swatch-check">check</mat-icon>
-                </button>
-              </div>
+    <!-- ── Identidad visual ─────────────────────────────────────────────── -->
+    <mat-card class="form-card">
+      <mat-card-title><mat-icon>palette</mat-icon> Identidad visual</mat-card-title>
+      <mat-card-content>
+        <div class="color-seleccionado-bar">
+          <div class="color-muestra-grande" [style.background]="colorActual()"></div>
+          <div class="color-seleccionado-info">
+            <span class="color-seleccionado-nombre">Color institucional seleccionado</span>
+            <code class="color-hex-badge">{{ colorActual() }}</code>
+          </div>
+          <button type="button" mat-stroked-button (click)="paletaAbierta = !paletaAbierta">
+            <mat-icon>{{ paletaAbierta ? 'expand_less' : 'palette' }}</mat-icon>
+            {{ paletaAbierta ? 'Cerrar paleta' : 'Elegir color' }}
+          </button>
+        </div>
+
+        <div class="paleta-panel" *ngIf="paletaAbierta">
+          <div *ngFor="let grupo of PALETA" class="paleta-grupo">
+            <p class="paleta-grupo-titulo">{{ grupo.nombre }}</p>
+            <div class="paleta-fila">
+              <button *ngFor="let color of grupo.colores"
+                      type="button" class="swatch"
+                      [class.swatch--activo]="esColorSeleccionado(color.hex)"
+                      [style.background]="color.hex"
+                      [matTooltip]="color.nombre + ' — ' + color.hex"
+                      matTooltipPosition="above"
+                      (click)="seleccionarColor(color.hex)">
+                <mat-icon *ngIf="esColorSeleccionado(color.hex)" class="swatch-check">check</mat-icon>
+              </button>
             </div>
+          </div>
 
-            <div class="paleta-manual">
-              <mat-form-field appearance="outline" style="width:200px">
-                <mat-label>Código hexadecimal manual</mat-label>
-                <input matInput formControlName="color_primario"
-                       placeholder="#1a237e" maxlength="7">
-                <mat-hint>Formato: #RRGGBB</mat-hint>
-                <mat-error>Formato inválido</mat-error>
-              </mat-form-field>
-              <div class="color-muestra-preview"
-                   [style.background]="colorActual()"
-                   [style.opacity]="form.get('color_primario')?.valid ? 1 : 0.3">
-              </div>
+          <div class="paleta-manual">
+            <mat-form-field appearance="outline" style="width:200px">
+              <mat-label>Código hexadecimal manual</mat-label>
+              <input matInput formControlName="color_primario"
+                     placeholder="#1a237e" maxlength="7">
+              <mat-hint>Formato: #RRGGBB</mat-hint>
+              <mat-error>Formato inválido</mat-error>
+            </mat-form-field>
+            <div class="color-muestra-preview"
+                 [style.background]="colorActual()"
+                 [style.opacity]="form.get('color_primario')?.valid ? 1 : 0.3">
             </div>
           </div>
         </div>
+      </mat-card-content>
+    </mat-card>
 
-        <!-- ── Parametrización de adjuntos ───────────────── -->
-        <div class="campo-ancho politica-section">
-          <p class="color-section-titulo">
-            <mat-icon style="vertical-align:middle; margin-right:6px">attach_file</mat-icon>
-            Parametrización de archivos adjuntos
-          </p>
-          <p style="font-size:13px; color:var(--texto-suave); margin-bottom:16px">
-            Aplica al formulario público, al buzón oficial y a la creación de cualquier recepción.
-          </p>
+    <!-- ── Archivos adjuntos ────────────────────────────────────────────── -->
+    <mat-card class="form-card">
+      <mat-card-title><mat-icon>attach_file</mat-icon> Archivos adjuntos</mat-card-title>
+      <mat-card-content>
+        <p class="card-subtexto">
+          Aplica al formulario público, al buzón oficial y a la creación de cualquier recepción.
+        </p>
 
-          <div class="form-grid" style="margin-bottom:20px">
-            <mat-form-field appearance="outline">
-              <mat-label>Máximo de adjuntos por envío</mat-label>
-              <input matInput type="number" formControlName="max_adjuntos" min="1" max="20">
-              <mat-hint>Entre 1 y 20 archivos</mat-hint>
-              <mat-error>Valor entre 1 y 20</mat-error>
-            </mat-form-field>
+        <div class="form-grid" style="margin-bottom:20px">
+          <mat-form-field appearance="outline">
+            <mat-label>Máximo de adjuntos por envío</mat-label>
+            <input matInput type="number" formControlName="max_adjuntos" min="1" max="20">
+            <mat-hint>Entre 1 y 20 archivos</mat-hint>
+            <mat-error>Valor entre 1 y 20</mat-error>
+          </mat-form-field>
 
-            <mat-form-field appearance="outline">
-              <mat-label>Tamaño máximo por archivo (MB)</mat-label>
-              <input matInput type="number" formControlName="max_tamano_adjunto_mb" min="1" max="100">
-              <mat-hint>Entre 1 y 100 MB</mat-hint>
-              <mat-error>Valor entre 1 y 100</mat-error>
-            </mat-form-field>
-          </div>
+          <mat-form-field appearance="outline">
+            <mat-label>Tamaño máximo por archivo (MB)</mat-label>
+            <input matInput type="number" formControlName="max_tamano_adjunto_mb" min="1" max="100">
+            <mat-hint>Entre 1 y 100 MB</mat-hint>
+            <mat-error>Valor entre 1 y 100</mat-error>
+          </mat-form-field>
+        </div>
 
-          <p style="font-size:13px; font-weight:600; margin-bottom:10px">Tipos de archivo permitidos</p>
-          <div class="tipos-archivo-grid">
+        <p class="form-seccion-titulo">Tipos de archivo permitidos</p>
+        <div class="tipos-archivo-grid">
+          <div class="tipo-archivo-item" *ngFor="let t of TIPOS_ARCHIVO" [class.activo]="tipoActivo(t)">
             <mat-checkbox
-              *ngFor="let t of TIPOS_ARCHIVO"
               [checked]="tipoActivo(t)"
               (change)="toggleTipo(t)"
               color="primary">
               <span style="font-size:13px">{{ t.label }}</span>
-              <span style="font-size:11px; color:var(--texto-suave); margin-left:4px">{{ t.ext }}</span>
+              <span class="tipo-archivo-ext">{{ t.ext }}</span>
             </mat-checkbox>
           </div>
-          <p *ngIf="tiposSeleccionados.size === 0"
-             style="font-size:12px; color:#c62828; margin-top:8px">
-            Seleccione al menos un tipo de archivo.
-          </p>
+        </div>
+        <p *ngIf="tiposSeleccionados.size === 0" class="aviso-error-inline">
+          Seleccione al menos un tipo de archivo.
+        </p>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- ── Privacidad ───────────────────────────────────────────────────── -->
+    <mat-card class="form-card">
+      <mat-card-title><mat-icon>policy</mat-icon> Privacidad y tratamiento de datos</mat-card-title>
+      <mat-card-content>
+        <p class="card-subtexto">
+          Requerida por la Ley 1581 de 2012 antes de habilitar la operación del sistema.
+        </p>
+
+        <!-- Resumen colapsado — permite validar de un vistazo si está activa y actualizada -->
+        <div class="detalle-resumen detalle-resumen--politica" *ngIf="!mostrarDetallePolitica">
+          <span class="chip-politica" [class.chip-politica--activa]="form.get('politica_privacidad_activa')?.value">
+            {{ form.get('politica_privacidad_activa')?.value ? 'Activa' : 'Inactiva' }}
+          </span>
+          <p class="politica-preview">{{ form.get('politica_privacidad_texto')?.value || 'Sin texto configurado.' }}</p>
+          <button mat-button type="button" (click)="mostrarDetallePolitica = true">
+            <mat-icon>edit</mat-icon> Editar
+          </button>
         </div>
 
-        <!-- ── Política de privacidad ──────────────────── -->
-        <div class="campo-ancho politica-section">
-          <p class="color-section-titulo">
-            <mat-icon style="vertical-align:middle; margin-right:6px">policy</mat-icon>
-            Política de privacidad y tratamiento de datos
-          </p>
-          <p style="font-size:13px; color:var(--texto-suave); margin-bottom:12px">
-            Requerida por la Ley 1581 de 2012 antes de habilitar la operación del sistema.
-          </p>
-
+        <ng-container *ngIf="mostrarDetallePolitica">
           <mat-form-field appearance="outline" class="campo-ancho">
             <mat-label>Texto de la política de privacidad</mat-label>
             <textarea matInput formControlName="politica_privacidad_texto"
@@ -158,32 +304,39 @@
               </span>
             </mat-slide-toggle>
           </div>
-        </div>
 
-        <!-- Acciones formulario -->
-        <div class="acciones campo-ancho">
-          <span class="exito" *ngIf="guardado">
-            <mat-icon>check_circle</mat-icon> Guardado correctamente
-          </span>
-          <button mat-flat-button color="primary" type="submit"
-                  [disabled]="guardando || form.invalid">
-            {{ guardando ? 'Guardando...' : 'Guardar configuración' }}
-          </button>
-        </div>
+          <div class="detalle-acciones" *ngIf="form.get('politica_privacidad_texto')?.value">
+            <button mat-button type="button" (click)="mostrarDetallePolitica = false">
+              <mat-icon>expand_less</mat-icon> Colapsar
+            </button>
+          </div>
+        </ng-container>
+      </mat-card-content>
+    </mat-card>
 
-      </form>
-    </mat-card-content>
-  </mat-card>
+    <!-- ── Guardar (barra persistente — visible sin bajar hasta el final) ── -->
+    <div class="guardar-barra">
+      <span class="exito" *ngIf="guardado">
+        <mat-icon>check_circle</mat-icon> Guardado correctamente
+      </span>
+      <button mat-flat-button color="primary" type="submit"
+              [disabled]="guardando || form.invalid">
+        <mat-icon>save</mat-icon>
+        {{ guardando ? 'Guardando...' : 'Guardar cambios' }}
+      </button>
+    </div>
 
-  <!-- ── SMTP movido a Canales ──────────────────────────── -->
-  <mat-card style="margin-top:24px; border-left:4px solid var(--color-primario)">
-    <mat-card-content style="display:flex; align-items:center; gap:16px; padding:16px; flex-wrap:wrap">
-      <mat-icon style="color:var(--color-primario)">outgoing_mail</mat-icon>
-      <div style="flex:1">
+  </form>
+
+  <!-- ── Otras herramientas ───────────────────────────────────────────── -->
+  <p class="seccion-divisor">Otras herramientas</p>
+
+  <mat-card class="form-card aviso-card">
+    <mat-card-content>
+      <mat-icon class="aviso-icono">outgoing_mail</mat-icon>
+      <div class="aviso-texto">
         <strong>Correo saliente (SMTP)</strong>
-        <p style="margin:4px 0 0; font-size:13px; color:var(--texto-suave)">
-          La configuración SMTP se encuentra en Canales de recepción.
-        </p>
+        <p>La configuración SMTP se encuentra en Canales de recepción.</p>
       </div>
       <a mat-stroked-button routerLink="/admin/canales">
         <mat-icon>open_in_new</mat-icon> Ir a Canales
@@ -191,27 +344,42 @@
     </mat-card-content>
   </mat-card>
 
+  <div class="respaldos-grid">
+    <mat-card class="form-card respaldo-card respaldo-card--primario">
+      <mat-card-content>
+        <mat-icon class="respaldo-icono">storage</mat-icon>
+        <h3>Respaldo de base de datos</h3>
+        <p>
+          Copia completa de la base de datos (radicados, recepciones, remitentes, usuarios,
+          bitácora — todo), lista para restaurar en caso de emergencia. Guárdela en un lugar
+          seguro, fuera del servidor.
+        </p>
+        <button mat-flat-button color="primary"
+                [disabled]="descargandoBackupBd"
+                (click)="descargarRespaldoBaseDatos()">
+          <mat-icon>download</mat-icon>
+          {{ descargandoBackupBd ? 'Generando...' : 'Descargar respaldo de la BD' }}
+        </button>
+      </mat-card-content>
+    </mat-card>
 
-  <!-- ── Respaldo de configuración ───────────────────────── -->
-  <mat-card style="margin-top:24px">
-    <mat-card-content>
-      <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap">
-        <mat-icon style="font-size:36px; height:36px; width:36px; color:var(--azul)">backup</mat-icon>
-        <div style="flex:1">
-          <strong style="display:block; margin-bottom:4px">Respaldo de configuración</strong>
-          <p style="margin:0; font-size:13px; color:var(--texto-suave)">
-            Descarga un archivo JSON con toda la configuración del sistema: entidad, dependencias,
-            canales, catálogos y parámetros. Guárdelo en un lugar seguro.
-          </p>
-        </div>
+    <mat-card class="form-card respaldo-card">
+      <mat-card-content>
+        <mat-icon class="respaldo-icono">description</mat-icon>
+        <h3>Resumen de configuración</h3>
+        <p>
+          JSON legible con entidad, dependencias, canales, catálogos y parámetros. Útil para
+          revisar la configuración rápidamente — <strong>no reemplaza el respaldo de base de
+          datos</strong>, que es el que sirve para restaurar el sistema ante una emergencia.
+        </p>
         <button mat-stroked-button color="primary"
                 [disabled]="descargandoBackup"
                 (click)="descargarRespaldo()">
           <mat-icon>download</mat-icon>
-          {{ descargandoBackup ? 'Generando...' : 'Descargar respaldo' }}
+          {{ descargandoBackup ? 'Generando...' : 'Descargar resumen' }}
         </button>
-      </div>
-    </mat-card-content>
-  </mat-card>
+      </mat-card-content>
+    </mat-card>
+  </div>
 
 </div>

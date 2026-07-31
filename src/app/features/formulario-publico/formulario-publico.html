@@ -27,8 +27,22 @@
     </div>
   </div>
 
-  <!-- Canal inactivo -->
-  <div *ngIf="!cargando && !errorCarga && !info?.canal_activo" class="contenedor">
+  <!-- Sistema aún no configurado al 100% (checklist de HU-01 incompleto) -->
+  <div *ngIf="!cargando && !errorCarga && sistemaNoOperativo" class="contenedor">
+    <div class="alerta-info">
+      <mat-icon>info_outline</mat-icon>
+      <div>
+        <strong>Sistema no operativo — complete la configuración inicial</strong>
+        <p>Este sistema aún no está listo para recibir solicitudes.
+           Contáctenos a través de nuestros otros canales de atención.</p>
+        <p *ngIf="info?.entidad_telefono"><mat-icon class="icon-inline">phone</mat-icon> {{ info?.entidad_telefono }}</p>
+        <p *ngIf="info?.entidad_email"><mat-icon class="icon-inline">email</mat-icon> {{ info?.entidad_email }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Canal formulario desactivado (sistema sí operativo) -->
+  <div *ngIf="!cargando && !errorCarga && !sistemaNoOperativo && !formularioDisponible" class="contenedor">
     <div class="alerta-info">
       <mat-icon>info_outline</mat-icon>
       <div>
@@ -88,7 +102,7 @@
   </div>
 
   <!-- Formulario -->
-  <div *ngIf="!cargando && !errorCarga && info?.canal_activo && !confirmacion"
+  <div *ngIf="!cargando && !errorCarga && formularioDisponible && !confirmacion"
        class="contenedor" role="main" id="formulario-principal">
 
     <div class="intro">
@@ -127,8 +141,9 @@
                 <mat-error>Los nombres son obligatorios</mat-error>
               </mat-form-field>
               <mat-form-field appearance="outline">
-                <mat-label>Apellidos</mat-label>
+                <mat-label>Apellidos *</mat-label>
                 <input matInput formControlName="apellidos" autocomplete="family-name">
+                <mat-error>Los apellidos son obligatorios</mat-error>
               </mat-form-field>
             </ng-container>
 
@@ -195,14 +210,11 @@
               </mat-form-field>
               <span class="nit-guion" aria-hidden="true">–</span>
               <mat-form-field appearance="outline" class="nit-dv">
-                <mat-label>DV *</mat-label>
+                <mat-label>DV</mat-label>
                 <input matInput formControlName="digito_verificacion"
                        inputmode="numeric" maxlength="1" autocomplete="off"
                        (keypress)="soloDigitos($event)"
                        placeholder="0">
-                <mat-error *ngIf="form.get('digito_verificacion')?.hasError('required')">
-                  Requerido
-                </mat-error>
                 <mat-error *ngIf="form.get('digito_verificacion')?.hasError('pattern')">
                   1 dígito
                 </mat-error>
@@ -271,8 +283,9 @@
         </mat-card-content>
       </mat-card>
 
-      <!-- Política de privacidad -->
-      <mat-card class="seccion-card" *ngIf="info?.politica_privacidad_activa"
+      <!-- Política de privacidad — aceptación siempre obligatoria (Ley 1581/2012),
+           sin importar si el administrador activó o no el toggle de configuración. -->
+      <mat-card class="seccion-card"
                 role="group" aria-labelledby="titulo-politica">
         <mat-card-title id="titulo-politica">
           <mat-icon aria-hidden="true">privacy_tip</mat-icon> Política de privacidad

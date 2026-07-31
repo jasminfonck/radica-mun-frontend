@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { PaginadoOut } from '../../shared/models/paginacion.model';
 
 export interface RemitenteResumen {
   id: number;
@@ -93,11 +94,16 @@ export class RemitenteService {
 
   constructor(private http: HttpClient) {}
 
-  buscar(q?: string, tipo_persona?: string, soloActivos = true): Observable<RemitenteResumen[]> {
-    let params = new HttpParams().set('solo_activos', String(soloActivos));
+  buscar(
+    q?: string, tipo_persona?: string, soloActivos = true, page = 1, page_size = 20,
+  ): Observable<PaginadoOut<RemitenteResumen>> {
+    let params = new HttpParams()
+      .set('solo_activos', String(soloActivos))
+      .set('page', page)
+      .set('page_size', page_size);
     if (q)            params = params.set('q', q);
     if (tipo_persona) params = params.set('tipo_persona', tipo_persona);
-    return this.http.get<RemitenteResumen[]>(this.base, { params });
+    return this.http.get<PaginadoOut<RemitenteResumen>>(this.base, { params });
   }
 
   verificarDuplicados(numero_identificacion?: string, email?: string): Observable<RemitenteResumen[]> {

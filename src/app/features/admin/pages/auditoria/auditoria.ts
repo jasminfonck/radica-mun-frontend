@@ -1,5 +1,6 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
+import { PageEvent } from '@angular/material/paginator';
 import { AdminService, BitacoraOut, LogMensajeEmailOut } from '../../../../core/services/admin.service';
 import { ConsultaService, LogAuditoriaOut } from '../../../../core/services/consulta.service';
 
@@ -11,23 +12,31 @@ import { ConsultaService, LogAuditoriaOut } from '../../../../core/services/cons
 export class AuditoriaComponent implements OnInit {
 
   // ── Tab 1: Bitácora Admin ─────────────────────────────────────────────────
-  registros: BitacoraOut[] = [];
-  registrosFiltrados: BitacoraOut[] = [];
+  registrosAdmin: BitacoraOut[] = [];
+  totalAdmin = 0;
+  pageIndexAdmin = 0;
+  pageSizeAdmin = 20;
   modulosAdmin: string[] = [];
   filtrosAdmin: FormGroup;
+  cargandoAdmin = true;
 
   // ── Tab 2: Bitácora Operativa ─────────────────────────────────────────────
   logsOperativos: LogAuditoriaOut[] = [];
+  totalOperativa = 0;
+  pageIndexOperativa = 0;
+  pageSizeOperativa = 20;
   cargandoOperativa = false;
   filtrosOperativa: FormGroup;
 
   // ── Tab 3: Log de correos ─────────────────────────────────────────────────
   logEmails: LogMensajeEmailOut[] = [];
+  totalEmails = 0;
+  pageIndexEmails = 0;
+  pageSizeEmails = 20;
   cargandoEmails = false;
   filtrosEmails: FormGroup;
   columnaEmails = ['created_at', 'tipo', 'destinatario', 'asunto', 'estado'];
 
-  cargando = true;
   columnasAdmin     = ['created_at', 'usuario_nombre', 'accion', 'modulo', 'detalle'];
   columnasOperativa = ['created_at', 'usuario', 'accion', 'modulo', 'descripcion', 'ip'];
 
@@ -102,57 +111,49 @@ export class AuditoriaComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.adminService.getAuditoria(500).subscribe({
-      next: r => {
-        this.registros = r;
-        this.registrosFiltrados = r;
-        this.modulosAdmin = [...new Set(r.map(x => x.modulo).filter(Boolean))].sort();
-        this.cargando = false;
-        this.cdr.markForCheck();
-      },
-      error: () => { this.cargando = false; this.cdr.markForCheck(); },
+    this.adminService.getModulosAuditoria().subscribe(m => {
+      this.modulosAdmin = m;
+      this.cdr.markForCheck();
     });
+    this.cargarAdmin();
     this.cargarOperativa();
     this.cargarEmails();
   }
 
-  // ── Admin filters ─────────────────────────────────────────────────────────
+  // ── Admin ─────────────────────────────────────────────────────────────────
 
-  aplicarFiltrosAdmin(): void {
+  private _buscarPaginaAdmin(): void {
+    this.cargandoAdmin = true;
     const { texto, accion, modulo, fecha_desde, fecha_hasta } = this.filtrosAdmin.value;
-    const txtLower = (texto ?? '').toLowerCase().trim();
-
-    const parseFechaLocal = (iso: string, finDia = false): number | null => {
-      if (!iso) return null;
-      const [y, m, d] = iso.split('-').map(Number);
-      return finDia
-        ? new Date(y, m - 1, d, 23, 59, 59, 999).getTime()
-        : new Date(y, m - 1, d).getTime();
-    };
-
-    const desdeMs = parseFechaLocal(fecha_desde);
-    const hastaMs = parseFechaLocal(fecha_hasta, true);
-
-    this.registrosFiltrados = this.registros.filter(r => {
-      if (accion && r.accion !== accion) return false;
-      if (modulo && r.modulo !== modulo) return false;
-      const t = new Date(r.created_at).getTime();
-      if (desdeMs !== null && t < desdeMs) return false;
-      if (hastaMs !== null && t > hastaMs) return false;
-      if (txtLower) {
-        const hay = [r.usuario_nombre, this.etiquetaAccion(r.accion), r.modulo ?? '', r.detalle ?? '']
-          .join(' ').toLowerCase();
-        if (!hay.includes(txtLower)) return false;
-      }
-      return true;
+    this.adminService.getAuditoria({
+      texto: texto || undefined, accion: accion || undefined, modulo: modulo || undefined,
+      fecha_desde: fecha_desde || undefined, fecha_hasta: fecha_hasta || undefined,
+      page: this.pageIndexAdmin + 1, page_size: this.pageSizeAdmin,
+    }).subscribe({
+      next: r => {
+        this.registrosAdmin = r.items;
+        this.totalAdmin      = r.total;
+        this.cargandoAdmin   = false;
+        this.cdr.markForCheck();
+      },
+      error: () => { this.cargandoAdmin = false; this.cdr.markForCheck(); },
     });
-    this.cdr.markForCheck();
+  }
+
+  cargarAdmin(): void {
+    this.pageIndexAdmin = 0;
+    this._buscarPaginaAdmin();
+  }
+
+  onPageChangeAdmin(event: PageEvent): void {
+    this.pageIndexAdmin = event.pageIndex;
+    this.pageSizeAdmin  = event.pageSize;
+    this._buscarPaginaAdmin();
   }
 
   limpiarAdmin(): void {
     this.filtrosAdmin.reset({ texto: '', accion: '', modulo: '', fecha_desde: '', fecha_hasta: '' });
-    this.registrosFiltrados = this.registros;
-    this.cdr.markForCheck();
+    this.cargarAdmin();
   }
 
   get hayFiltrosAdmin(): boolean {
@@ -162,19 +163,35 @@ export class AuditoriaComponent implements OnInit {
 
   // ── Operativa ─────────────────────────────────────────────────────────────
 
-  cargarOperativa(): void {
+  private _buscarPaginaOperativa(): void {
     this.cargandoOperativa = true;
     const { accion, modulo, fecha_desde, fecha_hasta } = this.filtrosOperativa.value;
-    const filtros: any = {};
+    const filtros: any = { page: this.pageIndexOperativa + 1, page_size: this.pageSizeOperativa };
     if (accion)      filtros.accion      = accion;
     if (modulo)      filtros.modulo      = modulo;
     if (fecha_desde) filtros.fecha_desde = fecha_desde;
     if (fecha_hasta) filtros.fecha_hasta = fecha_hasta;
 
     this.consultaService.logAuditoria(filtros).subscribe({
-      next:  l  => { this.logsOperativos = l; this.cargandoOperativa = false; this.cdr.markForCheck(); },
+      next: r => {
+        this.logsOperativos = r.items;
+        this.totalOperativa  = r.total;
+        this.cargandoOperativa = false;
+        this.cdr.markForCheck();
+      },
       error: () => { this.cargandoOperativa = false; this.cdr.markForCheck(); },
     });
+  }
+
+  cargarOperativa(): void {
+    this.pageIndexOperativa = 0;
+    this._buscarPaginaOperativa();
+  }
+
+  onPageChangeOperativa(event: PageEvent): void {
+    this.pageIndexOperativa = event.pageIndex;
+    this.pageSizeOperativa  = event.pageSize;
+    this._buscarPaginaOperativa();
   }
 
   limpiarOperativa(): void {
@@ -184,14 +201,30 @@ export class AuditoriaComponent implements OnInit {
 
   // ── Emails ────────────────────────────────────────────────────────────────
 
-  cargarEmails(): void {
+  private _buscarPaginaEmails(): void {
     this.cargandoEmails = true;
     const { recepcion_id } = this.filtrosEmails.value;
     const rid = recepcion_id ? Number(recepcion_id) : undefined;
-    this.adminService.getLogEmail(200, rid).subscribe({
-      next: l  => { this.logEmails = l; this.cargandoEmails = false; this.cdr.markForCheck(); },
+    this.adminService.getLogEmail(rid, this.pageIndexEmails + 1, this.pageSizeEmails).subscribe({
+      next: r => {
+        this.logEmails    = r.items;
+        this.totalEmails   = r.total;
+        this.cargandoEmails = false;
+        this.cdr.markForCheck();
+      },
       error: () => { this.cargandoEmails = false; this.cdr.markForCheck(); },
     });
+  }
+
+  cargarEmails(): void {
+    this.pageIndexEmails = 0;
+    this._buscarPaginaEmails();
+  }
+
+  onPageChangeEmails(event: PageEvent): void {
+    this.pageIndexEmails = event.pageIndex;
+    this.pageSizeEmails  = event.pageSize;
+    this._buscarPaginaEmails();
   }
 
   limpiarEmails(): void {

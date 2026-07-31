@@ -13,139 +13,161 @@
 
     <!-- ── Pestaña: Información ────────────────────────────────────────── -->
     <mat-tab label="Información">
-      <div class="tab-contenido detalle-grid">
+      <div class="tab-contenido info-layout">
 
-        <mat-card>
-          <mat-card-title>Datos de recepción</mat-card-title>
-          <mat-card-content>
-            <div class="campo-detalle">
-              <span class="campo-etiqueta">Canal</span>
-              <span>{{ recepcion.canal.nombre }}</span>
-            </div>
-            <div class="campo-detalle">
-              <span class="campo-etiqueta">Asunto provisional</span>
-              <span>{{ recepcion.asunto_provisional || 'No registrado' }}</span>
-            </div>
-            <div class="campo-detalle">
-              <span class="campo-etiqueta">Observaciones</span>
-              <span>{{ recepcion.observaciones || 'Sin observaciones' }}</span>
-            </div>
-            <div class="campo-detalle" *ngIf="recepcion.email_remitente">
-              <span class="campo-etiqueta">Email del remitente</span>
-              <span>{{ recepcion.email_remitente }}</span>
-            </div>
-            <div class="campo-detalle" *ngIf="recepcion.recibido_por">
-              <span class="campo-etiqueta">Recibido por</span>
-              <span>{{ recepcion.recibido_por.nombre }}</span>
-            </div>
-          </mat-card-content>
-        </mat-card>
+        <!-- Columna izquierda: detalles -->
+        <div class="info-col-principal">
 
-        <!-- Panel de aviso de adjuntos rechazados por el poller -->
-        <mat-card *ngIf="recepcion.aviso_adjuntos || avisoEnviado"
-                  class="aviso-adjuntos-card">
-          <mat-card-title>
-            <mat-icon style="color:#e65100;vertical-align:middle;margin-right:6px">warning</mat-icon>
-            Adjuntos rechazados por el sistema
-          </mat-card-title>
-          <mat-card-content>
-
-            <ng-container *ngIf="recepcion.aviso_adjuntos && !avisoEnviado">
-              <p style="font-size:13px;color:#555;margin:0 0 10px">
-                Los siguientes archivos no fueron guardados al procesar el correo:
-              </p>
-              <ul style="margin:0 0 14px;padding-left:20px">
-                <li *ngFor="let linea of recepcion.aviso_adjuntos.split('\n')"
-                    style="font-size:13px;color:#555;margin-bottom:4px">
-                  {{ linea }}
-                </li>
+          <!-- Aviso de adjuntos rechazados por el poller -->
+          <div class="alerta-banner" *ngIf="recepcion.aviso_adjuntos && !avisoEnviado">
+            <mat-icon class="alerta-icono">warning</mat-icon>
+            <div class="alerta-cuerpo">
+              <p class="alerta-titulo">Adjuntos rechazados por el sistema</p>
+              <p class="alerta-texto">Los siguientes archivos no fueron guardados al procesar el correo:</p>
+              <ul class="alerta-lista">
+                <li *ngFor="let linea of recepcion.aviso_adjuntos.split('\n')">{{ linea }}</li>
               </ul>
-              <p style="font-size:13px;color:#777;margin:0 0 14px">
-                Puede notificar al remitente <strong>{{ recepcion.email_remitente }}</strong>
-                para que reenvíe los archivos cumpliendo las restricciones vigentes
-                (tipo, cantidad y tamaño).
-              </p>
-
-              <div *ngIf="errorAviso"
-                   style="color:#c62828;font-size:13px;margin-bottom:10px">
-                <mat-icon style="font-size:15px;vertical-align:middle">error_outline</mat-icon>
-                {{ errorAviso }}
-              </div>
-
-              <button mat-flat-button color="warn"
-                      [disabled]="enviandoAviso || !recepcion.email_remitente"
-                      [matTooltip]="!recepcion.email_remitente ? 'No hay correo del remitente registrado' : ''"
-                      (click)="notificarAdjuntos()">
-                <mat-icon>mail</mat-icon>
-                {{ enviandoAviso ? 'Enviando…' : 'Notificar remitente' }}
-              </button>
-            </ng-container>
-
-            <ng-container *ngIf="avisoEnviado">
-              <div style="display:flex;align-items:center;gap:8px;color:#2e7d32">
-                <mat-icon>check_circle</mat-icon>
-                <span style="font-size:14px">
-                  Aviso enviado a <strong>{{ recepcion.email_remitente }}</strong>.
-                  El remitente recibirá las instrucciones para reenviar los archivos.
+              <hr class="alerta-divisor">
+              <div class="alerta-detalle">
+                <mat-icon>info</mat-icon>
+                <span>
+                  Puede notificar al remitente <strong>{{ recepcion.email_remitente }}</strong>
+                  para que reenvíe los archivos cumpliendo las restricciones vigentes
+                  (tipo, cantidad y tamaño).
                 </span>
               </div>
-            </ng-container>
 
-          </mat-card-content>
-        </mat-card>
+              <div class="alerta-detalle" *ngIf="errorAviso" style="color:#c62828;margin-top:8px">
+                <mat-icon>error_outline</mat-icon>
+                <span>{{ errorAviso }}</span>
+              </div>
 
-        <mat-card>
-          <mat-card-title>Estado</mat-card-title>
-          <mat-card-content>
-            <div class="estado-actual">
-              <span [class]="'chip-estado ' + recepcion.estado">
-                {{ recepcion.estado | titlecase }}
-              </span>
+              <div class="alerta-acciones">
+                <button mat-flat-button color="warn"
+                        [disabled]="enviandoAviso || !recepcion.email_remitente"
+                        [matTooltip]="!recepcion.email_remitente ? 'No hay correo del remitente registrado' : ''"
+                        (click)="notificarAdjuntos()">
+                  <mat-icon>mail</mat-icon>
+                  {{ enviandoAviso ? 'Enviando…' : 'Notificar remitente' }}
+                </button>
+              </div>
             </div>
+          </div>
 
-            <ng-container *ngIf="radicado?.estado === 'radicado'">
-              <p class="estado-label" style="color:#757575;font-style:italic;margin-top:8px">
-                <mat-icon style="font-size:15px;vertical-align:middle">lock</mat-icon>
+          <div class="alerta-banner alerta-ok" *ngIf="avisoEnviado">
+            <mat-icon class="alerta-icono">check_circle</mat-icon>
+            <div class="alerta-cuerpo">
+              <p class="alerta-titulo">Aviso enviado</p>
+              <p class="alerta-texto">
+                Se notificó a <strong>{{ recepcion.email_remitente }}</strong> — recibirá las
+                instrucciones para reenviar los archivos.
+              </p>
+            </div>
+          </div>
+
+          <!-- Aviso de clasificación automática (spam/duplicado) — revisión obligatoria -->
+          <div class="alerta-banner" *ngIf="recepcion.estado === 'posible_duplicado' || recepcion.estado === 'revision_spam'">
+            <mat-icon class="alerta-icono">warning</mat-icon>
+            <div class="alerta-cuerpo">
+              <p class="alerta-titulo">Asignación automática del sistema</p>
+              <p class="alerta-texto">
+                Este estado (<strong>{{ recepcion.estado === 'posible_duplicado' ? 'Posible duplicado' : 'En revisión (spam)' }}</strong>)
+                fue asignado por el clasificador automático del sistema, no por una persona —
+                <strong>revíselo antes de continuar, podría ser un falso positivo.</strong>
+              </p>
+              <ng-container *ngIf="recepcion.spam_score || recepcion.duplicado_de">
+                <hr class="alerta-divisor">
+                <div class="alerta-detalle">
+                  <mat-icon>info</mat-icon>
+                  <span>
+                    <ng-container *ngIf="recepcion.spam_score">Puntaje de spam: <strong>{{ recepcion.spam_score }}</strong></ng-container>
+                    <ng-container *ngIf="recepcion.spam_score && recepcion.duplicado_de"> · </ng-container>
+                    <ng-container *ngIf="recepcion.duplicado_de">
+                      Posible duplicado de la recepción
+                      <a [routerLink]="['/recepcion', recepcion.duplicado_de]" target="_blank" rel="noopener">#{{ recepcion.duplicado_de }}</a>
+                    </ng-container>
+                  </span>
+                </div>
+              </ng-container>
+            </div>
+          </div>
+
+          <mat-card>
+            <mat-card-title>Datos de recepción</mat-card-title>
+            <mat-card-content>
+              <div class="campos-suaves">
+                <div class="campo-suave">
+                  <span class="campo-suave-etiqueta">Canal</span>
+                  <span class="campo-suave-valor">{{ recepcion.canal.nombre }}</span>
+                </div>
+                <div class="campo-suave">
+                  <span class="campo-suave-etiqueta">Asunto provisional</span>
+                  <span class="campo-suave-valor">{{ recepcion.asunto_provisional || 'No registrado' }}</span>
+                </div>
+                <div class="campo-suave">
+                  <span class="campo-suave-etiqueta">Observaciones</span>
+                  <span class="campo-suave-valor">{{ recepcion.observaciones || 'Sin observaciones' }}</span>
+                </div>
+                <div class="campo-suave" *ngIf="recepcion.email_remitente">
+                  <span class="campo-suave-etiqueta">Email del remitente</span>
+                  <span class="campo-suave-valor">{{ recepcion.email_remitente }}</span>
+                </div>
+                <div class="campo-suave" *ngIf="recepcion.recibido_por">
+                  <span class="campo-suave-etiqueta">Recibido por</span>
+                  <span class="campo-suave-valor">{{ recepcion.recibido_por.nombre }}</span>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+        </div>
+
+        <!-- Columna derecha: barra lateral de acciones -->
+        <div class="info-col-lateral">
+          <mat-card class="panel-gestion">
+            <mat-card-title>Gestión del registro</mat-card-title>
+            <mat-card-content>
+
+              <p class="form-seccion-titulo">Estado actual</p>
+              <span [class]="'chip-estado ' + recepcion.estado">
+                {{ (recepcion.estado.replace('_',' ')) | titlecase }}
+              </span>
+
+              <p class="estado-bloqueado" *ngIf="radicado?.estado === 'radicado'">
+                <mat-icon>lock</mat-icon>
                 El estado no puede modificarse — recepción ya radicada.
               </p>
-            </ng-container>
 
-            <ng-container *ngIf="radicado?.estado !== 'radicado' && !estadoPendiente">
-              <p class="estado-label">Cambiar estado:</p>
-              <div class="estados-botones">
-                <button *ngFor="let e of estados"
-                        mat-stroked-button
-                        [color]="recepcion.estado === e.value ? 'primary' : ''"
-                        [disabled]="recepcion.estado === e.value"
-                        (click)="iniciarCambioEstado(e.value)">
-                  {{ e.label }}
+              <ng-container *ngIf="radicado?.estado !== 'radicado'">
+                <p class="form-seccion-titulo">Cambiar estado</p>
+
+                <div class="segmentado-estados">
+                  <button *ngFor="let e of estados"
+                          type="button"
+                          class="segmento"
+                          [class.segmento-activo]="estadoSeleccionado === e.value"
+                          [disabled]="recepcion.estado === e.value"
+                          (click)="seleccionarEstado(e.value)">
+                    {{ e.label }}
+                  </button>
+                </div>
+
+                <mat-form-field appearance="outline" class="obs-cambio-estado">
+                  <mat-label>{{ requiereObsCambioEstado ? 'Observaciones *' : 'Observaciones (opcional)' }}</mat-label>
+                  <textarea matInput rows="3" [(ngModel)]="obsCambioEstado"
+                            placeholder="Describa el motivo del cambio..."></textarea>
+                </mat-form-field>
+
+                <button mat-flat-button color="primary" class="btn-actualizar-estado"
+                        [disabled]="!puedeActualizarEstado"
+                        (click)="actualizarEstado()">
+                  <mat-icon>check</mat-icon> Actualizar estado
                 </button>
-              </div>
-            </ng-container>
+              </ng-container>
 
-            <!-- Inline form: observaciones obligatorias para incompleto/no_competente -->
-            <ng-container *ngIf="estadoPendiente">
-              <p class="estado-label">
-                <mat-icon style="font-size:16px;vertical-align:middle">warning</mat-icon>
-                Indique el motivo para marcar como <strong>{{ estadoPendiente }}</strong>:
-              </p>
-              <mat-form-field appearance="outline" style="width:100%">
-                <mat-label>Observaciones *</mat-label>
-                <textarea matInput rows="3" [(ngModel)]="obsEstadoPendiente"
-                          placeholder="Describa el motivo..."></textarea>
-              </mat-form-field>
-              <div class="acciones">
-                <button mat-button (click)="cancelarCambioEstado()">Cancelar</button>
-                <button mat-flat-button color="warn"
-                        [disabled]="!obsEstadoPendiente.trim()"
-                        (click)="confirmarCambioEstado()">
-                  Confirmar cambio
-                </button>
-              </div>
-            </ng-container>
-
-          </mat-card-content>
-        </mat-card>
+            </mat-card-content>
+          </mat-card>
+        </div>
 
       </div>
     </mat-tab>
@@ -159,12 +181,18 @@
             <p *ngIf="recepcion.adjuntos.length === 0" class="sin-adjuntos">
               No hay documentos adjuntos
             </p>
-            <mat-list>
-              <mat-list-item *ngFor="let adj of recepcion.adjuntos">
-                <mat-icon matListItemIcon>insert_drive_file</mat-icon>
-                <span matListItemTitle>{{ adj.nombre_original }}</span>
-                <span matListItemLine>{{ adj.tipo_mime }} · {{ formatoTamano(adj.tamano_bytes) }}</span>
-                <div matListItemMeta>
+            <div class="adjuntos-grid" *ngIf="recepcion.adjuntos.length > 0">
+              <div class="adjunto-card" *ngFor="let adj of recepcion.adjuntos">
+                <div class="adjunto-card-cuerpo">
+                  <div class="adjunto-icono" [ngClass]="infoAdjunto(adj.tipo_mime).acc">
+                    <mat-icon>{{ infoAdjunto(adj.tipo_mime).icon }}</mat-icon>
+                  </div>
+                  <div class="adjunto-info">
+                    <div class="adjunto-nombre" [matTooltip]="adj.nombre_original">{{ adj.nombre_original }}</div>
+                    <div class="adjunto-meta">{{ infoAdjunto(adj.tipo_mime).etiqueta }} · {{ formatoTamano(adj.tamano_bytes) }}</div>
+                  </div>
+                </div>
+                <div class="adjunto-card-acciones">
                   <button mat-icon-button (click)="verAdjunto(adj)" matTooltip="Ver en nueva pestaña">
                     <mat-icon>open_in_new</mat-icon>
                   </button>
@@ -172,8 +200,8 @@
                     <mat-icon>download</mat-icon>
                   </button>
                 </div>
-              </mat-list-item>
-            </mat-list>
+              </div>
+            </div>
           </mat-card-content>
         </mat-card>
       </div>
@@ -349,7 +377,7 @@
             <mat-card-title>Nuevo remitente</mat-card-title>
             <mat-card-content>
 
-              <div *ngIf="duplicadosAviso.length > 0" class="aviso-duplicados">
+              <div *ngIf="duplicadosAviso.length > 0" class="aviso-duplicados-bloqueo">
                 <div class="aviso-duplicados-cabecera">
                   <mat-icon>block</mat-icon>
                   <strong>Ya existe un remitente registrado con esa identificación o email.
@@ -360,13 +388,16 @@
                     <a (click)="seleccionarRemitente(d)" class="dup-link">
                       <mat-icon>person</mat-icon>
                       {{ d.nombre_completo }} — {{ d.numero_identificacion }}
+                      <span *ngIf="!d.activo" style="color:#c62828">(inactivo)</span>
                     </a>
                   </li>
                 </ul>
               </div>
 
               <form [formGroup]="formRemitente">
-                <mat-form-field appearance="outline">
+
+                <p class="form-seccion-titulo">Identificación</p>
+                <mat-form-field appearance="outline" class="campo-ancho">
                   <mat-label>Tipo de persona</mat-label>
                   <mat-select formControlName="tipo_persona">
                     <mat-option value="natural">Persona natural</mat-option>
@@ -382,41 +413,11 @@
                     <mat-error>Los nombres son obligatorios</mat-error>
                   </mat-form-field>
                   <mat-form-field appearance="outline">
-                    <mat-label>Apellidos</mat-label>
+                    <mat-label>Apellidos *</mat-label>
                     <input matInput formControlName="apellidos"
                            (keypress)="soloLetras($event)">
+                    <mat-error>Los apellidos son obligatorios</mat-error>
                   </mat-form-field>
-                </div>
-
-                <div class="form-grid" *ngIf="formRemitente.get('tipo_persona')?.value === 'juridico'">
-                  <mat-form-field appearance="outline" class="campo-ancho">
-                    <mat-label>Razón social *</mat-label>
-                    <input matInput formControlName="razon_social">
-                    <mat-error>La razón social es obligatoria</mat-error>
-                  </mat-form-field>
-                  <!-- NIT + Dígito de verificación en campos separados -->
-                  <div class="nit-row">
-                    <mat-form-field appearance="outline" class="nit-numero">
-                      <mat-label>NIT *</mat-label>
-                      <input matInput formControlName="numero_identificacion"
-                             inputmode="numeric" maxlength="15"
-                             (keypress)="soloNumerosTel($event)">
-                      <mat-error *ngIf="formRemitente.get('numero_identificacion')?.hasError('pattern')">
-                        7–15 dígitos
-                      </mat-error>
-                    </mat-form-field>
-                    <span class="nit-guion">–</span>
-                    <mat-form-field appearance="outline" class="nit-dv">
-                      <mat-label>DV *</mat-label>
-                      <input matInput formControlName="digito_verificacion"
-                             inputmode="numeric" maxlength="1" placeholder="0"
-                             (keypress)="soloNumerosTel($event)">
-                      <mat-error>Requerido</mat-error>
-                    </mat-form-field>
-                  </div>
-                </div>
-
-                <div class="form-grid">
                   <mat-form-field appearance="outline">
                     <mat-label>Tipo de identificación</mat-label>
                     <mat-select formControlName="tipo_identificacion" (selectionChange)="verificarDuplicados()">
@@ -436,9 +437,45 @@
                       Mínimo 4 caracteres
                     </mat-error>
                   </mat-form-field>
+                </div>
+
+                <div class="form-grid" *ngIf="formRemitente.get('tipo_persona')?.value === 'juridico'">
+                  <mat-form-field appearance="outline" class="campo-ancho">
+                    <mat-label>Razón social *</mat-label>
+                    <input matInput formControlName="razon_social">
+                    <mat-error>La razón social es obligatoria</mat-error>
+                  </mat-form-field>
+                  <!-- NIT + Dígito de verificación en campos separados -->
+                  <div class="nit-row">
+                    <mat-form-field appearance="outline" class="nit-numero">
+                      <mat-label>NIT *</mat-label>
+                      <input matInput formControlName="numero_identificacion"
+                             inputmode="numeric" maxlength="15"
+                             (keypress)="soloNumerosTel($event)"
+                             (blur)="verificarDuplicados()">
+                      <mat-error *ngIf="formRemitente.get('numero_identificacion')?.hasError('pattern')">
+                        7–15 dígitos
+                      </mat-error>
+                    </mat-form-field>
+                    <span class="nit-guion">–</span>
+                    <mat-form-field appearance="outline" class="nit-dv">
+                      <mat-label>DV</mat-label>
+                      <input matInput formControlName="digito_verificacion"
+                             inputmode="numeric" maxlength="1" placeholder="0"
+                             (keypress)="soloNumerosTel($event)">
+                      <mat-error>1 dígito</mat-error>
+                    </mat-form-field>
+                  </div>
+                </div>
+
+                <p class="form-seccion-titulo">Contacto</p>
+                <div class="form-grid">
                   <mat-form-field appearance="outline">
-                    <mat-label>Email</mat-label>
+                    <mat-label>Email *</mat-label>
                     <input matInput formControlName="email" type="email" (blur)="verificarDuplicados()">
+                    <mat-error *ngIf="formRemitente.get('email')?.hasError('required')">
+                      El email es obligatorio
+                    </mat-error>
                     <mat-error *ngIf="formRemitente.get('email')?.hasError('email')">
                       Ingrese un email válido
                     </mat-error>
@@ -451,6 +488,10 @@
                       Solo números, +, espacios, paréntesis y guiones (7-20 caracteres)
                     </mat-error>
                   </mat-form-field>
+                </div>
+
+                <p class="form-seccion-titulo">Ubicación</p>
+                <div class="form-grid">
                   <mat-form-field appearance="outline" class="campo-ancho">
                     <mat-label>Dirección</mat-label>
                     <input matInput formControlName="direccion">
@@ -477,6 +518,12 @@
                   </mat-form-field>
                 </div>
               </form>
+
+              <div *ngIf="errorRemitente"
+                   style="color:#c62828;font-size:13px;margin-bottom:10px">
+                <mat-icon style="font-size:15px;vertical-align:middle">error_outline</mat-icon>
+                {{ errorRemitente }}
+              </div>
 
               <div class="acciones">
                 <button mat-button (click)="modoFormRemitente = 'ninguno'">Cancelar</button>
@@ -531,7 +578,7 @@
                       <mat-option *ngFor="let t of tiposRequerimiento" [value]="t.id">{{ t.nombre }}</mat-option>
                     </mat-select>
                     <mat-error *ngIf="formMetadatos.get('tipo_requerimiento_id')?.hasError('required')">
-                      Seleccione el tipo de requerimiento
+                      El tipo de requerimiento es obligatorio
                     </mat-error>
                   </mat-form-field>
 
@@ -545,7 +592,7 @@
                       Asignado automáticamente por el tipo de requerimiento
                     </mat-hint>
                     <mat-error *ngIf="formMetadatos.get('plazo_respuesta_id')?.hasError('required')">
-                      Seleccione el plazo de respuesta
+                      El plazo de respuesta es obligatorio
                     </mat-error>
                   </mat-form-field>
 
@@ -607,9 +654,9 @@
         <span class="tab-label-con-estado">
           <mat-icon class="tab-estado-icon"
             [class.tab-estado-ok]="radicado?.estado === 'radicado'"
-            [class.tab-estado-warning]="radicado?.estado === 'pendiente'"
-            [class.tab-estado-pendiente]="!radicado">
-            {{ radicado?.estado === 'radicado' ? 'check_circle' : (radicado ? 'pending' : 'radio_button_unchecked') }}
+            [class.tab-estado-warning]="!radicado && recepcion.numero_radicado"
+            [class.tab-estado-pendiente]="!radicado && !recepcion.numero_radicado">
+            {{ radicado?.estado === 'radicado' ? 'check_circle' : (recepcion.numero_radicado ? 'pending' : 'radio_button_unchecked') }}
           </mat-icon>
           Radicado
         </span>
@@ -656,14 +703,14 @@
         </ng-container>
 
         <!-- ── Radicado pendiente (número asignado, sin completar) ──── -->
-        <ng-container *ngIf="radicado?.estado === 'pendiente' || !radicado">
+        <ng-container *ngIf="!radicado">
 
           <!-- Número de seguimiento — visible desde el inicio -->
-          <mat-card class="form-card" *ngIf="radicado"
+          <mat-card class="form-card" *ngIf="recepcion.numero_radicado"
                     style="background:#fff8e1;border:1px solid #ffe082">
             <mat-card-content>
               <div class="radicado-numero-grande" style="color:#e65100">
-                {{ radicado.numero_radicado }}
+                {{ recepcion.numero_radicado }}
               </div>
               <div style="display:flex;align-items:center;gap:6px;margin-top:4px;font-size:13px;color:#8d6e00">
                 <mat-icon style="font-size:16px;width:16px;height:16px">pending</mat-icon>
@@ -686,7 +733,7 @@
               <p>Para completar el radicado debe primero marcar la recepción como <strong>Competente</strong>
                 en la pestaña <em>Información</em>, verificando que es de competencia de esta entidad.</p>
               <p style="margin-top:4px;font-size:12px;color:#757575">
-                Estado actual: <span [class]="'chip-estado ' + recepcion.estado">{{ recepcion.estado | titlecase }}</span>
+                Estado actual: <span [class]="'chip-estado ' + recepcion.estado">{{ (recepcion.estado.replace('_',' ')) | titlecase }}</span>
               </p>
             </div>
           </div>
@@ -713,6 +760,16 @@
                         {{ d.nombre }}
                       </mat-option>
                     </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="campo-ancho" *ngIf="series.length > 0">
+                    <mat-label>Serie documental</mat-label>
+                    <mat-select formControlName="serie_id">
+                      <mat-option [value]="null">— Sin clasificar —</mat-option>
+                      <mat-option *ngFor="let s of series" [value]="s.id">
+                        {{ s.codigo ? s.codigo + ' — ' : '' }}{{ s.nombre }}
+                      </mat-option>
+                    </mat-select>
+                    <mat-hint>Según el Cuadro de Clasificación Documental de la dependencia seleccionada</mat-hint>
                   </mat-form-field>
                   <mat-form-field appearance="outline" class="campo-ancho">
                     <mat-label>Observaciones de radicación</mat-label>

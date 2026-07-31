@@ -1,17 +1,20 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { PaginadoOut } from '../../shared/models/paginacion.model';
 
 export interface DependenciaResumen { id: number; nombre: string; codigo?: string; }
+export interface SerieResumen        { id: number; nombre: string; codigo?: string; }
 export interface UsuarioResumen      { id: number; nombre: string; }
 
 export interface RadicadoOut {
   id: number;
   numero_radicado: string;
   recepcion_id: number;
-  dependencia?: DependenciaResumen | null;  // null si estado='pendiente'
-  radicado_por?: UsuarioResumen | null;     // null si estado='pendiente'
-  estado: string;                           // pendiente | radicado | anulado
+  dependencia?: DependenciaResumen | null;
+  serie?: SerieResumen | null;
+  radicado_por?: UsuarioResumen | null;
+  estado: string;                           // radicado | anulado
   observaciones?: string;
   ruta_constancia?: string;
   fecha_radicacion: string;
@@ -30,6 +33,7 @@ export interface RadicadoResumen {
 export interface RadicadoCreate {
   recepcion_id:   number;
   dependencia_id: number;
+  serie_id?:      number;
   observaciones?: string;
 }
 
@@ -49,6 +53,9 @@ export interface FiltrosRadicado {
   estado?: string;
   fecha_desde?: string;
   fecha_hasta?: string;
+  numero?: string;
+  page?: number;
+  page_size?: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -57,13 +64,16 @@ export class RadicadoService {
 
   constructor(private http: HttpClient) {}
 
-  listar(filtros: FiltrosRadicado = {}): Observable<RadicadoResumen[]> {
+  listar(filtros: FiltrosRadicado = {}): Observable<PaginadoOut<RadicadoResumen>> {
     let params = new HttpParams();
     if (filtros.dependencia_id) params = params.set('dependencia_id', filtros.dependencia_id);
     if (filtros.estado)         params = params.set('estado', filtros.estado);
     if (filtros.fecha_desde)    params = params.set('fecha_desde', filtros.fecha_desde);
     if (filtros.fecha_hasta)    params = params.set('fecha_hasta', filtros.fecha_hasta);
-    return this.http.get<RadicadoResumen[]>(this.base, { params });
+    if (filtros.numero)         params = params.set('numero', filtros.numero);
+    params = params.set('page', filtros.page ?? 1);
+    params = params.set('page_size', filtros.page_size ?? 20);
+    return this.http.get<PaginadoOut<RadicadoResumen>>(this.base, { params });
   }
 
   obtener(id: number): Observable<RadicadoOut> {

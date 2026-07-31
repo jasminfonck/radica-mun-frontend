@@ -38,6 +38,10 @@
           <span class="campo-etiqueta">Código</span>
           <span>{{ radicado.dependencia?.codigo }}</span>
         </div>
+        <div class="campo-detalle" *ngIf="radicado.serie">
+          <span class="campo-etiqueta">Serie documental</span>
+          <span>{{ radicado.serie?.codigo ? radicado.serie?.codigo + ' — ' : '' }}{{ radicado.serie?.nombre }}</span>
+        </div>
         <div class="campo-detalle">
           <span class="campo-etiqueta">Completado por</span>
           <span>{{ radicado.radicado_por?.nombre ?? '—' }}</span>
@@ -65,7 +69,7 @@
             <mat-icon>inbox</mat-icon> Ver recepción original
           </button>
 
-          <button mat-stroked-button *ngIf="esAdmin" (click)="regenerarPdf()">
+          <button mat-stroked-button *ngIf="puedeRegenerarConstancia" (click)="regenerarPdf()">
             <mat-icon>refresh</mat-icon> Regenerar PDF
           </button>
 

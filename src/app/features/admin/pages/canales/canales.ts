@@ -1,5 +1,6 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { MatSlideToggleChange } from '@angular/material/slide-toggle';
 import {
   AdminService, CanalOut, BuzonCorreoOut, BuzonCorreoCreate, BuzonCorreoUpdate,
   ConfiguracionOut, EntidadOut, TestSmtpOut,
@@ -46,9 +47,9 @@ export class CanalesComponent implements OnInit {
   ];
 
   iconos: Record<string, string> = {
-    presencial: 'storefront',
-    digital:    'language',
-    email:      'email',
+    ventanilla: 'storefront',
+    formulario: 'language',
+    correo:     'email',
   };
 
   estadoIcono: Record<string, string> = {
@@ -80,7 +81,7 @@ export class CanalesComponent implements OnInit {
         this.canales = c;
         this.cargando = false;
         this.cdr.markForCheck();
-        const canalEmail = c.find(x => x.tipo === 'email');
+        const canalEmail = c.find(x => x.tipo === 'correo');
         if (canalEmail) this._cargarBuzon(canalEmail.id);
       },
       error: err => {
@@ -200,7 +201,7 @@ export class CanalesComponent implements OnInit {
   }
 
   get canalEmail(): CanalOut | undefined {
-    return this.canales.find(c => c.tipo === 'email');
+    return this.canales.find(c => c.tipo === 'correo');
   }
 
   get usandoGraph(): boolean {
@@ -231,9 +232,10 @@ export class CanalesComponent implements OnInit {
 
   // ── Canales ──────────────────────────────────────────────────────────────
 
-  toggleCanal(canal: CanalOut): void {
+  toggleCanal(canal: CanalOut, event: MatSlideToggleChange): void {
     const nuevoActivo = !canal.activo;
-    if (canal.tipo === 'email' && nuevoActivo && (!this.buzon || this.buzon.estado_conexion !== 'ok')) {
+    if (canal.tipo === 'correo' && nuevoActivo && (!this.buzon || this.buzon.estado_conexion !== 'ok')) {
+      event.source.checked = canal.activo; // el toggle ya cambió visualmente al hacer clic; revertirlo
       this.toast.advertencia('Configure y pruebe el buzón de correo antes de activar este canal.');
       this.cdr.markForCheck();
       return;
@@ -243,13 +245,14 @@ export class CanalesComponent implements OnInit {
       next: c => {
         const idx = this.canales.findIndex(x => x.id === c.id);
         if (idx >= 0) this.canales[idx] = c;
-        if (c.tipo === 'email' && this.buzon) {
+        if (c.tipo === 'correo' && this.buzon) {
           this.buzon.activo = c.activo;
         }
         this.guardando[canal.id] = false;
         this.cdr.markForCheck();
       },
       error: err => {
+        event.source.checked = canal.activo; // la llamada falló, revertir el toggle a su valor real
         this.toast.error(err?.error?.detail || 'No se pudo actualizar el canal.');
         this.guardando[canal.id] = false;
         this.cdr.markForCheck();
@@ -257,7 +260,7 @@ export class CanalesComponent implements OnInit {
     });
   }
 
-  toggleAcuse(canal: CanalOut): void {
+  toggleAcuse(canal: CanalOut, event: MatSlideToggleChange): void {
     const nuevoAcuse = !canal.acuse_configurado;
     this.guardando[canal.id] = true;
     this.adminService.actualizarCanal(canal.id, { activo: canal.activo, acuse_configurado: nuevoAcuse }).subscribe({
@@ -269,6 +272,7 @@ export class CanalesComponent implements OnInit {
         if (nuevoAcuse) this.toast.exito('Acuse de recibo configurado. Ya puede activar el canal.');
       },
       error: err => {
+        event.source.checked = canal.acuse_configurado;
         this.toast.error(err?.error?.detail || 'No se pudo actualizar el canal.');
         this.guardando[canal.id] = false;
         this.cdr.markForCheck();

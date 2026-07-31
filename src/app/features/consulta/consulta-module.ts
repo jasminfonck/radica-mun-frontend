@@ -12,6 +12,9 @@ import { MatTableModule }       from '@angular/material/table';
 import { MatTooltipModule }     from '@angular/material/tooltip';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDividerModule }     from '@angular/material/divider';
+import { MatMenuModule }        from '@angular/material/menu';
+import { MatPaginatorModule }   from '@angular/material/paginator';
+import { MatTabsModule }        from '@angular/material/tabs';
 
 import { ConsultaRoutingModule }        from './consulta-routing-module';
 import { DashboardConsultaComponent }   from './pages/dashboard/dashboard-consulta';
@@ -33,7 +36,8 @@ import { AuditoriaComponent }           from './pages/auditoria/auditoria';
     MatCardModule, MatButtonModule, MatIconModule,
     MatFormFieldModule, MatInputModule, MatSelectModule,
     MatTableModule, MatTooltipModule, MatProgressBarModule,
-    MatDividerModule,
+    MatDividerModule, MatMenuModule, MatPaginatorModule,
+    MatTabsModule,
   ],
 })
 export class ConsultaModule {}

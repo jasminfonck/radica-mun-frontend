@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { InicioComponent } from './inicio';
 
 @NgModule({
@@ -12,6 +13,7 @@ import { InicioComponent } from './inicio';
     RouterModule.forChild([{ path: '', component: InicioComponent }]),
     MatIconModule,
     MatProgressBarModule,
+    MatTooltipModule,
   ]
 })
 export class InicioModule {}

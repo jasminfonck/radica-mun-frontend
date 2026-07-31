@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
+import { PageEvent } from '@angular/material/paginator';
 import { forkJoin } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
@@ -17,6 +18,10 @@ export class BandejaRadicadosComponent implements OnInit {
   radicados: RadicadoResumen[] = [];
   dependencias: DependenciaOut[] = [];
   cargando = true;
+
+  total = 0;
+  pageIndex = 0;
+  pageSize = 20;
 
   filtros!: FormGroup;
   columnas = ['numero_radicado', 'recepcion_id', 'dependencia', 'fecha_radicacion', 'estado', 'acciones'];
@@ -36,40 +41,49 @@ export class BandejaRadicadosComponent implements OnInit {
 
   ngOnInit(): void {
     this.filtros = this.fb.group({
+      numero:         [''],
       dependencia_id: [null],
       estado:         [''],
       fecha_desde:    [''],
       fecha_hasta:    [''],
     });
 
-    forkJoin({
-      dependencias: this.adminService.getDependencias(false).pipe(catchError(() => of([]))),
-      radicados:    this.radicadoService.listar({}).pipe(catchError(() => of([]))),
-    }).subscribe(({ dependencias, radicados }) => {
+    this.adminService.getDependencias(false).pipe(catchError(() => of([]))).subscribe(dependencias => {
       this.dependencias = dependencias as DependenciaOut[];
-      this.radicados    = radicados as RadicadoResumen[];
-      this.cargando     = false;
       this.cdr.markForCheck();
     });
+    this._buscarPagina();
   }
 
-  cargar(): void {
+  private _buscarPagina(): void {
     this.cargando = true;
     const f = this.filtros.value;
-    const filtros: FiltrosRadicado = {};
+    const filtros: FiltrosRadicado = { page: this.pageIndex + 1, page_size: this.pageSize };
+    if (f.numero)          filtros.numero          = f.numero;
     if (f.dependencia_id) filtros.dependencia_id = f.dependencia_id;
     if (f.estado)         filtros.estado         = f.estado;
     if (f.fecha_desde)    filtros.fecha_desde     = f.fecha_desde;
     if (f.fecha_hasta)    filtros.fecha_hasta     = f.fecha_hasta;
 
     this.radicadoService.listar(filtros).subscribe({
-      next:  r  => { this.radicados = r; this.cargando = false; this.cdr.markForCheck(); },
+      next:  r  => { this.radicados = r.items; this.total = r.total; this.cargando = false; this.cdr.markForCheck(); },
       error: () => { this.cargando = false; this.cdr.markForCheck(); },
     });
   }
 
+  cargar(): void {
+    this.pageIndex = 0;
+    this._buscarPagina();
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.pageIndex = event.pageIndex;
+    this.pageSize  = event.pageSize;
+    this._buscarPagina();
+  }
+
   limpiar(): void {
-    this.filtros.reset({ estado: '' });
+    this.filtros.reset({ numero: '', estado: '' });
     this.cargar();
   }
 }

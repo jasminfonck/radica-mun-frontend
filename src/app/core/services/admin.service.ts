@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { PaginadoOut } from '../../shared/models/paginacion.model';
 
 export interface Rol           { id: number; nombre: string; descripcion?: string; }
 export interface UsuarioOut    { id: number; nombre: string; apellido?: string; email: string; activo: boolean; rol: Rol; created_at: string; }
@@ -18,12 +19,17 @@ export interface EntidadOut {
   email_institucional?: string; configurada: boolean;
 }
 
+export interface EntidadPublicaOut { nombre: string; }
+
 export interface DependenciaOut {
   id: number; nombre: string; codigo?: string; responsable?: string;
   email?: string; activa: boolean; padre_id?: number; nivel: string;
 }
 
 // CCD
+export interface SerieCCDOut {
+  id: number; nombre: string; codigo?: string; descripcion?: string; activa: boolean; dependencia_id: number;
+}
 export interface SubserieCCDOut {
   id: number; nombre: string; codigo?: string; descripcion?: string; activa: boolean; serie_id: number;
 }
@@ -85,9 +91,27 @@ export interface ConfiguracionOut {
   smtp_from_fuente?: 'buzon_oficial' | 'email_entidad' | 'personalizado';
   smtp_from_personalizado?: string;
   smtp_activo: boolean;
+  // Almacenamiento compartido en red (alternativa a la carpeta local)
+  almacenamiento_tipo: 'local' | 'smb';
+  smb_servidor?: string;
+  smb_puerto?: number;
+  smb_carpeta_compartida?: string;
+  smb_subcarpeta?: string;
+  smb_usuario?: string;
+  smb_password_configurado: boolean;
+  smb_dominio?: string;
 }
 
 export interface TestSmtpOut { ok: boolean; mensaje: string; }
+export interface PruebaConexionOut { ok: boolean; mensaje: string; }
+
+export interface DirectorioEntradaOut { nombre: string; ruta: string; }
+export interface DirectorioListadoOut {
+  ruta_actual: string;
+  ruta_padre?: string;
+  subdirectorios: DirectorioEntradaOut[];
+  puede_escribir: boolean;
+}
 
 export interface LogMensajeEmailOut {
   id: number;
@@ -182,6 +206,7 @@ export class AdminService {
 
   // Entidad
   getEntidad(): Observable<EntidadOut>                                            { return this.http.get<EntidadOut>(`${this.base}/entidad`); }
+  getEntidadPublica(): Observable<EntidadPublicaOut>                              { return this.http.get<EntidadPublicaOut>(`${this.base}/entidad/publico`); }
   actualizarEntidad(d: Partial<EntidadOut>): Observable<EntidadOut>              { return this.http.put<EntidadOut>(`${this.base}/entidad`, d); }
 
   // Dependencias
@@ -194,12 +219,12 @@ export class AdminService {
   actualizarCanal(id: number, d: CanalUpdate): Observable<CanalOut>              { return this.http.put<CanalOut>(`${this.base}/canales/${id}`, d); }
 
   // Tipos de requerimiento
-  getTipos(): Observable<TipoReqOut[]>                                            { return this.http.get<TipoReqOut[]>(`${this.base}/tipos-requerimiento`); }
+  getTipos(soloActivos = false): Observable<TipoReqOut[]>                         { return this.http.get<TipoReqOut[]>(`${this.base}/tipos-requerimiento`, { params: { solo_activos: soloActivos } }); }
   crearTipo(d: { nombre: string; descripcion?: string }): Observable<TipoReqOut> { return this.http.post<TipoReqOut>(`${this.base}/tipos-requerimiento`, d); }
   actualizarTipo(id: number, d: Partial<TipoReqOut>): Observable<TipoReqOut>     { return this.http.put<TipoReqOut>(`${this.base}/tipos-requerimiento/${id}`, d); }
 
   // Plazos
-  getPlazos(): Observable<PlazoOut[]>                                             { return this.http.get<PlazoOut[]>(`${this.base}/plazos`); }
+  getPlazos(soloActivos = false): Observable<PlazoOut[]>                          { return this.http.get<PlazoOut[]>(`${this.base}/plazos`, { params: { solo_activos: soloActivos } }); }
   crearPlazo(d: { nombre: string; dias_habiles: number }): Observable<PlazoOut>  { return this.http.post<PlazoOut>(`${this.base}/plazos`, d); }
   actualizarPlazo(id: number, d: Partial<PlazoOut>): Observable<PlazoOut>        { return this.http.put<PlazoOut>(`${this.base}/plazos/${id}`, d); }
 
@@ -207,23 +232,56 @@ export class AdminService {
   getConfiguracion(): Observable<ConfiguracionOut>                                { return this.http.get<ConfiguracionOut>(`${this.base}/configuracion`); }
   actualizarConfiguracion(d: Partial<ConfiguracionOut & { smtp_password?: string }>): Observable<ConfiguracionOut> { return this.http.put<ConfiguracionOut>(`${this.base}/configuracion`, d); }
   testSmtp(emailDestino: string): Observable<TestSmtpOut>                        { return this.http.post<TestSmtpOut>(`${this.base}/configuracion/test-smtp`, { email_destino: emailDestino }); }
+  probarSmb(): Observable<PruebaConexionOut>                                     { return this.http.post<PruebaConexionOut>(`${this.base}/configuracion/smb/probar`, {}); }
   getEstadoSistema(): Observable<{ sistema_listo: boolean }>                      { return this.http.get<{ sistema_listo: boolean }>(`${this.base}/sistema/estado`); }
 
+  // Explorador de carpetas (ruta de almacenamiento)
+  listarDirectorios(ruta?: string): Observable<DirectorioListadoOut> {
+    const params: any = {};
+    if (ruta) params['ruta'] = ruta;
+    return this.http.get<DirectorioListadoOut>(`${this.base}/directorios`, { params });
+  }
+  crearDirectorio(rutaPadre: string, nombre: string): Observable<DirectorioListadoOut> {
+    return this.http.post<DirectorioListadoOut>(`${this.base}/directorios`, { ruta_padre: rutaPadre, nombre });
+  }
+
   // Log de emails
-  getLogEmail(limite = 200, recepcionId?: number): Observable<LogMensajeEmailOut[]> {
-    const params: any = { limite };
+  getLogEmail(recepcionId?: number, page = 1, page_size = 20): Observable<PaginadoOut<LogMensajeEmailOut>> {
+    const params: any = { page, page_size };
     if (recepcionId != null) params['recepcion_id'] = recepcionId;
-    return this.http.get<LogMensajeEmailOut[]>(`${this.base}/log-email`, { params });
+    return this.http.get<PaginadoOut<LogMensajeEmailOut>>(`${this.base}/log-email`, { params });
   }
 
   // Auditoría
-  getAuditoria(limite = 200): Observable<BitacoraOut[]>                          { return this.http.get<BitacoraOut[]>(`${this.base}/auditoria`, { params: { limite } }); }
+  getAuditoria(filtros: {
+    texto?: string; accion?: string; modulo?: string;
+    fecha_desde?: string; fecha_hasta?: string; page?: number; page_size?: number;
+  } = {}): Observable<PaginadoOut<BitacoraOut>> {
+    const params: any = { page: filtros.page ?? 1, page_size: filtros.page_size ?? 20 };
+    if (filtros.texto)       params['texto']       = filtros.texto;
+    if (filtros.accion)      params['accion']      = filtros.accion;
+    if (filtros.modulo)      params['modulo']      = filtros.modulo;
+    if (filtros.fecha_desde) params['fecha_desde'] = filtros.fecha_desde;
+    if (filtros.fecha_hasta) params['fecha_hasta'] = filtros.fecha_hasta;
+    return this.http.get<PaginadoOut<BitacoraOut>>(`${this.base}/auditoria`, { params });
+  }
+
+  getModulosAuditoria(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.base}/auditoria/modulos`);
+  }
 
   // Respaldo
   getRespaldo(): Observable<RespaldoOut>                                          { return this.http.get<RespaldoOut>(`${this.base}/respaldo`); }
 
+  getRespaldoBaseDatos(): Observable<Blob> {
+    return this.http.get(`${this.base}/respaldo/base-datos`, { responseType: 'blob' });
+  }
+
   // CCD
   getCCDArbol(): Observable<DependenciaNodo[]>                                   { return this.http.get<DependenciaNodo[]>(`${this.base}/ccd/arbol`); }
+  getSeriesPorDependencia(dependenciaId: number, soloActivas = true): Observable<SerieCCDOut[]> {
+    return this.http.get<SerieCCDOut[]>(`${this.base}/ccd/series`, { params: { dependencia_id: dependenciaId, solo_activas: soloActivas } });
+  }
   crearSerie(d: { nombre: string; codigo?: string; descripcion?: string; dependencia_id: number }): Observable<SerieNodo> { return this.http.post<SerieNodo>(`${this.base}/ccd/series`, d); }
   actualizarSerie(id: number, d: Partial<SerieNodo>): Observable<SerieNodo>     { return this.http.put<SerieNodo>(`${this.base}/ccd/series/${id}`, d); }
   toggleSerie(id: number, activa: boolean): Observable<SerieNodo>               { return this.http.patch<SerieNodo>(`${this.base}/ccd/series/${id}/estado`, null, { params: { activa } }); }

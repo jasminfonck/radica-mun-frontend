@@ -1,7 +1,11 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
+import { PageEvent } from '@angular/material/paginator';
 import { AdminService, DependenciaOut, CanalOut } from '../../../../core/services/admin.service';
-import { ConsultaService, ResultadoBusqueda, FiltrosBusqueda } from '../../../../core/services/consulta.service';
+import {
+  ConsultaService, ResultadoBusqueda, FiltrosBusqueda, FormatoExportacion,
+  ItemConteo,
+} from '../../../../core/services/consulta.service';
 
 interface ResumenItem { label: string; total: number; }
 
@@ -20,9 +24,18 @@ export class ReportesComponent implements OnInit {
   resultados: ResultadoBusqueda[] = [];
   generando  = false;
   generado   = false;
+  total = 0;
+  pageIndex = 0;
+  readonly pageSize = 20;
 
   porDependencia: ResumenItem[] = [];
   porCanal:       ResumenItem[] = [];
+  porTipoRequerimiento: ResumenItem[] = [];
+
+  // Remitentes frecuentes — reutiliza los mismos filtros del formulario
+  remitentesFrecuentes: ItemConteo[] = [];
+  cargandoRemitentes = false;
+  generadoRemitentes = false;
 
   readonly columnas = ['numero_radicado', 'fecha_radicacion', 'remitente', 'asunto', 'canal', 'dependencia', 'estado'];
 
@@ -52,8 +65,7 @@ export class ReportesComponent implements OnInit {
     this.admin.getCanales().subscribe(c  => { this.canales = c.filter(x => x.activo); this.cdr.markForCheck(); });
   }
 
-  generar(): void {
-    this.generando = true;
+  private _buildFiltros(): FiltrosBusqueda {
     const v = this.filtros.value;
     const filtros: FiltrosBusqueda = {};
     if (v.fecha_desde)     filtros.fecha_desde     = v.fecha_desde;
@@ -61,28 +73,51 @@ export class ReportesComponent implements OnInit {
     if (v.dependencia_id)  filtros.dependencia_id  = v.dependencia_id;
     if (v.canal_id)        filtros.canal_id        = v.canal_id;
     if (v.estado_radicado) filtros.estado_radicado = v.estado_radicado;
+    return filtros;
+  }
 
-    this.consulta.buscar(filtros).subscribe({
+  // ── Radicados (tabla paginada + agrupado por canal/dependencia/tipo) ───────
+  generar(): void {
+    this.pageIndex = 0;
+    this._buscarPagina();
+
+    // El agrupado (por canal/dependencia/tipo) se calcula en el backend sobre
+    // el total de registros que cumplen los filtros, no sobre una página —
+    // no depende de la paginación de la tabla y no queda incompleto aunque
+    // haya miles de resultados.
+    this.consulta.reporteAgrupado(this._buildFiltros()).subscribe({
       next: r => {
-        this.resultados = r;
-        this._calcularResumen();
-        this.generando = false;
-        this.generado  = true;
+        this.porCanal             = r.por_canal;
+        this.porDependencia       = r.por_dependencia;
+        this.porTipoRequerimiento = r.por_tipo_requerimiento;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.pageIndex = event.pageIndex;
+    this._buscarPagina();
+  }
+
+  private _buscarPagina(): void {
+    this.generando = true;
+    const filtrosListado = { ...this._buildFiltros(), page: this.pageIndex + 1, page_size: this.pageSize };
+
+    this.consulta.buscar(filtrosListado).subscribe({
+      next: r => {
+        this.resultados = r.items;
+        this.total      = r.total;
+        this.generando  = false;
+        this.generado   = true;
         this.cdr.markForCheck();
       },
       error: () => { this.generando = false; this.cdr.markForCheck(); },
     });
   }
 
-  exportar(): void {
-    const v = this.filtros.value;
-    const filtros: FiltrosBusqueda = {};
-    if (v.fecha_desde)     filtros.fecha_desde     = v.fecha_desde;
-    if (v.fecha_hasta)     filtros.fecha_hasta     = v.fecha_hasta;
-    if (v.dependencia_id)  filtros.dependencia_id  = v.dependencia_id;
-    if (v.canal_id)        filtros.canal_id        = v.canal_id;
-    if (v.estado_radicado) filtros.estado_radicado = v.estado_radicado;
-    this.consulta.exportarCsv(filtros);
+  exportar(formato: FormatoExportacion): void {
+    this.consulta.exportar(this._buildFiltros(), formato);
   }
 
   imprimir(): void {
@@ -93,8 +128,13 @@ export class ReportesComponent implements OnInit {
     this.filtros.reset({ fecha_desde: '', fecha_hasta: '', dependencia_id: null, canal_id: null, estado_radicado: '' });
     this.resultados    = [];
     this.generado      = false;
+    this.total      = 0;
+    this.pageIndex  = 0;
     this.porDependencia = [];
     this.porCanal       = [];
+    this.porTipoRequerimiento = [];
+    this.remitentesFrecuentes = [];
+    this.generadoRemitentes   = false;
     this.cdr.markForCheck();
   }
 
@@ -106,18 +146,17 @@ export class ReportesComponent implements OnInit {
     return `${Math.round((total / max) * 100)}%`;
   }
 
-  private _calcularResumen(): void {
-    const agrupar = (key: keyof ResultadoBusqueda): ResumenItem[] => {
-      const map = new Map<string, number>();
-      for (const r of this.resultados) {
-        const k = String(r[key] || '—');
-        map.set(k, (map.get(k) || 0) + 1);
-      }
-      return Array.from(map.entries())
-        .map(([label, total]) => ({ label, total }))
-        .sort((a, b) => b.total - a.total);
-    };
-    this.porCanal       = agrupar('canal');
-    this.porDependencia = agrupar('dependencia');
+  // ── Remitentes frecuentes ───────────────────────────────────────────────────
+  generarRemitentesFrecuentes(): void {
+    this.cargandoRemitentes = true;
+    this.consulta.reporteRemitentesFrecuentes(this._buildFiltros()).subscribe({
+      next: items => {
+        this.remitentesFrecuentes = items;
+        this.cargandoRemitentes   = false;
+        this.generadoRemitentes   = true;
+        this.cdr.markForCheck();
+      },
+      error: () => { this.cargandoRemitentes = false; this.cdr.markForCheck(); },
+    });
   }
 }

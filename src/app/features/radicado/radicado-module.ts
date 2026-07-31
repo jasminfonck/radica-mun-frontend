@@ -11,6 +11,8 @@ import { MatSelectModule }      from '@angular/material/select';
 import { MatTableModule }       from '@angular/material/table';
 import { MatTooltipModule }     from '@angular/material/tooltip';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatPaginatorModule }   from '@angular/material/paginator';
+import { MatExpansionModule }   from '@angular/material/expansion';
 
 import { RadicadoRoutingModule }      from './radicado-routing-module';
 import { BandejaRadicadosComponent }  from './pages/bandeja/bandeja-radicados';
@@ -27,7 +29,8 @@ import { DetalleRadicadoComponent }   from './pages/detalle/detalle-radicado';
     RadicadoRoutingModule,
     MatCardModule, MatButtonModule, MatIconModule,
     MatFormFieldModule, MatInputModule, MatSelectModule,
-    MatTableModule, MatTooltipModule, MatProgressBarModule,
+    MatTableModule, MatTooltipModule, MatProgressBarModule, MatPaginatorModule,
+    MatExpansionModule,
   ],
 })
 export class RadicadoModule {}

@@ -1,16 +1,12 @@
-import {
-  AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef,
-  Component, OnInit, ViewChild,
-} from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup } from '@angular/forms';
+import { PageEvent } from '@angular/material/paginator';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { MatTableDataSource } from '@angular/material/table';
-import { MatSort } from '@angular/material/sort';
 
 import {
-  RecepcionService, RecepcionOut, RecepcionFiltros, ESTADOS_RECEPCION,
+  RecepcionService, RecepcionOut, RecepcionFiltros, ESTADOS_RECEPCION_FILTRO,
 } from '../../../../core/services/recepcion.service';
 import { AdminService, CanalOut } from '../../../../core/services/admin.service';
 
@@ -21,16 +17,17 @@ import { AdminService, CanalOut } from '../../../../core/services/admin.service'
   standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BandejaComponent implements OnInit, AfterViewInit {
-  dataSource = new MatTableDataSource<RecepcionOut>([]);
+export class BandejaComponent implements OnInit {
+  recepciones: RecepcionOut[] = [];
   canales: CanalOut[] = [];
-  estados = ESTADOS_RECEPCION;
+  estados = ESTADOS_RECEPCION_FILTRO;
   columnas = ['id', 'canal', 'asunto', 'estado', 'fecha', 'adjuntos', 'acciones'];
   filtrosForm!: FormGroup;
-  busquedaCtrl = new FormControl('');
   cargando = true;
 
-  @ViewChild(MatSort) sort!: MatSort;
+  total = 0;
+  pageIndex = 0;
+  pageSize = 20;
 
   constructor(
     private fb: FormBuilder,
@@ -46,66 +43,50 @@ export class BandejaComponent implements OnInit, AfterViewInit {
       estado:      [null],
       fecha_desde: [null],
       fecha_hasta: [null],
+      texto:       [''],
     });
 
-    // Filtro por asunto (cliente)
-    this.dataSource.filterPredicate = (rec: RecepcionOut, filtro: string) => {
-      const texto = filtro.trim().toLowerCase();
-      return (rec.asunto_provisional ?? '').toLowerCase().includes(texto);
-    };
-
-    this.busquedaCtrl.valueChanges.subscribe(val => {
-      this.dataSource.filter = (val ?? '').trim().toLowerCase();
-    });
-
-    forkJoin({
-      canales:     this.adminService.getCanales().pipe(catchError(() => of([]))),
-      recepciones: this.recepcionService.listar({}).pipe(catchError(() => of([]))),
-    }).subscribe(({ canales, recepciones }) => {
-      this.canales          = (canales as CanalOut[]).filter(x => x.activo);
-      this.dataSource.data  = recepciones as RecepcionOut[];
-      this.cargando         = false;
+    this.adminService.getCanales().pipe(catchError(() => of([]))).subscribe(canales => {
+      this.canales = (canales as CanalOut[]).filter(x => x.activo);
       this.cdr.markForCheck();
     });
+    this._buscarPagina();
   }
 
-  ngAfterViewInit(): void {
-    this.dataSource.sort = this.sort;
-
-    // Comparador personalizado para columnas anidadas
-    this.dataSource.sortingDataAccessor = (item: RecepcionOut, col: string) => {
-      switch (col) {
-        case 'canal':  return item.canal?.nombre ?? '';
-        case 'asunto': return item.asunto_provisional ?? '';
-        case 'fecha':  return item.created_at;
-        case 'adjuntos': return item.adjuntos?.length ?? 0;
-        default: return (item as any)[col] ?? '';
-      }
-    };
-  }
-
-  cargar(): void {
+  private _buscarPagina(): void {
     this.cargando = true;
     const raw = this.filtrosForm.value;
-    const filtros: RecepcionFiltros = {};
+    const filtros: RecepcionFiltros = { page: this.pageIndex + 1, page_size: this.pageSize };
     if (raw.canal_id)    filtros.canal_id    = raw.canal_id;
     if (raw.estado)      filtros.estado      = raw.estado;
     if (raw.fecha_desde) filtros.fecha_desde = raw.fecha_desde;
     if (raw.fecha_hasta) filtros.fecha_hasta = raw.fecha_hasta;
+    if (raw.texto)       filtros.texto       = raw.texto;
 
     this.recepcionService.listar(filtros).subscribe({
       next: r => {
-        this.dataSource.data = r;
-        this.cargando        = false;
+        this.recepciones = r.items;
+        this.total        = r.total;
+        this.cargando      = false;
         this.cdr.markForCheck();
       },
       error: () => { this.cargando = false; this.cdr.markForCheck(); },
     });
   }
 
+  cargar(): void {
+    this.pageIndex = 0;
+    this._buscarPagina();
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.pageIndex = event.pageIndex;
+    this.pageSize  = event.pageSize;
+    this._buscarPagina();
+  }
+
   limpiarFiltros(): void {
     this.filtrosForm.reset();
-    this.busquedaCtrl.setValue('');
     this.cargar();
   }
 

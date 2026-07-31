@@ -29,10 +29,10 @@
                 <mat-icon matPrefix style="opacity:0.5">search</mat-icon>
                 <input matInput formControlName="texto"
                        placeholder="Usuario, módulo, detalle..."
-                       (keyup.enter)="aplicarFiltrosAdmin()">
+                       (keyup.enter)="cargarAdmin()">
                 <button *ngIf="filtrosAdmin.get('texto')?.value"
                         matSuffix mat-icon-button
-                        (click)="filtrosAdmin.get('texto')?.setValue(''); aplicarFiltrosAdmin()">
+                        (click)="filtrosAdmin.get('texto')?.setValue(''); cargarAdmin()">
                   <mat-icon>close</mat-icon>
                 </button>
               </mat-form-field>
@@ -68,7 +68,7 @@
               </mat-form-field>
 
               <div style="display:flex; gap:8px; padding-bottom:20px">
-                <button mat-flat-button color="primary" (click)="aplicarFiltrosAdmin()">
+                <button mat-flat-button color="primary" (click)="cargarAdmin()">
                   <mat-icon>filter_list</mat-icon> Filtrar
                 </button>
                 <button mat-stroked-button (click)="limpiarAdmin()" [disabled]="!hayFiltrosAdmin">
@@ -77,43 +77,35 @@
               </div>
             </div>
 
-            <div *ngIf="!cargando && hayFiltrosAdmin"
+            <div *ngIf="!cargandoAdmin && hayFiltrosAdmin"
                  style="font-size:13px; color:var(--texto-suave); margin-top:4px">
               <mat-icon style="font-size:14px; vertical-align:middle; margin-right:4px">info_outline</mat-icon>
-              {{ registrosFiltrados.length }} resultado{{ registrosFiltrados.length !== 1 ? 's' : '' }}
-              de {{ registros.length }} registros totales
+              {{ totalAdmin }} resultado{{ totalAdmin !== 1 ? 's' : '' }}
             </div>
           </mat-card-content>
         </mat-card>
 
         <!-- Cargando -->
-        <div *ngIf="cargando" style="text-align:center; padding:40px">
+        <div *ngIf="cargandoAdmin" style="text-align:center; padding:40px">
           <p style="color:var(--texto-suave)">Cargando registros...</p>
         </div>
 
         <!-- Sin datos -->
-        <mat-card *ngIf="!cargando && registros.length === 0">
+        <mat-card *ngIf="!cargandoAdmin && registrosAdmin.length === 0">
           <mat-card-content style="text-align:center; padding:32px; color:var(--texto-suave)">
             <mat-icon style="font-size:48px; height:48px; width:48px; opacity:0.3">history</mat-icon>
-            <p>Aún no hay registros en la bitácora admin.</p>
-          </mat-card-content>
-        </mat-card>
-
-        <!-- Sin resultados filtro -->
-        <mat-card *ngIf="!cargando && registros.length > 0 && registrosFiltrados.length === 0">
-          <mat-card-content style="text-align:center; padding:32px; color:var(--texto-suave)">
-            <mat-icon style="font-size:48px; height:48px; width:48px; opacity:0.3">search_off</mat-icon>
-            <p>No se encontraron registros con los filtros aplicados.</p>
-            <button mat-stroked-button (click)="limpiarAdmin()" style="margin-top:8px">
+            <p *ngIf="!hayFiltrosAdmin">Aún no hay registros en la bitácora admin.</p>
+            <p *ngIf="hayFiltrosAdmin">No se encontraron registros con los filtros aplicados.</p>
+            <button *ngIf="hayFiltrosAdmin" mat-stroked-button (click)="limpiarAdmin()" style="margin-top:8px">
               Limpiar filtros
             </button>
           </mat-card-content>
         </mat-card>
 
         <!-- Tabla admin -->
-        <mat-card *ngIf="!cargando && registrosFiltrados.length > 0" style="overflow:hidden">
+        <mat-card *ngIf="!cargandoAdmin && registrosAdmin.length > 0" style="overflow:hidden">
           <mat-card-content style="padding:0">
-            <table mat-table [dataSource]="registrosFiltrados" class="mat-elevation-z0" style="width:100%">
+            <table mat-table [dataSource]="registrosAdmin" class="mat-elevation-z0" style="width:100%">
 
               <ng-container matColumnDef="created_at">
                 <th mat-header-cell *matHeaderCellDef>Fecha y hora</th>
@@ -155,6 +147,9 @@
               <tr mat-header-row *matHeaderRowDef="columnasAdmin"></tr>
               <tr mat-row *matRowDef="let r; columns: columnasAdmin;" class="fila-auditoria"></tr>
             </table>
+
+            <mat-paginator [length]="totalAdmin" [pageSize]="pageSizeAdmin" [pageIndex]="pageIndexAdmin"
+                           [hidePageSize]="true" (page)="onPageChangeAdmin($event)"></mat-paginator>
           </mat-card-content>
         </mat-card>
 
@@ -280,6 +275,9 @@
               <tr mat-header-row *matHeaderRowDef="columnasOperativa"></tr>
               <tr mat-row *matRowDef="let l; columns: columnasOperativa;" class="fila-auditoria"></tr>
             </table>
+
+            <mat-paginator [length]="totalOperativa" [pageSize]="pageSizeOperativa" [pageIndex]="pageIndexOperativa"
+                           [hidePageSize]="true" (page)="onPageChangeOperativa($event)"></mat-paginator>
           </mat-card-content>
         </mat-card>
 
@@ -379,6 +377,9 @@
               <tr mat-header-row *matHeaderRowDef="columnaEmails"></tr>
               <tr mat-row *matRowDef="let e; columns: columnaEmails;" class="fila-auditoria"></tr>
             </table>
+
+            <mat-paginator [length]="totalEmails" [pageSize]="pageSizeEmails" [pageIndex]="pageIndexEmails"
+                           [hidePageSize]="true" (page)="onPageChangeEmails($event)"></mat-paginator>
           </mat-card-content>
         </mat-card>
 

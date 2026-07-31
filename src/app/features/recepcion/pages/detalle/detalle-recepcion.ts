@@ -4,12 +4,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
-import { RecepcionService, RecepcionOut, AdjuntoOut, BitacoraEvento, ESTADOS_RECEPCION, LogMensajeEmailOut } from '../../../../core/services/recepcion.service';
+import { RecepcionService, RecepcionOut, AdjuntoOut, BitacoraEvento, ESTADOS_RECEPCION_TRANSICION, LogMensajeEmailOut } from '../../../../core/services/recepcion.service';
 import {
   RemitenteService, RemitenteResumen, RemitenteOut, MetadatosOut,
   PlazoRespuestaResumen,
 } from '../../../../core/services/remitente.service';
-import { AdminService, DependenciaOut, TipoReqOut } from '../../../../core/services/admin.service';
+import { AdminService, DependenciaOut, TipoReqOut, SerieCCDOut } from '../../../../core/services/admin.service';
 import { RadicadoService, RadicadoOut } from '../../../../core/services/radicado.service';
 import { GeoService, DepartamentoOut, MunicipioOut } from '../../../../core/services/geo.service';
 import { AuthService } from '../../../../core/auth/auth.service';
@@ -23,7 +23,7 @@ import { AuthService } from '../../../../core/auth/auth.service';
 })
 export class DetalleRecepcionComponent implements OnInit {
   recepcion?: RecepcionOut;
-  estados = ESTADOS_RECEPCION;
+  estados = ESTADOS_RECEPCION_TRANSICION;
   cargando = true;
 
   // ── Remitente ──────────────────────────────────────────────────────────────
@@ -34,6 +34,7 @@ export class DetalleRecepcionComponent implements OnInit {
   remitenteCompleto?: RemitenteOut;
   modoFormRemitente: 'ninguno' | 'nuevo' | 'edicion' = 'ninguno';
   guardandoRemitente = false;
+  errorRemitente = '';
   guardandoMetadatos = false;
   exito = false;
 
@@ -67,6 +68,7 @@ export class DetalleRecepcionComponent implements OnInit {
   // ── Radicado ───────────────────────────────────────────────────────────────
   radicado?: RadicadoOut | null;
   dependencias: DependenciaOut[] = [];
+  series: SerieCCDOut[] = [];
   formRadicado!: FormGroup;
   radicando = false;
   exitoRadicado = false;
@@ -102,8 +104,8 @@ export class DetalleRecepcionComponent implements OnInit {
     forkJoin({
       recepcion:    this.recepcionService.obtener(id).pipe(catchError(() => of(null))),
       metadatos:    this.remitenteService.obtenerMetadatos(id).pipe(catchError(() => of(null))),
-      tipos:        this.adminService.getTipos().pipe(catchError(() => of([]))),
-      plazos:       this.adminService.getPlazos().pipe(catchError(() => of([]))),
+      tipos:        this.adminService.getTipos(true).pipe(catchError(() => of([]))),
+      plazos:       this.adminService.getPlazos(true).pipe(catchError(() => of([]))),
       deps:         this.adminService.getDependencias(true).pipe(catchError(() => of([]))),
       radicado:     this.radicadoService.obtenerPorRecepcion(id).pipe(catchError(() => of(null))),
       departamentos: this.geoService.getDepartamentos().pipe(catchError(() => of([]))),
@@ -130,9 +132,13 @@ export class DetalleRecepcionComponent implements OnInit {
       distinctUntilChanged(),
     ).subscribe((q: string) => {
       if (q && q.length >= 2) {
-        this.remitenteService.buscar(q).subscribe(r => { this.remitentesEncontrados = r; });
+        this.remitenteService.buscar(q).subscribe(r => {
+          this.remitentesEncontrados = r.items;
+          this.cdr.markForCheck();
+        });
       } else {
         this.remitentesEncontrados = [];
+        this.cdr.markForCheck();
       }
     });
 
@@ -145,7 +151,7 @@ export class DetalleRecepcionComponent implements OnInit {
       digito_verificacion:   [''],
       tipo_identificacion:   ['CC', Validators.required],
       numero_identificacion: ['', [Validators.required, Validators.minLength(4), Validators.maxLength(20)]],
-      email:                 ['', Validators.email],
+      email:                 ['', [Validators.required, Validators.email]],
       telefono:              ['', Validators.pattern(/^[0-9+\s()\-]{7,20}$/)],
       direccion:             [''],
       departamento:          [''],
@@ -155,21 +161,25 @@ export class DetalleRecepcionComponent implements OnInit {
     // Actualizar validadores de nombre/razón social según tipo persona
     this.formRemitente.get('tipo_persona')!.valueChanges.subscribe((tipo: string) => {
       const nombres     = this.formRemitente.get('nombres')!;
+      const apellidos   = this.formRemitente.get('apellidos')!;
       const razonSocial = this.formRemitente.get('razon_social')!;
       const numId       = this.formRemitente.get('numero_identificacion')!;
       const tipoId      = this.formRemitente.get('tipo_identificacion')!;
       if (tipo === 'juridico') {
         nombres.clearValidators();
+        apellidos.clearValidators();
         razonSocial.setValidators(Validators.required);
         tipoId.setValue('NIT', { emitEvent: false });
         numId.setValidators([Validators.required, Validators.pattern(/^\d{7,15}$/)]);
       } else {
         nombres.setValidators(Validators.required);
+        apellidos.setValidators(Validators.required);
         razonSocial.clearValidators();
         tipoId.setValue('CC', { emitEvent: false });
         numId.setValidators([Validators.required, Validators.minLength(4), Validators.maxLength(20)]);
       }
       nombres.updateValueAndValidity({ emitEvent: false });
+      apellidos.updateValueAndValidity({ emitEvent: false });
       razonSocial.updateValueAndValidity({ emitEvent: false });
       numId.updateValueAndValidity({ emitEvent: false });
       this.cdr.markForCheck();
@@ -184,7 +194,7 @@ export class DetalleRecepcionComponent implements OnInit {
         dvCtrl.clearValidators(); dvCtrl.setValue('', { emitEvent: false });
       } else if (tipo === 'NIT') {
         numId.setValidators([Validators.required, Validators.pattern(/^\d{7,15}$/)]);
-        dvCtrl.setValidators([Validators.required, Validators.pattern(/^\d$/)]);
+        dvCtrl.setValidators([Validators.pattern(/^\d$/)]);
       } else if (tipo === 'CE') {
         numId.setValidators([Validators.required, Validators.pattern(/^[A-Za-z0-9]{4,15}$/)]);
         dvCtrl.clearValidators(); dvCtrl.setValue('', { emitEvent: false });
@@ -198,7 +208,23 @@ export class DetalleRecepcionComponent implements OnInit {
 
     this.formRadicado = this.fb.group({
       dependencia_id: [null, Validators.required],
+      serie_id:       [null],
       observaciones:  [''],
+    });
+
+    // Al elegir dependencia destino, ofrecer solo las series del CCD que
+    // pertenecen a esa dependencia (hallazgo 5.15) — es opcional: si la
+    // dependencia no tiene series configuradas, el select queda vacío y no
+    // bloquea completar el radicado.
+    this.formRadicado.get('dependencia_id')!.valueChanges.subscribe((depId: number | null) => {
+      this.formRadicado.get('serie_id')!.setValue(null, { emitEvent: false });
+      this.series = [];
+      this.cdr.markForCheck();
+      if (!depId) return;
+      this.adminService.getSeriesPorDependencia(depId).subscribe(s => {
+        this.series = s;
+        this.cdr.markForCheck();
+      });
     });
 
     this.formMetadatos = this.fb.group({
@@ -239,27 +265,27 @@ export class DetalleRecepcionComponent implements OnInit {
 
   // ── Estado ─────────────────────────────────────────────────────────────────
   readonly ESTADOS_REQUIEREN_OBS = new Set(['incompleto', 'no_competente']);
-  estadoPendiente: string | null = null;
-  obsEstadoPendiente = '';
+  estadoSeleccionado: string | null = null;
+  obsCambioEstado = '';
 
-  iniciarCambioEstado(estado: string): void {
+  get requiereObsCambioEstado(): boolean {
+    return !!this.estadoSeleccionado && this.ESTADOS_REQUIEREN_OBS.has(this.estadoSeleccionado);
+  }
+
+  get puedeActualizarEstado(): boolean {
+    if (!this.estadoSeleccionado || this.estadoSeleccionado === this.recepcion?.estado) return false;
+    if (this.requiereObsCambioEstado && !this.obsCambioEstado.trim()) return false;
+    return true;
+  }
+
+  seleccionarEstado(estado: string): void {
     if (this.recepcion?.estado === estado) return;
-    if (this.ESTADOS_REQUIEREN_OBS.has(estado)) {
-      this.estadoPendiente = estado;
-      this.obsEstadoPendiente = '';
-    } else {
-      this._ejecutarCambioEstado(estado, '');
-    }
+    this.estadoSeleccionado = estado;
   }
 
-  confirmarCambioEstado(): void {
-    if (!this.estadoPendiente || !this.obsEstadoPendiente.trim()) return;
-    this._ejecutarCambioEstado(this.estadoPendiente, this.obsEstadoPendiente.trim());
-  }
-
-  cancelarCambioEstado(): void {
-    this.estadoPendiente = null;
-    this.obsEstadoPendiente = '';
+  actualizarEstado(): void {
+    if (!this.puedeActualizarEstado || !this.estadoSeleccionado) return;
+    this._ejecutarCambioEstado(this.estadoSeleccionado, this.obsCambioEstado.trim());
   }
 
   private _ejecutarCambioEstado(estado: string, observaciones: string): void {
@@ -268,8 +294,8 @@ export class DetalleRecepcionComponent implements OnInit {
     if (observaciones) payload.observaciones = observaciones;
     this.recepcionService.actualizar(this.recepcion.id, payload).subscribe(r => {
       this.recepcion = r;
-      this.estadoPendiente = null;
-      this.obsEstadoPendiente = '';
+      this.estadoSeleccionado = null;
+      this.obsCambioEstado = '';
       this.cdr.markForCheck();
     });
   }
@@ -283,7 +309,7 @@ export class DetalleRecepcionComponent implements OnInit {
   }
 
   get esCanaleEmail(): boolean {
-    return this.recepcion?.canal?.tipo === 'email';
+    return this.recepcion?.canal?.tipo === 'correo';
   }
 
   // ── Adjuntos ───────────────────────────────────────────────────────────────
@@ -310,21 +336,20 @@ export class DetalleRecepcionComponent implements OnInit {
     });
   }
 
-  subirAdjunto(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (!input.files || !this.recepcion) return;
-    const archivo = input.files[0];
-    this.recepcionService.subirAdjunto(this.recepcion.id, archivo).subscribe(adjunto => {
-      this.recepcion!.adjuntos.push(adjunto);
-      this.cdr.markForCheck();
-    });
-  }
-
   formatoTamano(bytes?: number): string {
     if (!bytes) return '';
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  infoAdjunto(mime?: string): { icon: string; acc: string; etiqueta: string } {
+    const m = (mime || '').toLowerCase();
+    if (m === 'application/pdf')                              return { icon: 'picture_as_pdf', acc: 'acc-rojo',    etiqueta: 'PDF'    };
+    if (m.startsWith('image/'))                                return { icon: 'image',          acc: 'acc-verde',   etiqueta: 'Imagen' };
+    if (m.includes('msword') || m.includes('wordprocessingml')) return { icon: 'description',     acc: 'acc-azul',    etiqueta: 'Word'   };
+    if (m.includes('ms-excel') || m.includes('spreadsheetml'))  return { icon: 'table_chart',      acc: 'acc-teal',    etiqueta: 'Excel'  };
+    return { icon: 'insert_drive_file', acc: 'acc-gris', etiqueta: 'Archivo' };
   }
 
   // ── Geo ────────────────────────────────────────────────────────────────────
@@ -462,6 +487,7 @@ export class DetalleRecepcionComponent implements OnInit {
     this.remitenteSeleccionado = undefined;
     this.remitenteCompleto = undefined;
     this.duplicadosAviso = [];
+    this.errorRemitente = '';
     this.municipiosFiltrados = [];
     this.formMetadatos.disable();
     this.formRemitente.reset({ tipo_persona: 'natural', tipo_identificacion: 'CC', numero_anexos: 0 });
@@ -488,6 +514,7 @@ export class DetalleRecepcionComponent implements OnInit {
     if (this.formRemitente.invalid) return;
     if (this.duplicadosAviso.length > 0) return;
     this.guardandoRemitente = true;
+    this.errorRemitente = '';
     this.remitenteService.crear(this.formRemitente.value).subscribe({
       next: r => {
         this.remitenteSeleccionado = r;
@@ -502,6 +529,8 @@ export class DetalleRecepcionComponent implements OnInit {
         this.guardandoRemitente = false;
         if (err.status === 409) {
           this.verificarDuplicados();
+        } else {
+          this.errorRemitente = err.error?.detail || 'No se pudo guardar el remitente. Intente nuevamente.';
         }
         this.cdr.markForCheck();
       }
@@ -567,6 +596,7 @@ export class DetalleRecepcionComponent implements OnInit {
     const payload = {
       recepcion_id:   this.recepcion.id,
       dependencia_id: this.formRadicado.value.dependencia_id,
+      serie_id:       this.formRadicado.value.serie_id || undefined,
       observaciones:  this.formRadicado.value.observaciones || undefined,
     };
 

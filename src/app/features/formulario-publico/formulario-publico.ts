@@ -138,7 +138,7 @@ export class FormularioPublicoComponent implements OnInit {
     this.form = this.fb.group({
       tipo_persona:          ['natural'],
       nombres:               ['', Validators.required],
-      apellidos:             [''],
+      apellidos:             ['', Validators.required],
       razon_social:          [''],
       tipo_identificacion:   ['CC'],
       numero_identificacion: ['', this._validadoresNumId('CC')],
@@ -148,22 +148,26 @@ export class FormularioPublicoComponent implements OnInit {
       asunto:                ['', [Validators.required, Validators.maxLength(300)]],
       tipo_requerimiento_id: [null],
       observaciones:         ['', Validators.maxLength(1000)],
-      acepta_politica:       [false],
+      acepta_politica:       [false, Validators.requiredTrue],
     });
 
     this.form.get('tipo_persona')!.valueChanges.subscribe(tipo => {
       const nombres     = this.form.get('nombres')!;
+      const apellidos   = this.form.get('apellidos')!;
       const razonSocial = this.form.get('razon_social')!;
       if (tipo === 'juridico') {
         nombres.clearValidators();
+        apellidos.clearValidators();
         razonSocial.setValidators(Validators.required);
         this.form.get('tipo_identificacion')!.setValue('NIT');
       } else {
         nombres.setValidators(Validators.required);
+        apellidos.setValidators(Validators.required);
         razonSocial.clearValidators();
         this.form.get('tipo_identificacion')!.setValue('CC');
       }
       nombres.updateValueAndValidity();
+      apellidos.updateValueAndValidity();
       razonSocial.updateValueAndValidity();
       this.cdr.markForCheck();
     });
@@ -175,7 +179,7 @@ export class FormularioPublicoComponent implements OnInit {
       numId.setValidators(this._validadoresNumId(tipo));
       numId.updateValueAndValidity();
       if (tipo === 'NIT') {
-        digitoV.setValidators([Validators.required, Validators.pattern(/^\d$/)]);
+        digitoV.setValidators([Validators.pattern(/^\d$/)]);
       } else {
         digitoV.clearValidators();
         digitoV.setValue('', { emitEvent: false });
@@ -191,10 +195,6 @@ export class FormularioPublicoComponent implements OnInit {
         this.maxMbAdjunto = info.max_tamano_adjunto_mb ?? 10;
         this.tiposPermitidos = info.tipos_archivo_permitidos ?? [];
         this.cargando = false;
-        if (info.politica_privacidad_activa) {
-          this.form.get('acepta_politica')!.setValidators(Validators.requiredTrue);
-          this.form.get('acepta_politica')!.updateValueAndValidity();
-        }
         document.documentElement.style.setProperty('--color-primario', info.color_primario);
         this.cdr.markForCheck();
       },
@@ -208,6 +208,19 @@ export class FormularioPublicoComponent implements OnInit {
 
   get esJuridico(): boolean {
     return this.form.get('tipo_persona')?.value === 'juridico';
+  }
+
+  /** El formulario solo se habilita si el canal está activo Y el sistema está 100% configurado. */
+  get formularioDisponible(): boolean {
+    return !!this.info?.canal_activo && !!this.info?.sistema_listo;
+  }
+
+  /** Distingue las dos causas de indisponibilidad documentadas en
+   * MU-HU-02_Recepcion_Multicanal.md §9: sistema sin configurar al 100%
+   * (checklist de HU-01 incompleto) tiene prioridad como causa raíz sobre
+   * un canal puntual desactivado, aunque ambas cosas sean ciertas a la vez. */
+  get sistemaNoOperativo(): boolean {
+    return !!this.info && !this.info.sistema_listo;
   }
 
   agregarArchivos(evento: Event): void {

@@ -91,7 +91,11 @@
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>Teléfono</mat-label>
-            <input matInput formControlName="telefono" type="tel">
+            <input matInput formControlName="telefono" type="tel"
+                   (keypress)="soloNumerosTel($event)">
+            <mat-error *ngIf="form.get('telefono')?.hasError('pattern')">
+              Solo números, +, espacios, paréntesis y guiones (7-20 caracteres)
+            </mat-error>
           </mat-form-field>
           <mat-form-field appearance="outline" class="campo-ancho">
             <mat-label>Dirección</mat-label>

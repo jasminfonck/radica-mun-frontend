@@ -17,6 +17,7 @@ export class DetalleRadicadoComponent implements OnInit {
   modoAnular = false;
   anulando = false;
   esAdmin = false;
+  puedeRegenerarConstancia = false;
 
 
   formAnular!: FormGroup;
@@ -33,6 +34,9 @@ export class DetalleRadicadoComponent implements OnInit {
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     this.esAdmin = this.auth.tieneRol('administrador');
+    // El backend ya permite regenerar a administrador y operador
+    // (radicado/router.py) — el botón solo mostraba a admin (hallazgo 5.14).
+    this.puedeRegenerarConstancia = this.auth.tieneRol('administrador', 'operador');
 
     this.formAnular = this.fb.group({
       observaciones: ['', Validators.required],

@@ -1,9 +1,10 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
 import { AdminService, RespaldoOut } from '../../../../core/services/admin.service';
 import { ThemeService } from '../../../../core/services/theme.service';
 import { ToastService } from '../../../../core/services/toast.service';
+import { RutaPickerDialogComponent } from './ruta-picker-dialog';
 
 export interface GrupoColor {
   nombre: string;
@@ -19,6 +20,7 @@ export interface TipoArchivo {
 @Component({
   selector: 'app-configuracion',
   templateUrl: './configuracion.html',
+  styleUrls: ['./configuracion.scss'],
   standalone: false
 })
 export class ConfiguracionComponent implements OnInit {
@@ -28,6 +30,21 @@ export class ConfiguracionComponent implements OnInit {
   ejemploRadicado   = '';
   paletaAbierta     = false;
   descargandoBackup = false;
+  descargandoBackupBd = false;
+
+  smbPasswordConfigurado = false;
+  probandoSmb = false;
+  // Ambas secciones parten colapsadas si ya tienen algo guardado (para no
+  // mostrar el formulario completo de entrada), y expandidas si están vacías
+  // (para invitar a completarlas). El usuario puede alternar libremente.
+  mostrarDetalleAlmacenamiento = true;
+  mostrarDetallePolitica       = true;
+  // Tipo de almacenamiento tal como está GUARDADO en el servidor — distinto
+  // del valor en vivo del formulario (`almacenamiento_tipo` del form), que
+  // cambia apenas se toca el radio button, antes de guardar. "Probar
+  // conexión" prueba lo que el backend tiene guardado, no lo que se ve en
+  // pantalla, así que su estado debe reflejar esto último, no el form.
+  tipoGuardado: 'local' | 'smb' = 'local';
 
   tiposSeleccionados = new Set<string>();
 
@@ -100,9 +117,9 @@ export class ConfiguracionComponent implements OnInit {
     private fb: FormBuilder,
     private adminService: AdminService,
     private toast: ToastService,
-    private router: Router,
     private cdr: ChangeDetectorRef,
     private themeService: ThemeService,
+    private dialog: MatDialog,
   ) {}
 
 
@@ -115,6 +132,15 @@ export class ConfiguracionComponent implements OnInit {
       politica_privacidad_texto:  [''],
       max_adjuntos:               [5,  [Validators.required, Validators.min(1), Validators.max(20)]],
       max_tamano_adjunto_mb:      [10, [Validators.required, Validators.min(1), Validators.max(100)]],
+      // Almacenamiento compartido en red (alternativa a la carpeta local)
+      almacenamiento_tipo:    ['local'],
+      smb_servidor:            [''],
+      smb_puerto:              [445],
+      smb_carpeta_compartida: [''],
+      smb_subcarpeta:          [''],
+      smb_usuario:              [''],
+      smb_password:             [''],
+      smb_dominio:              [''],
     });
 
     this.adminService.getConfiguracion().subscribe({
@@ -123,6 +149,11 @@ export class ConfiguracionComponent implements OnInit {
         this.tiposSeleccionados = new Set(
           (c.tipos_archivo_permitidos || '').split(',').map(t => t.trim()).filter(Boolean)
         );
+        this.smbPasswordConfigurado = c.smb_password_configurado;
+        this.tipoGuardado = c.almacenamiento_tipo;
+        const yaConfigurado = c.almacenamiento_tipo === 'smb' ? !!c.smb_servidor : !!c.ruta_almacenamiento;
+        this.mostrarDetalleAlmacenamiento = !yaConfigurado;
+        this.mostrarDetallePolitica = !c.politica_privacidad_texto;
         this.actualizarEjemplo();
         this.cdr.markForCheck();
       },
@@ -147,6 +178,23 @@ export class ConfiguracionComponent implements OnInit {
 
   colorActual(): string { return this.form.get('color_primario')?.value || '#cccccc'; }
 
+  examinarRuta(): void {
+    const actual = this.form.get('ruta_almacenamiento')?.value || undefined;
+    this.dialog.open(RutaPickerDialogComponent, { width: '560px', data: { rutaInicial: actual } })
+      .afterClosed().subscribe((ruta?: string) => {
+        if (ruta) {
+          this.form.get('ruta_almacenamiento')?.setValue(ruta);
+          this.cdr.markForCheck();
+        }
+      });
+  }
+
+  seleccionarAlmacenamiento(tipo: 'local' | 'smb'): void {
+    this.form.get('almacenamiento_tipo')?.setValue(tipo);
+    this.mostrarDetalleAlmacenamiento = true;
+    this.cdr.markForCheck();
+  }
+
   esColorSeleccionado(hex: string): boolean {
     return this.form.get('color_primario')?.value?.toLowerCase() === hex.toLowerCase();
   }
@@ -166,20 +214,45 @@ export class ConfiguracionComponent implements OnInit {
   guardar(): void {
     if (this.form.invalid) return;
     this.guardando = true;
+    this.guardado   = false;
     const payload = {
       ...this.form.value,
       tipos_archivo_permitidos: Array.from(this.tiposSeleccionados).join(','),
     };
     this.adminService.actualizarConfiguracion(payload).subscribe({
-      next: () => {
+      next: c => {
         this.guardando = false;
+        this.guardado  = true;
+        this.smbPasswordConfigurado = c.smb_password_configurado;
+        this.tipoGuardado = c.almacenamiento_tipo;
+        this.form.get('smb_password')?.setValue('');
         this.cdr.markForCheck();
-        this.router.navigate(['/admin']);
+        this.toast.exito('Configuración guardada correctamente.');
+        // La confirmación en pantalla no debe quedar indefinidamente si el
+        // usuario sigue editando otros campos sin volver a guardar.
+        setTimeout(() => { this.guardado = false; this.cdr.markForCheck(); }, 4000);
       },
       error: err => {
         this.guardando = false;
         this.cdr.markForCheck();
         this.toast.error(err?.error?.detail || 'Error al guardar la configuración.');
+      },
+    });
+  }
+
+  probarSmbConexion(): void {
+    this.probandoSmb = true;
+    this.adminService.probarSmb().subscribe({
+      next: r => {
+        this.probandoSmb = false;
+        this.cdr.markForCheck();
+        if (r.ok) this.toast.exito(r.mensaje);
+        else      this.toast.error(r.mensaje);
+      },
+      error: err => {
+        this.probandoSmb = false;
+        this.cdr.markForCheck();
+        this.toast.error(err?.error?.detail || 'No se pudo probar la conexión SMB.');
       },
     });
   }
@@ -204,6 +277,28 @@ export class ConfiguracionComponent implements OnInit {
         this.descargandoBackup = false;
         this.cdr.markForCheck();
         this.toast.error('No se pudo generar el respaldo de configuración.');
+      },
+    });
+  }
+
+  descargarRespaldoBaseDatos(): void {
+    this.descargandoBackupBd = true;
+    this.adminService.getRespaldoBaseDatos().subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = `respaldo_bd_radica_mun_${new Date().toISOString().slice(0, 10)}.sql`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.descargandoBackupBd = false;
+        this.cdr.markForCheck();
+        this.toast.exito('Respaldo de base de datos descargado correctamente.');
+      },
+      error: err => {
+        this.descargandoBackupBd = false;
+        this.cdr.markForCheck();
+        this.toast.error(err?.error?.detail || 'No se pudo generar el respaldo de la base de datos.');
       },
     });
   }

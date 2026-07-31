@@ -188,6 +188,58 @@ mat-card {
   .campo-ancho { grid-column: 1 / -1; }
 }
 
+// Encabezado de subsección dentro de un formulario largo (ej. agrupar
+// identidad/contacto/ubicación) — separa visualmente sin necesitar una
+// tarjeta aparte por grupo.
+.form-seccion-titulo {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--texto-muy-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin: 16px 0 6px;
+
+  &:first-child { margin-top: 0; }
+}
+
+// Panel de filtros avanzados dentro de una .form-card — colapsado por
+// defecto, con el/los filtros básicos visibles fuera del panel. Se anula la
+// elevación/margen por defecto de mat-expansion-panel para que quede
+// integrado visualmente en la tarjeta en vez de verse como un panel flotante
+// aparte.
+.filtros-avanzados {
+  margin-top: 4px;
+  box-shadow: none !important;
+  border: 1px solid var(--borde-suave);
+  border-radius: var(--radio-sm) !important;
+
+  .mat-expansion-panel-header {
+    padding: 0 14px;
+    height: 44px !important;
+  }
+  .mat-expansion-panel-header-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--texto-suave);
+  }
+  .mat-expansion-panel-body {
+    padding: 4px 14px 16px;
+  }
+}
+
+// Paleta de acento reutilizable (fondo suave + color de texto/ícono a
+// juego) — originada en la línea de tiempo de bitácora de recepción y
+// promovida aquí porque ahora también la usan las tarjetas de adjuntos.
+// Se combinan con una clase de forma (ver p.ej. .evento-icono,
+// .adjunto-icono) vía [ngClass], no reemplazan esa clase.
+.acc-verde   { background: #e8f5e9; color: #2e7d32; }
+.acc-azul    { background: #e3f2fd; color: #1565c0; }
+.acc-naranja { background: #fff3e0; color: #e65100; }
+.acc-rojo    { background: #ffebee; color: #c62828; }
+.acc-teal    { background: #e0f2f1; color: #00695c; }
+.acc-morado  { background: #f3e5f5; color: #6a1b9a; }
+.acc-gris    { background: #f5f5f5; color: #616161; }
+
 .tipos-archivo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -261,6 +313,101 @@ table.mat-mdc-table {
   &.incompetente  { background: var(--estado-incompetente-bg);  color: var(--estado-incompetente-text); }
   &.no_competente { background: var(--estado-no-competente-bg); color: var(--estado-no-competente-text); }
   &.competente    { background: var(--estado-competente-bg);    color: var(--estado-competente-text); }
+}
+
+// ── Banners de alerta ─────────────────────────────────────────────────────────
+// Aviso destacado con ícono + acento lateral, para advertencias que requieren
+// atención explícita del usuario (clasificación automática, adjuntos
+// rechazados) — no para mensajes menores. Variantes: por defecto (ámbar/
+// advertencia), .alerta-ok (verde/éxito), .alerta-error (rojo/error).
+.alerta-banner {
+  display: flex;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: var(--radio);
+  border: 1px solid #ffcc80;
+  border-left: 4px solid #e65100;
+  background: #fff8e1;
+  margin-bottom: 20px;
+
+  &:last-child { margin-bottom: 0; }
+
+  .alerta-icono {
+    flex-shrink: 0;
+    color: #e65100;
+    font-size: 26px;
+    width: 26px;
+    height: 26px;
+  }
+
+  .alerta-cuerpo { flex: 1; min-width: 0; }
+
+  .alerta-titulo {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #5d4037;
+    margin: 0 0 6px;
+  }
+
+  .alerta-texto {
+    font-size: 13.5px;
+    color: #6d4c41;
+    line-height: 1.5;
+    margin: 0;
+
+    strong { color: #4e342e; }
+  }
+
+  .alerta-lista {
+    margin: 8px 0 0;
+    padding-left: 20px;
+
+    li { font-size: 13px; color: #6d4c41; margin-bottom: 4px; }
+  }
+
+  .alerta-divisor {
+    border: none;
+    border-top: 1px solid #ffe0b2;
+    margin: 12px 0;
+  }
+
+  .alerta-detalle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    color: #8d6e63;
+
+    mat-icon { font-size: 15px; width: 15px; height: 15px; flex-shrink: 0; }
+  }
+
+  .alerta-acciones {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 14px;
+  }
+
+  &.alerta-ok {
+    border-color: #a5d6a7;
+    border-left-color: #2e7d32;
+    background: #e8f5e9;
+
+    .alerta-icono { color: #2e7d32; }
+    .alerta-titulo { color: #1b5e20; }
+    .alerta-texto { color: #2e7d32; strong { color: #1b5e20; } }
+  }
+
+  &.alerta-error {
+    border-color: #ef9a9a;
+    border-left-color: #c62828;
+    background: #ffebee;
+
+    .alerta-icono { color: #c62828; }
+    .alerta-titulo { color: #b71c1c; }
+    .alerta-texto { color: #c62828; strong { color: #b71c1c; } }
+  }
 }
 
 // ── Detail grid ───────────────────────────────────────────────────────────────
@@ -630,22 +777,6 @@ table.mat-mdc-table {
   mat-icon { color: #43a047; }
   strong   { flex: 1; }
   span     { font-size: 13px; color: var(--texto-suave); }
-}
-
-.aviso-duplicados {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 12px 16px;
-  background: #fff8e1;
-  border-left: 3px solid #f9a825;
-  border-radius: var(--radio-sm);
-  margin-bottom: 16px;
-  font-size: 13px;
-
-  mat-icon { color: #f9a825; }
-  ul { margin: 4px 0 0 18px; padding: 0; }
-  li a { color: var(--azul); cursor: pointer; text-decoration: underline; }
 }
 
 .aviso-sin-metadatos {

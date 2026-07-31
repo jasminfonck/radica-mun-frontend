@@ -18,8 +18,10 @@ import { AdminService, UsuarioOut, Rol } from '../../../../core/services/admin.s
             <mat-error *ngIf="form.get('nombre')?.hasError('minlength')">Mínimo 2 caracteres</mat-error>
           </mat-form-field>
           <mat-form-field appearance="outline" class="campo-nombre">
-            <mat-label>Apellido(s)</mat-label>
+            <mat-label>Apellido(s) *</mat-label>
             <input matInput formControlName="apellido">
+            <mat-error *ngIf="form.get('apellido')?.hasError('required')">Obligatorio</mat-error>
+            <mat-error *ngIf="form.get('apellido')?.hasError('minlength')">Mínimo 2 caracteres</mat-error>
           </mat-form-field>
         </div>
         <mat-form-field appearance="outline" class="campo-ancho">
@@ -31,7 +33,7 @@ import { AdminService, UsuarioOut, Rol } from '../../../../core/services/admin.s
         <mat-form-field appearance="outline" class="campo-ancho" *ngIf="!data.usuario">
           <mat-label>Contraseña inicial *</mat-label>
           <input matInput formControlName="password" type="password">
-          <mat-error>Mínimo 6 caracteres</mat-error>
+          <mat-error>Mínimo 8 caracteres</mat-error>
         </mat-form-field>
         <mat-form-field appearance="outline" class="campo-ancho">
           <mat-label>Rol *</mat-label>
@@ -78,9 +80,9 @@ export class UsuarioDialogComponent implements OnInit {
   ngOnInit(): void {
     this.form = this.fb.group({
       nombre:   [this.data.usuario?.nombre   || '', [Validators.required, Validators.minLength(2)]],
-      apellido: [this.data.usuario?.apellido || ''],
+      apellido: [this.data.usuario?.apellido || '', [Validators.required, Validators.minLength(2)]],
       email:    [this.data.usuario?.email    || '', [Validators.required, Validators.email]],
-      password: ['', this.data.usuario ? [] : [Validators.required, Validators.minLength(6)]],
+      password: ['', this.data.usuario ? [] : [Validators.required, Validators.minLength(8)]],
       rol_id:   [this.data.usuario?.rol?.id  || null, Validators.required],
     });
   }

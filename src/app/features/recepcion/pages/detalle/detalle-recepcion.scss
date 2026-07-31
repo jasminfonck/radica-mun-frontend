@@ -2,6 +2,127 @@
   gap: 20px;
 }
 
+// ── Pestaña Información — columna de detalles + barra lateral de acciones ──
+// Ancho fijo en la columna lateral (en vez de 1fr 1fr) para que se lea como
+// un panel de acciones y no como una segunda columna de contenido.
+.info-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  align-items: start;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+
+  // Padding más generoso que el de mat-card por defecto — el contenido
+  // quedaba pegado al borde izquierdo de la tarjeta.
+  mat-card-title {
+    padding: 20px 24px 0;
+  }
+  mat-card-content {
+    padding: 10px 24px 22px !important;
+  }
+}
+
+.info-col-principal {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.info-col-lateral {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+// "Datos de recepción" — etiquetas de menor énfasis, separadas por espacio
+// en blanco en vez de líneas divisorias.
+.campos-suaves {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.campo-suave {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.campo-suave-etiqueta {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--texto-suave);
+}
+
+.campo-suave-valor {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--texto);
+  line-height: 1.4;
+}
+
+// Panel "Gestión del registro" — selector de estado como control segmentado,
+// con confirmación explícita mediante un botón dedicado.
+.estado-bloqueado {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--texto-suave);
+  font-style: italic;
+  margin: 10px 0 0;
+
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+}
+
+.segmentado-estados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.segmento {
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--borde);
+  background: var(--blanco);
+  color: var(--texto-suave);
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: 'Lato', sans-serif;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+
+  &:hover:not(:disabled) {
+    border-color: var(--azul);
+    color: var(--azul);
+  }
+
+  &.segmento-activo {
+    background: var(--azul);
+    border-color: var(--azul);
+    color: #fff;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.obs-cambio-estado {
+  width: 100%;
+  margin-top: 14px;
+}
+
+.btn-actualizar-estado {
+  width: 100%;
+  margin-top: 4px;
+}
+
 .busqueda-full {
   width: 100%;
 }
@@ -9,6 +130,65 @@
 .anular-field {
   width: 100%;
   margin-top: 16px;
+}
+
+// ── Adjuntos — tarjetas con ícono/color por tipo de archivo ─────────────────
+.adjuntos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.adjunto-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--borde-suave);
+  border-radius: var(--radio-sm);
+  overflow: hidden;
+}
+
+.adjunto-card-cuerpo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+}
+
+.adjunto-icono {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  mat-icon { font-size: 22px; width: 22px; height: 22px; }
+}
+
+.adjunto-info {
+  min-width: 0; // permite que text-overflow funcione dentro del flex item
+
+  .adjunto-nombre {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--texto);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .adjunto-meta {
+    font-size: 12px;
+    color: var(--texto-suave);
+    margin-top: 2px;
+  }
+}
+
+.adjunto-card-acciones {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid var(--borde-suave);
+  padding: 2px 6px;
 }
 
 .tab-label-con-estado {
@@ -175,14 +355,6 @@
   flex-shrink: 0;
 
   mat-icon { font-size: 18px; width: 18px; height: 18px; }
-
-  &.acc-verde  { background: #e8f5e9; color: #2e7d32; }
-  &.acc-azul   { background: #e3f2fd; color: #1565c0; }
-  &.acc-naranja{ background: #fff3e0; color: #e65100; }
-  &.acc-rojo   { background: #ffebee; color: #c62828; }
-  &.acc-teal   { background: #e0f2f1; color: #00695c; }
-  &.acc-morado { background: #f3e5f5; color: #6a1b9a; }
-  &.acc-gris   { background: #f5f5f5; color: #616161; }
 }
 
 .evento-linea-vertical {
@@ -211,14 +383,6 @@
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 10px;
-
-  &.acc-verde  { background: #e8f5e9; color: #2e7d32; }
-  &.acc-azul   { background: #e3f2fd; color: #1565c0; }
-  &.acc-naranja{ background: #fff3e0; color: #e65100; }
-  &.acc-rojo   { background: #ffebee; color: #c62828; }
-  &.acc-teal   { background: #e0f2f1; color: #00695c; }
-  &.acc-morado { background: #f3e5f5; color: #6a1b9a; }
-  &.acc-gris   { background: #f5f5f5; color: #616161; }
 }
 
 .evento-fecha {
@@ -308,7 +472,10 @@
 
 // ── Aviso de duplicados ────────────────────────────────────────────────────
 
-.aviso-duplicados {
+// Bloqueante (a diferencia de un aviso informativo genérico): mientras se
+// muestre, el formulario no permite guardar — hay que seleccionar uno de los
+// remitentes existentes de la lista.
+.aviso-duplicados-bloqueo {
   background: #ffebee;
   border: 1px solid #ef9a9a;
   border-radius: 8px;
@@ -327,7 +494,7 @@
   mat-icon { color: #c62828; font-size: 20px; width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px; }
 }
 
-.aviso-duplicados ul {
+.aviso-duplicados-bloqueo ul {
   margin: 0 0 12px 20px;
   padding: 0;
 

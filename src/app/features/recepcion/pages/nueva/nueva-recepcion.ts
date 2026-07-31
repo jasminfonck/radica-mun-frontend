@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { RecepcionService } from '../../../../core/services/recepcion.service';
@@ -8,7 +8,8 @@ import { AdminService, CanalOut } from '../../../../core/services/admin.service'
   selector: 'app-nueva-recepcion',
   templateUrl: './nueva-recepcion.html',
   styleUrls: ['./nueva-recepcion.scss'],
-  standalone: false
+  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NuevaRecepcionComponent implements OnInit {
   form!: FormGroup;
@@ -22,6 +23,7 @@ export class NuevaRecepcionComponent implements OnInit {
     private recepcionService: RecepcionService,
     private adminService: AdminService,
     private router: Router,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -31,7 +33,10 @@ export class NuevaRecepcionComponent implements OnInit {
       observaciones:      [''],
       email_remitente:    ['', Validators.email],
     });
-    this.adminService.getCanales().subscribe(c => this.canales = c.filter(x => x.activo));
+    this.adminService.getCanales().subscribe(c => {
+      this.canales = c.filter(x => x.activo);
+      this.cdr.markForCheck();
+    });
   }
 
   get canalSeleccionado(): CanalOut | undefined {
@@ -39,7 +44,7 @@ export class NuevaRecepcionComponent implements OnInit {
   }
 
   get esCanaleEmail(): boolean {
-    return this.canalSeleccionado?.tipo === 'email';
+    return this.canalSeleccionado?.tipo === 'correo';
   }
 
   seleccionarArchivos(event: Event): void {
@@ -69,15 +74,29 @@ export class NuevaRecepcionComponent implements OnInit {
 
     this.recepcionService.crear(payload).subscribe({
       next: async (recepcion) => {
-        // Subir adjuntos uno a uno
-        for (const archivo of this.archivosSeleccionados) {
-          await this.recepcionService.subirAdjunto(recepcion.id, archivo).toPromise();
+        try {
+          // Subir adjuntos uno a uno — si el backend rechaza alguno (p. ej.
+          // extensión bloqueada), `toPromise()` rechaza la promesa. Antes
+          // ese rechazo quedaba sin capturar dentro de este callback `async`
+          // (no llega al `error:` del subscribe, que solo reacciona a
+          // errores del observable fuente, no a excepciones lanzadas dentro
+          // de `next`), dejando el botón congelado en "Guardando..." para
+          // siempre sin ningún aviso (hallazgo 3.13).
+          for (const archivo of this.archivosSeleccionados) {
+            await this.recepcionService.subirAdjunto(recepcion.id, archivo).toPromise();
+          }
+          this.router.navigate(['/recepcion', recepcion.id]);
+        } catch (err: any) {
+          this.error = err?.error?.detail
+            || 'La recepción se creó, pero un adjunto fue rechazado. Revíselo desde el detalle.';
+          this.guardando = false;
+          this.cdr.markForCheck();
         }
-        this.router.navigate(['/recepcion', recepcion.id]);
       },
       error: (err) => {
         this.error = err.error?.detail || 'Error al registrar la recepción';
         this.guardando = false;
+        this.cdr.markForCheck();
       }
     });
   }

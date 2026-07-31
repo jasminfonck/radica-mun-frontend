@@ -14,101 +14,108 @@
   <mat-card class="form-card" style="margin-bottom: 20px">
     <mat-card-title>Filtrar recepciones</mat-card-title>
     <mat-card-content>
-      <form [formGroup]="filtrosForm" class="form-grid">
+      <form [formGroup]="filtrosForm" (ngSubmit)="cargar()">
 
-        <mat-form-field appearance="outline">
-          <mat-label>Canal</mat-label>
-          <mat-select formControlName="canal_id">
-            <mat-option [value]="null">Todos los canales</mat-option>
-            <mat-option *ngFor="let c of canales" [value]="c.id">{{ c.nombre }}</mat-option>
-          </mat-select>
+        <mat-form-field appearance="outline" style="width:100%">
+          <mat-label>Buscar por asunto</mat-label>
+          <mat-icon matPrefix>search</mat-icon>
+          <input matInput formControlName="texto" placeholder="Escriba palabras del asunto...">
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Estado</mat-label>
-          <mat-select formControlName="estado">
-            <mat-option [value]="null">Todos los estados</mat-option>
-            <mat-option *ngFor="let e of estados" [value]="e.value">{{ e.label }}</mat-option>
-          </mat-select>
-        </mat-form-field>
+        <mat-expansion-panel class="filtros-avanzados" [expanded]="false">
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <mat-icon style="font-size:18px; width:18px; height:18px; margin-right:6px">tune</mat-icon>
+              Más filtros
+            </mat-panel-title>
+          </mat-expansion-panel-header>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Desde</mat-label>
-          <input matInput formControlName="fecha_desde" type="date">
-        </mat-form-field>
+          <div class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Canal</mat-label>
+              <mat-select formControlName="canal_id">
+                <mat-option [value]="null">Todos los canales</mat-option>
+                <mat-option *ngFor="let c of canales" [value]="c.id">{{ c.nombre }}</mat-option>
+              </mat-select>
+            </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Hasta</mat-label>
-          <input matInput formControlName="fecha_hasta" type="date">
-        </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Estado</mat-label>
+              <mat-select formControlName="estado">
+                <mat-option [value]="null">Todos los estados</mat-option>
+                <mat-option *ngFor="let e of estados" [value]="e.value">{{ e.label }}</mat-option>
+              </mat-select>
+            </mat-form-field>
 
+            <mat-form-field appearance="outline">
+              <mat-label>Desde</mat-label>
+              <input matInput formControlName="fecha_desde" type="date">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Hasta</mat-label>
+              <input matInput formControlName="fecha_hasta" type="date">
+            </mat-form-field>
+          </div>
+        </mat-expansion-panel>
+
+        <div class="acciones" style="margin-top:12px">
+          <button mat-stroked-button type="button" (click)="limpiarFiltros()">Limpiar</button>
+          <button mat-flat-button color="primary" type="submit">
+            <mat-icon>search</mat-icon> Buscar
+          </button>
+        </div>
       </form>
-      <div class="acciones">
-        <button mat-stroked-button (click)="limpiarFiltros()">Limpiar</button>
-        <button mat-flat-button color="primary" (click)="cargar()">
-          <mat-icon>search</mat-icon> Buscar
-        </button>
-      </div>
     </mat-card-content>
   </mat-card>
-
-  <!-- Búsqueda por asunto -->
-  <mat-form-field appearance="outline" class="busqueda-asunto">
-    <mat-label>Buscar por asunto</mat-label>
-    <mat-icon matPrefix>search</mat-icon>
-    <input matInput [formControl]="busquedaCtrl" placeholder="Escriba palabras del asunto...">
-    <button *ngIf="busquedaCtrl.value" mat-icon-button matSuffix
-            (click)="busquedaCtrl.setValue('')" matTooltip="Limpiar búsqueda">
-      <mat-icon>close</mat-icon>
-    </button>
-    <mat-hint *ngIf="dataSource.filter">
-      {{ dataSource.filteredData.length }} resultado{{ dataSource.filteredData.length !== 1 ? 's' : '' }}
-      de {{ dataSource.data.length }}
-    </mat-hint>
-  </mat-form-field>
 
   <!-- Tabla -->
   <mat-card>
     <mat-progress-bar mode="indeterminate" *ngIf="cargando"></mat-progress-bar>
-    <table mat-table [dataSource]="dataSource" matSort class="tabla-completa">
+    <table mat-table [dataSource]="recepciones" class="tabla-completa">
 
       <ng-container matColumnDef="id">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header="id">ID</th>
+        <th mat-header-cell *matHeaderCellDef>ID</th>
         <td mat-cell *matCellDef="let r">
           <strong style="color: var(--azul); font-family: 'Playfair Display', serif">#{{ r.id }}</strong>
         </td>
       </ng-container>
 
       <ng-container matColumnDef="canal">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header="canal">Canal</th>
+        <th mat-header-cell *matHeaderCellDef>Canal</th>
         <td mat-cell *matCellDef="let r">
           <span class="canal-chip">{{ r.canal.nombre }}</span>
         </td>
       </ng-container>
 
       <ng-container matColumnDef="asunto">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header="asunto">Asunto provisional</th>
+        <th mat-header-cell *matHeaderCellDef>Asunto provisional</th>
         <td mat-cell *matCellDef="let r" class="celda-asunto">
           {{ r.asunto_provisional || '—' }}
         </td>
       </ng-container>
 
       <ng-container matColumnDef="estado">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header="estado">Estado</th>
+        <th mat-header-cell *matHeaderCellDef>Estado</th>
         <td mat-cell *matCellDef="let r">
-          <span [class]="'chip-estado ' + r.estado">{{ r.estado | titlecase }}</span>
+          <span [class]="'chip-estado ' + r.estado">{{ (r.estado.replace('_',' ')) | titlecase }}</span>
+          <mat-icon *ngIf="r.spam_flag || r.duplicado_de"
+                    style="font-size:16px; width:16px; height:16px; vertical-align:middle; color:#e65100; margin-left:4px"
+                    [matTooltip]="r.duplicado_de ? ('Posible duplicado de #' + r.duplicado_de) : ('Posible spam (puntaje ' + r.spam_score + ')')">
+            warning
+          </mat-icon>
         </td>
       </ng-container>
 
       <ng-container matColumnDef="fecha">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header="fecha">Fecha</th>
+        <th mat-header-cell *matHeaderCellDef>Fecha</th>
         <td mat-cell *matCellDef="let r" style="white-space:nowrap">
           {{ r.created_at | date:'dd/MM/yyyy HH:mm':'America/Bogota' }}
         </td>
       </ng-container>
 
       <ng-container matColumnDef="adjuntos">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header="adjuntos">Adjuntos</th>
+        <th mat-header-cell *matHeaderCellDef>Adjuntos</th>
         <td mat-cell *matCellDef="let r">
           <span *ngIf="r.adjuntos.length > 0"
                 style="display:flex; align-items:center; gap:4px; color:var(--texto-suave); font-size:13px;">
@@ -138,8 +145,8 @@
           <div class="sin-datos-contenido">
             <mat-icon class="sin-datos-icon">inbox</mat-icon>
             <span class="sin-datos-texto">
-              {{ busquedaCtrl.value
-                ? 'Sin resultados para "' + busquedaCtrl.value + '"'
+              {{ filtrosForm.value.texto
+                ? 'Sin resultados para "' + filtrosForm.value.texto + '"'
                 : 'No hay recepciones con los filtros seleccionados' }}
             </span>
           </div>
@@ -147,6 +154,9 @@
       </tr>
 
     </table>
+
+    <mat-paginator [length]="total" [pageSize]="pageSize" [pageIndex]="pageIndex"
+                   [hidePageSize]="true" (page)="onPageChange($event)"></mat-paginator>
   </mat-card>
 
 </div>
